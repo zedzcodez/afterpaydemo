@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { captureFullPayment } from "@/lib/afterpay";
 import { sanitizeError } from "@/lib/errors";
+import { captureFullRequestSchema, validateRequest } from "@/lib/validation";
 
 const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
 
@@ -10,14 +11,13 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
   try {
     const body = await request.json();
-    const { token, merchantReference }: { token: string; merchantReference?: string } = body;
 
-    if (!token) {
-      return NextResponse.json(
-        { error: "Token is required" },
-        { status: 400 }
-      );
+    // Validate request body
+    const validation = validateRequest(captureFullRequestSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
+    const { token, merchantReference } = validation.data;
 
     const requestBody: Record<string, unknown> = { token };
     if (merchantReference) {

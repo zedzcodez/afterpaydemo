@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCheckout, toMoney, cartToCheckoutItems } from "@/lib/afterpay";
-import { CartItem } from "@/lib/types";
 import { sanitizeError } from "@/lib/errors";
+import { checkoutRequestSchema, validateRequest } from "@/lib/validation";
 
 const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
 
@@ -16,33 +16,13 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
   try {
     const body = await request.json();
-    const {
-      items,
-      total,
-      mode = "standard",
-      consumer,
-      shipping,
-    }: {
-      items: CartItem[];
-      total: number;
-      mode?: "standard" | "express";
-      consumer?: {
-        givenNames: string;
-        surname: string;
-        email: string;
-        phoneNumber?: string;
-      };
-      shipping?: {
-        name: string;
-        line1: string;
-        line2?: string;
-        area1: string;
-        area2?: string;
-        postcode: string;
-        countryCode: string;
-        phoneNumber?: string;
-      };
-    } = body;
+
+    // Validate request body
+    const validation = validateRequest(checkoutRequestSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+    const { items, total, mode, consumer, shipping } = validation.data;
 
     // CRITICAL: appUrl must exactly match the protocol, host, and port where the app is running.
     // This is used for redirectConfirmUrl, redirectCancelUrl, and popupOriginUrl.

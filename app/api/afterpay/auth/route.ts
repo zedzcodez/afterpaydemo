@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authorizePayment, getCheckout, toMoney } from "@/lib/afterpay";
 import { sanitizeError } from "@/lib/errors";
+import { authRequestSchema, validateRequest } from "@/lib/validation";
 
 const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
 
@@ -8,24 +9,13 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
   try {
     const body = await request.json();
-    const {
-      token,
-      amount,
-      isCheckoutAdjusted,
-      paymentScheduleChecksum,
-    }: {
-      token: string;
-      amount?: number;
-      isCheckoutAdjusted?: boolean;
-      paymentScheduleChecksum?: string;
-    } = body;
 
-    if (!token) {
-      return NextResponse.json(
-        { error: "Token is required" },
-        { status: 400 }
-      );
+    // Validate request body
+    const validation = validateRequest(authRequestSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
+    const { token, amount, isCheckoutAdjusted, paymentScheduleChecksum } = validation.data;
 
     let authAmount;
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { capturePayment, toMoney } from "@/lib/afterpay";
 import { sanitizeError } from "@/lib/errors";
+import { captureRequestSchema, validateRequest } from "@/lib/validation";
 
 const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
 
@@ -8,26 +9,13 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
   try {
     const body = await request.json();
-    const {
-      orderId,
-      amount,
-      currency = "USD",
-      isCheckoutAdjusted,
-      paymentScheduleChecksum,
-    }: {
-      orderId: string;
-      amount: number;
-      currency?: string;
-      isCheckoutAdjusted?: boolean;
-      paymentScheduleChecksum?: string;
-    } = body;
 
-    if (!orderId || !amount) {
-      return NextResponse.json(
-        { error: "Order ID and amount are required" },
-        { status: 400 }
-      );
+    // Validate request body
+    const validation = validateRequest(captureRequestSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
+    const { orderId, amount, currency, isCheckoutAdjusted, paymentScheduleChecksum } = validation.data;
 
     const captureAmount = toMoney(amount, currency);
     const requestBody: Record<string, unknown> = { amount: captureAmount };
