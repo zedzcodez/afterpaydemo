@@ -594,6 +594,12 @@ const getEffectiveStatus = () => {
 
 ### Panel Features
 
+#### Resizable Panel
+- **Drag to resize**: Hover over the top edge of the panel to see the resize grip
+- **Drag up/down** to increase or decrease panel height
+- **Height persists**: Your preferred height is saved to localStorage
+- **Min/Max limits**: Minimum 200px, maximum 80% of viewport height
+
 #### Display Order
 - Events display in **reverse-chronological order** (most recent first)
 - Click any log entry to view full details

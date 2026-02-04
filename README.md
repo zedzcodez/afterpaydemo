@@ -38,6 +38,7 @@ Full payment management interface at `/admin`:
 ### Developer Features
 - **Code Viewer**: Implementation snippets for each checkout method
 - **Developer Panel**: Enhanced API inspection tool with:
+  - **Resizable panel**: Drag the top edge to adjust height (persisted to localStorage)
   - Real-time request/response logging (reverse-chronological order)
   - **Full server-side request data**: See exactly what's sent to Afterpay APIs, including `merchantReference`, `merchant` URLs, and transformed payloads
   - Complete URLs, path parameters, headers, and request/response bodies
@@ -49,6 +50,7 @@ Full payment management interface at `/admin`:
   - Links to Afterpay API documentation for each endpoint
 - **Flow Logs**: Complete transaction timeline on confirmation page
 - **Toggle Controls**: Compare different checkout approaches side-by-side
+- **Official Afterpay Assets**: All checkout buttons use official Afterpay brand assets from CDN
 
 ### UI Features
 - **Dark Mode**: System preference detection with manual toggle, persisted to localStorage
