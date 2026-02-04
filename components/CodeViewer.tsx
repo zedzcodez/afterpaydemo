@@ -12,10 +12,10 @@ export function CodeViewer({ title, code, language = "typescript" }: CodeViewerP
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="border border-afterpay-gray-200 rounded-lg overflow-hidden">
+    <div className="border border-afterpay-gray-200 dark:border-afterpay-gray-700 rounded-lg overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 bg-afterpay-gray-50 text-left flex items-center justify-between hover:bg-afterpay-gray-100 transition-colors"
+        className="w-full px-4 py-3 bg-afterpay-gray-50 dark:bg-afterpay-gray-800 text-left flex items-center justify-between hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-700 transition-colors"
       >
         <span className="font-medium text-sm">{title}</span>
         <svg

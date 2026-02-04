@@ -467,7 +467,7 @@ Afterpay.initializeForPopup({
             className={`flex-1 py-2 px-4 rounded-lg border-2 transition-colors ${
               shippingFlow === "integrated"
                 ? "border-afterpay-mint bg-afterpay-mint/10"
-                : "border-afterpay-gray-200 hover:border-afterpay-gray-300"
+                : "border-afterpay-gray-200 dark:border-afterpay-gray-700 hover:border-afterpay-gray-300 dark:hover:border-afterpay-gray-600"
             }`}
           >
             <span className="block font-medium">Integrated</span>
@@ -480,7 +480,7 @@ Afterpay.initializeForPopup({
             className={`flex-1 py-2 px-4 rounded-lg border-2 transition-colors ${
               shippingFlow === "deferred"
                 ? "border-afterpay-mint bg-afterpay-mint/10"
-                : "border-afterpay-gray-200 hover:border-afterpay-gray-300"
+                : "border-afterpay-gray-200 dark:border-afterpay-gray-700 hover:border-afterpay-gray-300 dark:hover:border-afterpay-gray-600"
             }`}
           >
             <span className="block font-medium">Deferred</span>
@@ -492,7 +492,7 @@ Afterpay.initializeForPopup({
       </div>
 
       {/* Flow Description */}
-      <div className="bg-afterpay-gray-50 rounded-lg p-4 text-sm">
+      <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-lg p-4 text-sm">
         {shippingFlow === "integrated" ? (
           <>
             <p className="font-medium mb-2">Integrated Shipping Flow</p>

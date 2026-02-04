@@ -36,7 +36,7 @@ function ActionModal({ action, orderId, maxAmount, onClose, onSubmit, isLoading 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+      <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
         <h2 className="text-xl font-bold mb-2">{actionLabels[action].title}</h2>
         <p className="text-afterpay-gray-600 text-sm mb-4">{actionLabels[action].description}</p>
 
@@ -71,7 +71,7 @@ function ActionModal({ action, orderId, maxAmount, onClose, onSubmit, isLoading 
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2 px-4 border border-afterpay-gray-300 rounded-lg hover:bg-afterpay-gray-50"
+              className="flex-1 py-2 px-4 border border-afterpay-gray-300 dark:border-afterpay-gray-600 rounded-lg hover:bg-afterpay-gray-50 dark:hover:bg-afterpay-gray-700"
             >
               Cancel
             </button>
@@ -674,7 +674,7 @@ function AdminContent() {
         </div>
 
         {/* Capture Mode Settings */}
-        <div className="bg-white rounded-lg shadow-sm border border-afterpay-gray-200 p-6 mb-6">
+        <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 p-6 mb-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold">Capture Mode</h2>
@@ -690,7 +690,7 @@ function AdminContent() {
                 className={`px-4 py-2 rounded-l-lg border font-medium text-sm transition-colors ${
                   captureMode === "deferred"
                     ? "bg-afterpay-black text-white border-afterpay-black"
-                    : "bg-white text-afterpay-gray-600 border-afterpay-gray-300 hover:bg-afterpay-gray-50"
+                    : "bg-white dark:bg-afterpay-gray-700 text-afterpay-gray-600 dark:text-afterpay-gray-300 border-afterpay-gray-300 dark:border-afterpay-gray-600 hover:bg-afterpay-gray-50 dark:hover:bg-afterpay-gray-600"
                 }`}
               >
                 Deferred
@@ -700,7 +700,7 @@ function AdminContent() {
                 className={`px-4 py-2 rounded-r-lg border-t border-r border-b font-medium text-sm transition-colors ${
                   captureMode === "immediate"
                     ? "bg-afterpay-black text-white border-afterpay-black"
-                    : "bg-white text-afterpay-gray-600 border-afterpay-gray-300 hover:bg-afterpay-gray-50"
+                    : "bg-white dark:bg-afterpay-gray-700 text-afterpay-gray-600 dark:text-afterpay-gray-300 border-afterpay-gray-300 dark:border-afterpay-gray-600 hover:bg-afterpay-gray-50 dark:hover:bg-afterpay-gray-600"
                 }`}
               >
                 Immediate
@@ -710,7 +710,7 @@ function AdminContent() {
         </div>
 
         {/* Merchant Configuration */}
-        <div className="bg-white rounded-lg shadow-sm border border-afterpay-gray-200 p-6 mb-6">
+        <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-lg font-semibold">Merchant Configuration</h2>
@@ -734,7 +734,7 @@ function AdminContent() {
           {configuration && !configError && (
             <div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-afterpay-gray-50 rounded-lg p-4">
+                <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-900 rounded-lg p-4">
                   <dt className="text-sm text-afterpay-gray-600 mb-1">Minimum Order</dt>
                   <dd className="text-xl font-semibold">
                     {configuration.minimumAmount
@@ -742,7 +742,7 @@ function AdminContent() {
                       : "Not set"}
                   </dd>
                 </div>
-                <div className="bg-afterpay-gray-50 rounded-lg p-4">
+                <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-900 rounded-lg p-4">
                   <dt className="text-sm text-afterpay-gray-600 mb-1">Maximum Order</dt>
                   <dd className="text-xl font-semibold">
                     {configuration.maximumAmount
@@ -759,7 +759,7 @@ function AdminContent() {
         </div>
 
         {/* Webhook Demo Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-afterpay-gray-200 mb-6 overflow-hidden">
+        <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 mb-6 overflow-hidden">
           <button
             onClick={() => setWebhookExpanded(!webhookExpanded)}
             className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-afterpay-gray-50 to-purple-50 hover:from-afterpay-gray-100 hover:to-purple-100 transition-colors"
@@ -789,12 +789,12 @@ function AdminContent() {
           </button>
 
           {webhookExpanded && (
-            <div className="p-6 border-t border-afterpay-gray-200">
+            <div className="p-6 border-t border-afterpay-gray-200 dark:border-afterpay-gray-700">
               {/* Endpoint Info */}
-              <div className="bg-afterpay-gray-50 rounded-lg p-4 mb-4">
+              <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-900 rounded-lg p-4 mb-4">
                 <h3 className="text-sm font-medium mb-2">Webhook Endpoint</h3>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 bg-white px-3 py-2 rounded border border-afterpay-gray-200 text-sm font-mono">
+                  <code className="flex-1 bg-white dark:bg-afterpay-gray-900 px-3 py-2 rounded border border-afterpay-gray-200 dark:border-afterpay-gray-700 text-sm font-mono">
                     /api/webhooks/afterpay
                   </code>
                   <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
@@ -858,7 +858,7 @@ function AdminContent() {
                   )}
                 </div>
                 {webhookEvents.length === 0 ? (
-                  <div className="bg-afterpay-gray-50 rounded-lg p-4 text-center text-sm text-afterpay-gray-500">
+                  <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-900 rounded-lg p-4 text-center text-sm text-afterpay-gray-500">
                     No test webhooks sent yet. Click a button above to simulate a webhook event.
                   </div>
                 ) : (
@@ -909,7 +909,7 @@ function AdminContent() {
         </div>
 
         {/* Lookup Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-afterpay-gray-200 p-6 mb-6">
+        <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4">Lookup Payment</h2>
           <div className="flex gap-3">
             <input
@@ -948,8 +948,8 @@ function AdminContent() {
         {payment && (
           <div className="space-y-6">
             {/* Payment Overview */}
-            <div className="bg-white rounded-lg shadow-sm border border-afterpay-gray-200 overflow-hidden">
-              <div className="px-6 py-4 bg-gradient-to-r from-afterpay-gray-50 to-blue-50 border-b border-afterpay-gray-200">
+            <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 overflow-hidden">
+              <div className="px-6 py-4 bg-gradient-to-r from-afterpay-gray-50 to-blue-50 border-b border-afterpay-gray-200 dark:border-afterpay-gray-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <h2 className="text-lg font-semibold">Payment Details</h2>
@@ -988,8 +988,8 @@ function AdminContent() {
             </div>
 
             {/* Amount Breakdown */}
-            <div className="bg-white rounded-lg shadow-sm border border-afterpay-gray-200 overflow-hidden">
-              <div className="px-6 py-4 bg-gradient-to-r from-afterpay-gray-50 to-afterpay-mint/10 border-b border-afterpay-gray-200">
+            <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 overflow-hidden">
+              <div className="px-6 py-4 bg-gradient-to-r from-afterpay-gray-50 to-afterpay-mint/10 border-b border-afterpay-gray-200 dark:border-afterpay-gray-700">
                 <h2 className="text-lg font-semibold">Amount Breakdown</h2>
               </div>
               <div className="p-6">
@@ -1054,7 +1054,7 @@ function AdminContent() {
                 </div>
 
                 {/* Amount Details */}
-                <div className="space-y-3 pt-4 border-t border-afterpay-gray-200">
+                <div className="space-y-3 pt-4 border-t border-afterpay-gray-200 dark:border-afterpay-gray-700">
                   <div className="flex justify-between items-center">
                     <span className="text-afterpay-gray-600">Original Amount</span>
                     <span className="font-medium">{formatPrice(getOriginalAmount())}</span>
@@ -1071,7 +1071,7 @@ function AdminContent() {
                     <span>Voided</span>
                     <span className="font-medium">-{formatPrice(getVoidedAmount())}</span>
                   </div>
-                  <div className="flex justify-between items-center pt-3 border-t border-afterpay-gray-200">
+                  <div className="flex justify-between items-center pt-3 border-t border-afterpay-gray-200 dark:border-afterpay-gray-700">
                     <span className="font-medium">Open to Capture</span>
                     <span className="font-bold text-blue-600">{formatPrice(getOpenToCapture())}</span>
                   </div>
@@ -1084,8 +1084,8 @@ function AdminContent() {
             </div>
 
             {/* Actions */}
-            <div className="bg-white rounded-lg shadow-sm border border-afterpay-gray-200 overflow-hidden">
-              <div className="px-6 py-4 bg-gradient-to-r from-afterpay-gray-50 to-afterpay-mint/10 border-b border-afterpay-gray-200">
+            <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 overflow-hidden">
+              <div className="px-6 py-4 bg-gradient-to-r from-afterpay-gray-50 to-afterpay-mint/10 border-b border-afterpay-gray-200 dark:border-afterpay-gray-700">
                 <h2 className="text-lg font-semibold">Actions</h2>
               </div>
               <div className="p-6">
@@ -1122,11 +1122,11 @@ function AdminContent() {
 
             {/* Event History */}
             {((payment.events && payment.events.length > 0) || (payment.refunds && payment.refunds.length > 0)) && (
-              <div className="bg-white rounded-lg shadow-sm border border-afterpay-gray-200 overflow-hidden">
-                <div className="px-6 py-4 bg-gradient-to-r from-afterpay-gray-50 to-purple-50 border-b border-afterpay-gray-200">
+              <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 overflow-hidden">
+                <div className="px-6 py-4 bg-gradient-to-r from-afterpay-gray-50 to-purple-50 border-b border-afterpay-gray-200 dark:border-afterpay-gray-700">
                   <h2 className="text-lg font-semibold">Event History</h2>
                 </div>
-                <div className="divide-y divide-afterpay-gray-200">
+                <div className="divide-y divide-afterpay-gray-200 dark:divide-afterpay-gray-700">
                   {/* Combine events and refunds into a unified timeline */}
                   {[
                     ...(payment.events || []).map((event) => ({
@@ -1170,7 +1170,7 @@ function AdminContent() {
 
         {/* Empty State */}
         {!payment && !isLoading && !error && (
-          <div className="bg-white rounded-lg shadow-sm border border-afterpay-gray-200 p-12 text-center">
+          <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 p-12 text-center">
             <div className="w-16 h-16 bg-afterpay-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-afterpay-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

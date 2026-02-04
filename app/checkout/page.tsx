@@ -58,7 +58,7 @@ export default function CheckoutPage() {
           </div>
           <Link
             href="/cart"
-            className="text-afterpay-gray-600 hover:text-afterpay-black"
+            className="text-afterpay-gray-600 hover:text-afterpay-black dark:hover:text-white"
           >
             Edit Cart
           </Link>
@@ -72,7 +72,7 @@ export default function CheckoutPage() {
           <div className="lg:col-span-2">
             {/* Method Toggle */}
             <div className="mb-8">
-              <div className="relative flex border-b border-afterpay-gray-200">
+              <div className="relative flex border-b border-afterpay-gray-200 dark:border-afterpay-gray-700">
                 {/* Sliding indicator */}
                 <div
                   className="absolute bottom-0 h-0.5 bg-afterpay-mint transition-all duration-300 ease-out"
@@ -85,8 +85,8 @@ export default function CheckoutPage() {
                   onClick={() => setMethod("express")}
                   className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
                     method === "express"
-                      ? "text-afterpay-black"
-                      : "text-afterpay-gray-500 hover:text-afterpay-gray-700"
+                      ? "text-afterpay-black dark:text-white"
+                      : "text-afterpay-gray-500 hover:text-afterpay-gray-700 dark:hover:text-afterpay-gray-300"
                   }`}
                 >
                   Express Checkout
@@ -98,8 +98,8 @@ export default function CheckoutPage() {
                   onClick={() => setMethod("standard")}
                   className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
                     method === "standard"
-                      ? "text-afterpay-black"
-                      : "text-afterpay-gray-500 hover:text-afterpay-gray-700"
+                      ? "text-afterpay-black dark:text-white"
+                      : "text-afterpay-gray-500 hover:text-afterpay-gray-700 dark:hover:text-afterpay-gray-300"
                   }`}
                 >
                   Standard Checkout
@@ -111,7 +111,7 @@ export default function CheckoutPage() {
             </div>
 
             {/* Method Description */}
-            <div className="bg-afterpay-gray-50 rounded-lg p-4 mb-6">
+            <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-lg p-4 mb-6">
               {method === "express" ? (
                 <div>
                   <h3 className="font-medium mb-2">Express Checkout Flow</h3>
@@ -149,14 +149,14 @@ export default function CheckoutPage() {
 
           {/* Order Summary Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-afterpay-gray-50 rounded-lg p-6 sticky top-24">
+            <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-lg p-6 sticky top-24">
               <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
 
               {/* Cart Items */}
               <div className="space-y-4 mb-6">
                 {items.map((item) => (
                   <div key={item.product.id} className="flex gap-4">
-                    <div className="w-16 h-16 bg-afterpay-gray-100 rounded overflow-hidden relative flex-shrink-0">
+                    <div className="w-16 h-16 bg-afterpay-gray-100 dark:bg-afterpay-gray-700 rounded overflow-hidden relative flex-shrink-0">
                       <Image
                         src={item.product.image}
                         alt={item.product.name}
@@ -181,7 +181,7 @@ export default function CheckoutPage() {
               </div>
 
               {/* Totals */}
-              <div className="border-t border-afterpay-gray-200 pt-4 space-y-2">
+              <div className="border-t border-afterpay-gray-200 dark:border-afterpay-gray-700 pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal</span>
                   <span>{formatPrice(total)}</span>
@@ -190,7 +190,7 @@ export default function CheckoutPage() {
                   <span>Shipping</span>
                   <span>Calculated next</span>
                 </div>
-                <div className="flex justify-between font-semibold text-lg pt-2 border-t border-afterpay-gray-200">
+                <div className="flex justify-between font-semibold text-lg pt-2 border-t border-afterpay-gray-200 dark:border-afterpay-gray-700">
                   <span>Total</span>
                   <span>{formatPrice(total)}</span>
                 </div>

@@ -40,18 +40,18 @@ export default function ProductDetailPage() {
       <nav className="mb-8">
         <ol className="flex items-center space-x-2 text-sm text-afterpay-gray-500">
           <li>
-            <Link href="/" className="hover:text-afterpay-black transition-colors">
+            <Link href="/" className="hover:text-afterpay-black dark:hover:text-white transition-colors">
               Shop
             </Link>
           </li>
           <li>/</li>
-          <li className="text-afterpay-black">{product.name}</li>
+          <li className="text-afterpay-black dark:text-white">{product.name}</li>
         </ol>
       </nav>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Product Image */}
-        <div className="aspect-square bg-afterpay-gray-50 rounded-2xl overflow-hidden relative shadow-card">
+        <div className="aspect-square bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-2xl overflow-hidden relative shadow-card">
           <Image
             src={product.image}
             alt={product.name}
@@ -67,20 +67,20 @@ export default function ProductDetailPage() {
           <p className="text-xs font-medium text-afterpay-gray-400 uppercase tracking-wider mb-2">
             {product.category}
           </p>
-          <h1 className="font-display text-4xl font-bold text-afterpay-black mb-4">
+          <h1 className="font-display text-4xl font-bold text-afterpay-black dark:text-white mb-4">
             {product.name}
           </h1>
           <p className="text-afterpay-gray-600 mb-6">{product.description}</p>
 
           {/* Price */}
           <div className="mb-4">
-            <p className="text-3xl font-bold text-afterpay-black">
+            <p className="text-3xl font-bold text-afterpay-black dark:text-white">
               {formatPrice(product.price, product.currency)}
             </p>
           </div>
 
           {/* Afterpay OSM - Below Price */}
-          <div className="mb-8 p-4 bg-afterpay-gray-50 rounded-lg">
+          <div className="mb-8 p-4 bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-lg">
             <OSMPlacement
               pageType="product"
               amount={product.price}
@@ -120,7 +120,7 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Features */}
-          <div className="mt-8 pt-8 border-t border-afterpay-gray-200">
+          <div className="mt-8 pt-8 border-t border-afterpay-gray-200 dark:border-afterpay-gray-700">
             <h3 className="font-medium mb-4">Why shop with Afterpay?</h3>
             <ul className="space-y-3 text-sm text-afterpay-gray-600">
               <li className="flex items-center">

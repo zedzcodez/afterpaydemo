@@ -464,7 +464,7 @@ Afterpay.transfer({ token });`;
               className={`flex-1 py-2 px-4 rounded-lg border-2 transition-colors ${
                 checkoutMode === "redirect"
                   ? "border-afterpay-mint bg-afterpay-mint/10"
-                  : "border-afterpay-gray-200 hover:border-afterpay-gray-300"
+                  : "border-afterpay-gray-200 dark:border-afterpay-gray-700 hover:border-afterpay-gray-300 dark:hover:border-afterpay-gray-600"
               }`}
             >
               <span className="block font-medium">Redirect</span>
@@ -479,7 +479,7 @@ Afterpay.transfer({ token });`;
               className={`flex-1 py-2 px-4 rounded-lg border-2 transition-colors ${
                 checkoutMode === "popup"
                   ? "border-afterpay-mint bg-afterpay-mint/10"
-                  : "border-afterpay-gray-200 hover:border-afterpay-gray-300"
+                  : "border-afterpay-gray-200 dark:border-afterpay-gray-700 hover:border-afterpay-gray-300 dark:hover:border-afterpay-gray-600"
               } ${!isAfterpayReady ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <span className="block font-medium">Popup</span>
@@ -491,7 +491,7 @@ Afterpay.transfer({ token });`;
         </div>
 
         {/* Mode Description */}
-        <div className="bg-afterpay-gray-50 rounded-lg p-4 text-sm">
+        <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-lg p-4 text-sm">
           {checkoutMode === "redirect" ? (
             <>
               <p className="font-medium mb-2">Redirect Flow</p>
@@ -620,7 +620,7 @@ Afterpay.transfer({ token });`;
                 className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
                   selectedShipping.id === option.id
                     ? "border-afterpay-mint bg-afterpay-mint/10"
-                    : "border-afterpay-gray-200 hover:border-afterpay-gray-300"
+                    : "border-afterpay-gray-200 dark:border-afterpay-gray-700 hover:border-afterpay-gray-300 dark:hover:border-afterpay-gray-600"
                 }`}
               >
                 <div className="flex items-center">
@@ -641,7 +641,7 @@ Afterpay.transfer({ token });`;
         </div>
 
         {/* Order Summary */}
-        <div className="bg-afterpay-gray-50 rounded-lg p-4">
+        <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-lg p-4">
           <div className="space-y-2 mb-4">
             <div className="flex justify-between">
               <span>Subtotal</span>
@@ -651,7 +651,7 @@ Afterpay.transfer({ token });`;
               <span>Shipping</span>
               <span>{formatPrice(selectedShipping.price)}</span>
             </div>
-            <div className="flex justify-between font-semibold text-lg border-t border-afterpay-gray-200 pt-2">
+            <div className="flex justify-between font-semibold text-lg border-t border-afterpay-gray-200 dark:border-afterpay-gray-700 pt-2">
               <span>Total</span>
               <span>{formatPrice(finalTotal)}</span>
             </div>

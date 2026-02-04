@@ -52,10 +52,10 @@ export default function CartPage() {
             {items.map((item) => (
               <div
                 key={item.product.id}
-                className="flex items-center gap-4 p-4 bg-white border border-afterpay-gray-200 rounded-lg"
+                className="flex items-center gap-4 p-4 bg-white dark:bg-afterpay-gray-800 border border-afterpay-gray-200 dark:border-afterpay-gray-700 rounded-lg"
               >
                 {/* Product Image */}
-                <div className="w-24 h-24 bg-afterpay-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative">
+                <div className="w-24 h-24 bg-afterpay-gray-100 dark:bg-afterpay-gray-700 rounded-lg overflow-hidden flex-shrink-0 relative">
                   <Image
                     src={item.product.image}
                     alt={item.product.name}
@@ -69,7 +69,7 @@ export default function CartPage() {
                 <div className="flex-1 min-w-0">
                   <Link
                     href={`/products/${item.product.id}`}
-                    className="font-medium text-afterpay-black hover:underline"
+                    className="font-medium text-afterpay-black dark:text-white hover:underline"
                   >
                     {item.product.name}
                   </Link>
@@ -87,7 +87,7 @@ export default function CartPage() {
                     onClick={() =>
                       updateQuantity(item.product.id, item.quantity - 1)
                     }
-                    className="w-8 h-8 rounded-full border border-afterpay-gray-300 flex items-center justify-center hover:bg-afterpay-gray-50 transition-colors"
+                    className="w-8 h-8 rounded-full border border-afterpay-gray-300 dark:border-afterpay-gray-600 flex items-center justify-center hover:bg-afterpay-gray-50 dark:hover:bg-afterpay-gray-700 transition-colors"
                   >
                     -
                   </button>
@@ -98,7 +98,7 @@ export default function CartPage() {
                     onClick={() =>
                       updateQuantity(item.product.id, item.quantity + 1)
                     }
-                    className="w-8 h-8 rounded-full border border-afterpay-gray-300 flex items-center justify-center hover:bg-afterpay-gray-50 transition-colors"
+                    className="w-8 h-8 rounded-full border border-afterpay-gray-300 dark:border-afterpay-gray-600 flex items-center justify-center hover:bg-afterpay-gray-50 dark:hover:bg-afterpay-gray-700 transition-colors"
                   >
                     +
                   </button>
@@ -141,7 +141,7 @@ export default function CartPage() {
 
         {/* Order Summary */}
         <div className="lg:col-span-1">
-          <div className="bg-afterpay-gray-50 rounded-lg p-6 sticky top-24">
+          <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-lg p-6 sticky top-24">
             <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
 
             <div className="space-y-3 mb-6">
@@ -153,7 +153,7 @@ export default function CartPage() {
                 <span>Shipping</span>
                 <span>Calculated at checkout</span>
               </div>
-              <div className="border-t border-afterpay-gray-200 pt-3">
+              <div className="border-t border-afterpay-gray-200 dark:border-afterpay-gray-700 pt-3">
                 <div className="flex justify-between text-lg font-semibold">
                   <span>Total</span>
                   <span>{formatPrice(total)}</span>
@@ -162,7 +162,7 @@ export default function CartPage() {
             </div>
 
             {/* Afterpay OSM - Below Total */}
-            <div className="mb-6 p-4 bg-white rounded-lg border border-afterpay-gray-200">
+            <div className="mb-6 p-4 bg-white dark:bg-afterpay-gray-900 rounded-lg border border-afterpay-gray-200 dark:border-afterpay-gray-700">
               <OSMPlacement
                 pageType="cart"
                 amount={total}
