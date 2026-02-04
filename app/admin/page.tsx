@@ -417,7 +417,7 @@ function AdminContent() {
         };
 
         // If the API response doesn't include updated events, add them optimistically
-        if (action === "refund" && !data.refunds?.some((r: { refundId: string }) => r.refundId !== payment.refunds?.find((pr) => pr.refundId === r.refundId))) {
+        if (action === "refund" && !data.refunds?.some((r: { refundId: string }) => !payment.refunds?.some((pr) => pr.refundId === r.refundId))) {
           // Add refund to refunds array if not already present
           const refundExists = updatedPayment.refunds?.some((r) =>
             parseFloat(r.amount.amount) === amount &&
