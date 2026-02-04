@@ -674,24 +674,26 @@ Afterpay.transfer({ token });`;
           </div>
         )}
 
-        {/* Submit Button */}
+        {/* Submit Button - Official Afterpay Asset */}
         <button
           type="submit"
           disabled={isLoading || items.length === 0}
-          className="w-full py-4 px-6 bg-afterpay-black text-white font-medium rounded-lg hover:bg-afterpay-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label="Pay with Cash App Afterpay"
+          className="w-full flex items-center justify-center bg-afterpay-black rounded-lg hover:bg-afterpay-gray-800 transition-colors py-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
-            <span className="flex items-center justify-center gap-2">
+            <span className="flex items-center justify-center gap-2 py-2">
               <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              <span>Processing...</span>
+              <span className="text-white font-medium">Processing...</span>
             </span>
           ) : (
-            <span className="flex items-center justify-center gap-2">
-              <span>Continue to</span>
-              <span className="bg-afterpay-mint text-afterpay-black px-2 py-0.5 rounded text-sm font-bold">
-                Afterpay
-              </span>
-            </span>
+            <img
+              alt="Pay with Cash App Afterpay"
+              aria-hidden="true"
+              src="https://static.afterpaycdn.com/en-US/integration/button/pay-with-afterpay/color-on-black.svg"
+              height="48"
+              className="h-12"
+            />
           )}
         </button>
       </form>

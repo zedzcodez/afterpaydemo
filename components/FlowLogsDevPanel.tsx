@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { getFlowLogs, FlowLogs, FlowLogEntry } from "@/lib/flowLogs";
 
 interface FlowLogsDevPanelProps {
@@ -8,6 +8,10 @@ interface FlowLogsDevPanelProps {
 }
 
 type FilterType = "all" | "api_request" | "api_response" | "callback" | "redirect";
+
+const DEFAULT_PANEL_HEIGHT = 320;
+const MIN_PANEL_HEIGHT = 200;
+const MAX_PANEL_HEIGHT_RATIO = 0.8; // 80% of viewport height
 
 export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
   const [isOpen, setIsOpen] = useState(true);
@@ -21,6 +25,61 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
     response: true,
   });
   const [copySuccess, setCopySuccess] = useState(false);
+
+  // Resize state
+  const [panelHeight, setPanelHeight] = useState(DEFAULT_PANEL_HEIGHT);
+  const [isResizing, setIsResizing] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Load persisted height from localStorage
+  useEffect(() => {
+    const savedHeight = localStorage.getItem("devPanelHeight");
+    if (savedHeight) {
+      const height = parseInt(savedHeight, 10);
+      if (!isNaN(height) && height >= MIN_PANEL_HEIGHT) {
+        setPanelHeight(height);
+      }
+    }
+  }, []);
+
+  // Handle resize drag
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      const newHeight = window.innerHeight - e.clientY;
+      const maxHeight = window.innerHeight * MAX_PANEL_HEIGHT_RATIO;
+      const clampedHeight = Math.max(MIN_PANEL_HEIGHT, Math.min(newHeight, maxHeight));
+      setPanelHeight(clampedHeight);
+    };
+
+    const handleMouseUp = () => {
+      if (isResizing) {
+        setIsResizing(false);
+        // Persist height to localStorage
+        localStorage.setItem("devPanelHeight", panelHeight.toString());
+      }
+    };
+
+    if (isResizing) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      // Prevent text selection while dragging
+      document.body.style.userSelect = "none";
+      document.body.style.cursor = "ns-resize";
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    };
+  }, [isResizing, panelHeight]);
+
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
 
   useEffect(() => {
     setFlowLogs(getFlowLogs());
@@ -222,7 +281,21 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
   ];
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 bg-afterpay-gray-900 text-white z-50 ${className}`}>
+    <div ref={panelRef} className={`fixed bottom-0 left-0 right-0 bg-afterpay-gray-900 text-white z-50 ${className}`}>
+      {/* Resize Handle */}
+      {isOpen && (
+        <div
+          onMouseDown={handleResizeStart}
+          className={`absolute top-0 left-0 right-0 h-2 cursor-ns-resize group flex items-center justify-center ${
+            isResizing ? "bg-afterpay-mint/30" : "hover:bg-afterpay-mint/20"
+          }`}
+        >
+          {/* Visual grip indicator */}
+          <div className={`w-12 h-1 rounded-full transition-colors ${
+            isResizing ? "bg-afterpay-mint" : "bg-afterpay-gray-600 group-hover:bg-afterpay-mint"
+          }`} />
+        </div>
+      )}
       {/* Header */}
       <div className="w-full px-4 py-2 bg-afterpay-gray-800 flex items-center justify-between">
         <button
@@ -292,7 +365,7 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
 
       {/* Content */}
       {isOpen && (
-        <div className="h-80 flex flex-col">
+        <div style={{ height: `${panelHeight}px` }} className="flex flex-col">
           {/* Filter Bar */}
           <div className="px-4 py-2 bg-afterpay-gray-850 border-b border-afterpay-gray-700 flex items-center gap-3">
             {/* Filter Chips */}
