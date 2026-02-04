@@ -579,6 +579,11 @@ const getEffectiveStatus = () => {
 - **Full API URL** (e.g., `https://global-api-sandbox.afterpay.com/v2/checkouts`)
 - **Path parameters** (for endpoints like `/v2/payments/{orderId}/capture`)
 - **Request headers** (Content-Type, Authorization masked as "Basic ***", User-Agent)
+- **Full server-side request body** - Shows exactly what's sent to Afterpay APIs, including:
+  - `merchantReference` (generated server-side, e.g., "ORD-ABC123-XYZ")
+  - `merchant` object with `redirectConfirmUrl`, `redirectCancelUrl`, `popupOriginUrl`
+  - Full `amount` objects with currency
+  - Transformed item data
 - Request body with size indicator (e.g., "1.2 KB")
 - HTTP status code (color-coded: green for success, red for errors)
 - **API Status** (extracted from response: APPROVED, DECLINED, CAPTURED, etc.)

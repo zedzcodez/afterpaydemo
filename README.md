@@ -39,7 +39,8 @@ Full payment management interface at `/admin`:
 - **Code Viewer**: Implementation snippets for each checkout method
 - **Developer Panel**: Enhanced API inspection tool with:
   - Real-time request/response logging (reverse-chronological order)
-  - Full API details: complete URLs, path parameters, headers, request/response bodies
+  - **Full server-side request data**: See exactly what's sent to Afterpay APIs, including `merchantReference`, `merchant` URLs, and transformed payloads
+  - Complete URLs, path parameters, headers, and request/response bodies
   - Collapsible sections for headers and body data with size indicators
   - Filter by event type (Requests, Responses, Events, Redirects)
   - Search across labels, endpoints, and data content
