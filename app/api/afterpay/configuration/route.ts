@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sanitizeError } from "@/lib/errors";
 
 export interface ConfigurationResponse {
   minimumAmount?: {
@@ -41,9 +42,11 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.message || `API error: ${response.statusText}`;
+      const safeMessage = sanitizeError(new Error(errorMessage), "configuration");
       return NextResponse.json(
         {
-          error: errorData.message || `API error: ${response.statusText}`,
+          error: safeMessage,
           status: response.status,
         },
         { status: response.status }
@@ -68,10 +71,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Configuration error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to get configuration" },
-      { status: 500 }
-    );
+    const safeMessage = sanitizeError(error, "configuration");
+    return NextResponse.json({ error: safeMessage }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCheckout, toMoney, cartToCheckoutItems } from "@/lib/afterpay";
 import { CartItem } from "@/lib/types";
+import { sanitizeError } from "@/lib/errors";
 
 const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
 
@@ -90,10 +91,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Checkout creation error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Checkout failed" },
-      { status: 500 }
-    );
+    const safeMessage = sanitizeError(error, "checkout");
+    return NextResponse.json({ error: safeMessage }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { capturePayment, toMoney } from "@/lib/afterpay";
+import { sanitizeError } from "@/lib/errors";
 
 const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
 
@@ -60,10 +61,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Capture error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Capture failed" },
-      { status: 500 }
-    );
+    const safeMessage = sanitizeError(error, "capture");
+    return NextResponse.json({ error: safeMessage }, { status: 500 });
   }
 }

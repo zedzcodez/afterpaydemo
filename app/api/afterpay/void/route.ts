@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { voidPayment, toMoney } from "@/lib/afterpay";
+import { sanitizeError } from "@/lib/errors";
 
 const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
 
@@ -42,10 +43,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Void error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Void failed" },
-      { status: 500 }
-    );
+    const safeMessage = sanitizeError(error, "void");
+    return NextResponse.json({ error: safeMessage }, { status: 500 });
   }
 }

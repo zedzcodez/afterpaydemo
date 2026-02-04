@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPayment } from "@/lib/afterpay";
+import { sanitizeError } from "@/lib/errors";
 
 const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
 
@@ -36,10 +37,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error("Get payment error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to get payment details" },
-      { status: 500 }
-    );
+    const safeMessage = sanitizeError(error, "get-payment");
+    return NextResponse.json({ error: safeMessage }, { status: 500 });
   }
 }
