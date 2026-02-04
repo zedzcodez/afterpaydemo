@@ -89,6 +89,17 @@ export const products: Product[] = [
     sku: "TRACKER-001",
     category: "Electronics",
   },
+  {
+    id: "9",
+    name: "Designer Leather Jacket",
+    description:
+      "Premium Italian leather with silk lining. Timeless moto-style design for effortless edge.",
+    price: 425.0,
+    currency: "USD",
+    image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=600&h=600&fit=crop",
+    sku: "JACKET-001",
+    category: "Clothing",
+  },
 ];
 
 export function getProduct(id: string): Product | undefined {
