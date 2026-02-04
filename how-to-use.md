@@ -5,13 +5,14 @@ This guide walks you through testing all features of the Afterpay Demo Shop, wit
 ## Table of Contents
 
 1. [Quick Start](#quick-start)
-2. [On-Site Messaging (OSM)](#on-site-messaging-osm)
-3. [Express Checkout](#express-checkout)
-4. [Standard Checkout](#standard-checkout)
-5. [Capture Modes](#capture-modes)
-6. [Custom API Credentials](#custom-api-credentials)
-7. [Payment Admin Panel](#payment-admin-panel)
-8. [Developer Tools](#developer-tools)
+2. [Design System](#design-system)
+3. [On-Site Messaging (OSM)](#on-site-messaging-osm)
+4. [Express Checkout](#express-checkout)
+5. [Standard Checkout](#standard-checkout)
+6. [Capture Modes](#capture-modes)
+7. [Custom API Credentials](#custom-api-credentials)
+8. [Payment Admin Panel](#payment-admin-panel)
+9. [Developer Tools](#developer-tools)
 
 ---
 
@@ -26,6 +27,60 @@ This guide walks you through testing all features of the Afterpay Demo Shop, wit
 **Sandbox Test Account:**
 - Email: Use any email
 - Login: Use the OTP shown in the sandbox popup
+
+---
+
+## Design System
+
+The demo features a polished UI with distinctive styling built on Afterpay's brand identity.
+
+### Typography
+
+| Font | Usage | Source |
+|------|-------|--------|
+| Outfit | Headings, titles, prices | Google Fonts |
+| Plus Jakarta Sans | Body text, descriptions | Google Fonts |
+
+### Color Palette
+
+| Color | Hex | Usage |
+|-------|-----|-------|
+| Afterpay Mint | `#B2FCE4` | Primary CTAs, accents, highlights |
+| Mint Dark | `#8EEBC8` | Hover states |
+| Mint Light | `#D4FEF0` | Subtle backgrounds, gradients |
+
+### Product Images
+
+All product images are sourced from Unsplash and optimized via Next.js Image component:
+- Automatic format selection (WebP where supported)
+- Responsive sizing with `sizes` attribute
+- Lazy loading with blur placeholder support
+
+### Button Styles
+
+Three button variants available via CSS utility classes:
+
+```css
+.btn-primary   /* Mint background, black text, shadow */
+.btn-secondary /* Black background, white text */
+.btn-outline   /* Transparent with black border */
+```
+
+### Animation Effects
+
+| Effect | Class | Usage |
+|--------|-------|-------|
+| Fade In Up | `animate-fade-in-up` | Hero text, page elements |
+| Card Hover | `hover-lift` | Product cards, info cards |
+| Mint Glow | `shadow-mint-glow` | Logo, featured elements |
+
+### Technical Files
+
+| Feature | File |
+|---------|------|
+| Tailwind Config | `tailwind.config.ts` |
+| Global Styles | `app/globals.css` |
+| Font Loading | `app/layout.tsx` |
 
 ---
 

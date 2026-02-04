@@ -191,9 +191,34 @@ Or deploy directly:
 ## Tech Stack
 
 - **Framework**: Next.js 16 (App Router)
-- **Styling**: Tailwind CSS with Afterpay brand colors
+- **Styling**: Tailwind CSS with custom design system
+- **Typography**: Outfit (display) + Plus Jakarta Sans (body)
+- **Images**: Unsplash (optimized via Next.js Image)
 - **State Management**: React Context with localStorage persistence
 - **Deployment**: Vercel-ready
+
+## Design System
+
+The demo features a polished, distinctive UI built on Afterpay's brand colors:
+
+### Colors
+- **Primary**: Afterpay Mint (`#B2FCE4`) - Used for CTAs, accents, and highlights
+- **Mint Dark**: `#8EEBC8` - Hover states
+- **Mint Light**: `#D4FEF0` - Subtle backgrounds
+
+### Typography
+- **Display Font**: Outfit - Bold, geometric sans-serif for headings
+- **Body Font**: Plus Jakarta Sans - Clean, readable for body text
+
+### Components
+- **Buttons**: Three variants - `btn-primary` (mint), `btn-secondary` (black), `btn-outline`
+- **Cards**: Elevated with shadows, hover lift effects, and mint glow
+- **Forms**: Mint focus ring states on all inputs
+
+### Animations
+- Page load: Staggered fade-in-up animations
+- Cards: Scale and shadow transitions on hover
+- Buttons: Scale transforms on hover/active states
 
 ## License
 
