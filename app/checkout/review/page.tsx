@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useCart } from "@/components/CartProvider";
 import { formatPrice } from "@/lib/products";
 import { addFlowLog, getFlowLogs } from "@/lib/flowLogs";
@@ -207,8 +208,14 @@ function ReviewContent() {
             <div className="space-y-4">
               {items.map((item) => (
                 <div key={item.product.id} className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-afterpay-gray-100 rounded-lg flex items-center justify-center">
-                    <span className="text-2xl">{item.product.image}</span>
+                  <div className="w-16 h-16 bg-afterpay-gray-100 rounded-lg overflow-hidden relative flex-shrink-0">
+                    <Image
+                      src={item.product.image}
+                      alt={item.product.name}
+                      fill
+                      sizes="64px"
+                      className="object-cover"
+                    />
                   </div>
                   <div className="flex-1">
                     <p className="font-medium">{item.product.name}</p>

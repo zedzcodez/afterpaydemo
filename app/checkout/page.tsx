@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useCart } from "@/components/CartProvider";
 import { formatPrice } from "@/lib/products";
 import { CheckoutExpress } from "@/components/CheckoutExpress";
@@ -136,21 +137,14 @@ export default function CheckoutPage() {
               <div className="space-y-4 mb-6">
                 {items.map((item) => (
                   <div key={item.product.id} className="flex gap-4">
-                    <div className="w-16 h-16 bg-afterpay-gray-200 rounded flex items-center justify-center flex-shrink-0">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6 text-afterpay-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1}
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
+                    <div className="w-16 h-16 bg-afterpay-gray-100 rounded overflow-hidden relative flex-shrink-0">
+                      <Image
+                        src={item.product.image}
+                        alt={item.product.name}
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">

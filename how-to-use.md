@@ -491,11 +491,17 @@ const getEffectiveStatus = () => {
 **Information Shown:**
 - Request method and endpoint
 - Request body
-- Response status code
+- HTTP status code (color-coded: green for success, red for errors)
+- **API Status** (extracted from response: APPROVED, DECLINED, CAPTURED, etc.)
+- **Error messages** (prominently displayed when present)
 - Response body
 - Duration (ms)
+- **Documentation links** (click "Docs" to view Afterpay API reference)
 
-**Toggle:** Click any log entry to expand/collapse details
+**Features:**
+- Click any log entry to expand/collapse details
+- API status badges with color coding (green=approved, red=declined, yellow=pending)
+- Direct links to Afterpay API documentation for each endpoint
 
 ### Code Viewer
 
@@ -616,3 +622,38 @@ Use this checklist to verify all features work correctly:
 **Cause:** Refund amount > (Captured - Already Refunded)
 
 **Fix:** Check "Available to Refund" amount in Admin Panel
+
+---
+
+## Afterpay API Reference
+
+### Documentation Links
+
+| Topic | URL |
+|-------|-----|
+| Getting Started | https://developers.cash.app/cash-app-afterpay/guides/welcome/getting-started |
+| Express Checkout | https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout |
+| On-Site Messaging | https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging |
+| Test Environments | https://developers.cash.app/cash-app-afterpay/guides/api-development/test-environments |
+| API Reference | https://developers.cash.app/cash-app-afterpay/reference |
+
+### API Endpoint Reference
+
+| Endpoint | Documentation |
+|----------|---------------|
+| Create Checkout | https://developers.cash.app/cash-app-afterpay/reference/create-checkout |
+| Authorise Payment | https://developers.cash.app/cash-app-afterpay/reference/authorise-payment |
+| Capture Payment | https://developers.cash.app/cash-app-afterpay/reference/capture-payment |
+| Create Refund | https://developers.cash.app/cash-app-afterpay/reference/create-refund |
+| Void Payment | https://developers.cash.app/cash-app-afterpay/reference/void-payment |
+| Get Payment | https://developers.cash.app/cash-app-afterpay/reference/get-payment |
+| Get Configuration | https://developers.cash.app/cash-app-afterpay/reference/get-configuration |
+
+### Test Credit Cards
+
+| CVV | Result |
+|-----|--------|
+| `000` | Approved |
+| `051` | Declined |
+
+See [Test Environments](https://developers.cash.app/cash-app-afterpay/guides/api-development/test-environments#test-credit-cards) for complete test card documentation.

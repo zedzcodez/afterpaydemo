@@ -143,16 +143,20 @@ If `popupOriginUrl` doesn't match `window.location.origin`, the browser won't di
 
 ## API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/afterpay/checkout` | POST | Create Afterpay checkout |
-| `/api/afterpay/auth` | POST | Authorize payment |
-| `/api/afterpay/capture` | POST | Capture payment (with amount) |
-| `/api/afterpay/capture-full` | POST | Capture full payment (token only) |
-| `/api/afterpay/refund` | POST | Refund payment |
-| `/api/afterpay/void` | POST | Void payment |
-| `/api/afterpay/payment/[orderId]` | GET | Get payment details |
-| `/api/afterpay/configuration` | POST | Get merchant configuration (supports custom credentials) |
+This demo wraps Afterpay's v2 API endpoints. Each local endpoint maps to an Afterpay API call:
+
+| Local Endpoint | Afterpay API | Description | Docs |
+|----------------|--------------|-------------|------|
+| `POST /api/afterpay/checkout` | `POST /v2/checkouts` | Create checkout session | [Create Checkout](https://developers.cash.app/cash-app-afterpay/reference/create-checkout) |
+| `POST /api/afterpay/auth` | `POST /v2/payments/auth` | Authorize payment | [Authorise Payment](https://developers.cash.app/cash-app-afterpay/reference/authorise-payment) |
+| `POST /api/afterpay/capture` | `POST /v2/payments/{id}/capture` | Capture payment (partial) | [Capture Payment](https://developers.cash.app/cash-app-afterpay/reference/capture-payment) |
+| `POST /api/afterpay/capture-full` | `POST /v2/payments/capture` | Capture full payment | [Capture Payment](https://developers.cash.app/cash-app-afterpay/reference/capture-payment) |
+| `POST /api/afterpay/refund` | `POST /v2/payments/{id}/refund` | Process refund | [Create Refund](https://developers.cash.app/cash-app-afterpay/reference/create-refund) |
+| `POST /api/afterpay/void` | `POST /v2/payments/{id}/void` | Void authorization | [Void Payment](https://developers.cash.app/cash-app-afterpay/reference/void-payment) |
+| `GET /api/afterpay/payment/[id]` | `GET /v2/payments/{id}` | Get payment details | [Get Payment](https://developers.cash.app/cash-app-afterpay/reference/get-payment) |
+| `POST /api/afterpay/configuration` | `GET /v2/configuration` | Get merchant config | [Get Configuration](https://developers.cash.app/cash-app-afterpay/reference/get-configuration) |
+
+**API Base URL (Sandbox)**: `https://global-api-sandbox.afterpay.com`
 
 ## Testing
 
@@ -162,6 +166,17 @@ Use Afterpay's sandbox test accounts to complete checkout flows:
 |-------|-------|--------|
 | `approved@afterpay.com` | Any | Approved |
 | `declined@afterpay.com` | Any | Declined |
+
+### Test Credit Cards
+
+To test different payment outcomes, use these CVV codes:
+
+| CVV | Result |
+|-----|--------|
+| `000` | Approved |
+| `051` | Declined |
+
+See [Afterpay Test Environments](https://developers.cash.app/cash-app-afterpay/guides/api-development/test-environments#test-credit-cards) for more test card options.
 
 The sandbox environment simulates the full payment experience without processing real payments.
 
