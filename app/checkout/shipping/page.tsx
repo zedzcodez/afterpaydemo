@@ -347,7 +347,8 @@ function ShippingContent() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-72">
+    <div className="min-h-screen pb-72">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Progress Timeline */}
       <CheckoutProgress currentStep="shipping" showShipping />
 
@@ -521,6 +522,7 @@ function ShippingContent() {
       <p className="text-xs text-afterpay-gray-500 text-center mt-6">
         By clicking &quot;Place Order&quot;, your payment will be authorized and captured through Afterpay.
       </p>
+      </div>
 
       {/* Developer Panel */}
       <FlowLogsDevPanel />

@@ -190,7 +190,8 @@ function ReviewContent() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-72">
+    <div className="min-h-screen pb-72">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Progress Timeline */}
       <CheckoutProgress currentStep="review" showReview />
 
@@ -313,6 +314,7 @@ function ReviewContent() {
         By clicking &quot;Place Order&quot;, you agree to complete your purchase using Afterpay.
         Your payment will be authorized and captured.
       </p>
+      </div>
 
       {/* Developer Panel */}
       <FlowLogsDevPanel />
