@@ -1,8 +1,21 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/components/CartProvider";
 import { Header } from "@/components/Header";
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+});
+
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-body",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Afterpay Demo Shop",
@@ -15,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${outfit.variable} ${plusJakarta.variable}`}>
       <head>
         {/* Afterpay On-Site Messaging SDK */}
         <Script
@@ -28,7 +41,7 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
       </head>
-      <body className="bg-white text-afterpay-black min-h-screen">
+      <body className="bg-white text-afterpay-black min-h-screen font-body">
         <CartProvider>
           <Header />
           <main>{children}</main>

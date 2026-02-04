@@ -11,6 +11,8 @@ const config: Config = {
       colors: {
         afterpay: {
           mint: "#B2FCE4",
+          "mint-dark": "#8EEBC8",
+          "mint-light": "#D4FEF0",
           black: "#000000",
           white: "#FFFFFF",
           gray: {
@@ -28,7 +30,39 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "system-ui", "sans-serif"],
+        body: ["var(--font-body)", "system-ui", "sans-serif"],
+      },
+      boxShadow: {
+        "soft": "0 2px 8px -2px rgba(0, 0, 0, 0.08)",
+        "card": "0 4px 12px -4px rgba(0, 0, 0, 0.1)",
+        "card-hover": "0 12px 24px -8px rgba(0, 0, 0, 0.15)",
+        "mint-glow": "0 0 20px rgba(178, 252, 228, 0.5)",
+        "mint-glow-lg": "0 0 40px rgba(178, 252, 228, 0.6)",
+      },
+      animation: {
+        "fade-in-up": "fadeInUp 0.5s ease-out forwards",
+        "fade-in": "fadeIn 0.4s ease-out forwards",
+        "slide-in-right": "slideInRight 0.4s ease-out forwards",
+        "bounce-sm": "bounceSm 0.3s ease-out",
+      },
+      keyframes: {
+        fadeInUp: {
+          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        slideInRight: {
+          "0%": { opacity: "0", transform: "translateX(20px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
+        bounceSm: {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.15)" },
+        },
       },
     },
   },
