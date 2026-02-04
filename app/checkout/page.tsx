@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/components/CartProvider";
@@ -11,10 +12,18 @@ import { DevPanel, useDevPanel } from "@/components/DevPanel";
 import { CheckoutProgress } from "@/components/CheckoutProgress";
 
 type CheckoutMethod = "express" | "standard";
+type ShippingFlow = "integrated" | "deferred";
 
 export default function CheckoutPage() {
   const { items, total } = useCart();
-  const [method, setMethod] = useState<CheckoutMethod>("express");
+  const searchParams = useSearchParams();
+
+  // Read initial values from URL params
+  const initialMethod = searchParams.get("method") as CheckoutMethod | null;
+  const initialShipping = searchParams.get("shipping") as ShippingFlow | null;
+
+  const [method, setMethod] = useState<CheckoutMethod>(initialMethod || "express");
+  const [initialShippingFlow] = useState<ShippingFlow | undefined>(initialShipping || undefined);
   const [showDevPanel, setShowDevPanel] = useState(true);
   const { logs, addLog, updateLog, clearLogs } = useDevPanel();
 
@@ -128,7 +137,11 @@ export default function CheckoutPage() {
 
             {/* Checkout Form */}
             {method === "express" ? (
-              <CheckoutExpress onLog={addLog} onLogUpdate={updateLog} />
+              <CheckoutExpress
+                onLog={addLog}
+                onLogUpdate={updateLog}
+                initialShippingFlow={initialShippingFlow}
+              />
             ) : (
               <CheckoutStandard onLog={addLog} onLogUpdate={updateLog} />
             )}

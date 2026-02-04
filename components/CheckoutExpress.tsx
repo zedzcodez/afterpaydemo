@@ -16,6 +16,7 @@ interface CheckoutExpressProps {
     id: string,
     update: { response?: object; status?: number; error?: string }
   ) => void;
+  initialShippingFlow?: ShippingFlow;
 }
 
 const SHIPPING_OPTIONS = [
@@ -39,9 +40,9 @@ const SHIPPING_OPTIONS = [
   },
 ];
 
-export function CheckoutExpress({ onLog, onLogUpdate }: CheckoutExpressProps) {
+export function CheckoutExpress({ onLog, onLogUpdate, initialShippingFlow }: CheckoutExpressProps) {
   const { items, total } = useCart();
-  const [shippingFlow, setShippingFlow] = useState<ShippingFlow>("integrated");
+  const [shippingFlow, setShippingFlow] = useState<ShippingFlow>(initialShippingFlow || "integrated");
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -516,16 +517,20 @@ Afterpay.initializeForPopup({
         </div>
       )}
 
-      {/* Afterpay Button */}
+      {/* Afterpay Button - Official Asset */}
       <button
         id="afterpay-express-button"
         disabled={!isReady || items.length === 0}
-        className="w-full py-4 px-6 bg-afterpay-black text-white font-medium rounded-lg hover:bg-afterpay-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        aria-label="Pay with Cash App Afterpay"
+        className="w-full flex items-center justify-center bg-afterpay-black rounded-lg hover:bg-afterpay-gray-800 transition-colors py-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <span>Pay with</span>
-        <span className="bg-afterpay-mint text-afterpay-black px-2 py-0.5 rounded text-sm font-bold">
-          Afterpay
-        </span>
+        <img
+          alt="Pay with Cash App Afterpay"
+          aria-hidden="true"
+          src="https://static.afterpaycdn.com/en-US/integration/button/pay-with-afterpay/color-on-black.svg"
+          height="48"
+          className="h-12"
+        />
       </button>
 
       {/* Code Viewer */}

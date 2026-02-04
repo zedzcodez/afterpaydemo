@@ -30,7 +30,8 @@ export default function ProductDetailPage() {
 
   const handleBuyNow = () => {
     addToCart(product);
-    router.push("/cart");
+    // Navigate to checkout with Express Checkout and Integrated Shipping pre-selected
+    router.push("/checkout?method=express&shipping=integrated");
   };
 
   return (
@@ -96,11 +97,19 @@ export default function ProductDetailPage() {
 
           {/* Action Buttons */}
           <div className="space-y-3">
+            {/* Buy with Afterpay - Official Asset */}
             <button
               onClick={handleBuyNow}
-              className="w-full btn-primary"
+              aria-label="Buy with Cash App Afterpay"
+              className="w-full flex items-center justify-center bg-afterpay-black rounded-lg hover:bg-afterpay-gray-800 transition-colors py-2"
             >
-              Buy Now
+              <img
+                alt="Buy with Cash App Afterpay"
+                aria-hidden="true"
+                src="https://static.afterpaycdn.com/en-US/integration/button/buy-with-afterpay/color-on-black.svg"
+                height="48"
+                className="h-12"
+              />
             </button>
             <button
               onClick={handleAddToCart}
