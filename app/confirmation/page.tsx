@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useCart } from "@/components/CartProvider";
 import { getFlowLogs, FlowLogs, FlowLogEntry } from "@/lib/flowLogs";
 import { CheckoutProgress } from "@/components/CheckoutProgress";
+import { saveOrder, Order, OrderItem } from "@/lib/orders";
+import { getStoredCart, calculateTotal } from "@/lib/cart";
 
 function ConfirmationContent() {
   const searchParams = useSearchParams();
@@ -35,6 +37,29 @@ function ConfirmationContent() {
     if (orderId && status === "success") {
       hasProcessed.current = true;
       const isCaptured = flow.endsWith("-immediate");
+
+      // Save order to localStorage before clearing cart
+      const cartItems = getStoredCart();
+      const orderItems: OrderItem[] = cartItems.map(item => ({
+        productId: item.product.id,
+        productName: item.product.name,
+        quantity: item.quantity,
+        price: item.product.price,
+      }));
+
+      const order: Order = {
+        id: `local-${Date.now()}`,
+        orderId,
+        status: isCaptured ? "captured" : "authorized",
+        total: calculateTotal(cartItems),
+        items: orderItems,
+        createdAt: new Date().toISOString(),
+        flow,
+        captureMode: isCaptured ? "immediate" : "deferred",
+      };
+
+      saveOrder(order);
+
       setOrderDetails({
         orderId,
         status: isCaptured ? "CAPTURED" : "AUTHORIZED",
