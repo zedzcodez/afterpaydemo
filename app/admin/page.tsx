@@ -144,20 +144,23 @@ function AdminContent() {
         setIsLoading(true);
         setError(null);
 
-        addFlowLog({
-          type: "api_request",
-          label: "Get Payment Details (Auto)",
-          method: "GET",
-          endpoint: `/api/afterpay/payment/${urlOrderId} → /v2/payments/${urlOrderId}`,
-          data: { orderId: urlOrderId },
-        });
-
         const startTime = Date.now();
 
         try {
           const response = await fetch(`/api/afterpay/payment/${urlOrderId}`);
           const data = await response.json();
           const duration = Date.now() - startTime;
+
+          // Log request with metadata from _meta
+          addFlowLog({
+            type: "api_request",
+            label: "Get Payment Details (Auto)",
+            method: "GET",
+            endpoint: `/api/afterpay/payment/${urlOrderId} → /v2/payments/${urlOrderId}`,
+            data: { orderId: urlOrderId },
+            fullUrl: data._meta?.fullUrl,
+            headers: data._meta?.headers,
+          });
 
           addFlowLog({
             type: "api_response",
@@ -167,6 +170,7 @@ function AdminContent() {
             status: response.status,
             data: data,
             duration,
+            fullUrl: data._meta?.fullUrl,
           });
 
           if (data.error) {
@@ -192,14 +196,7 @@ function AdminContent() {
 
     try {
       const body = merchantId && secretKey ? { merchantId, secretKey } : {};
-
-      addFlowLog({
-        type: "api_request",
-        label: "Get Configuration",
-        method: "POST",
-        endpoint: "/api/afterpay/configuration → /v2/configuration",
-        data: merchantId ? { merchantId, secretKey: "***" } : { usingEnvCredentials: true },
-      });
+      const clientData = merchantId ? { merchantId, secretKey: "***" } : { usingEnvCredentials: true };
 
       const startTime = Date.now();
       const response = await fetch("/api/afterpay/configuration", {
@@ -211,6 +208,17 @@ function AdminContent() {
       const data = await response.json();
       const duration = Date.now() - startTime;
 
+      // Log request with metadata from _meta
+      addFlowLog({
+        type: "api_request",
+        label: "Get Configuration",
+        method: "POST",
+        endpoint: "/api/afterpay/configuration → /v2/configuration",
+        data: clientData,
+        fullUrl: data._meta?.fullUrl,
+        headers: data._meta?.headers,
+      });
+
       addFlowLog({
         type: "api_response",
         label: "Configuration Response",
@@ -219,6 +227,7 @@ function AdminContent() {
         status: response.status,
         data: data,
         duration,
+        fullUrl: data._meta?.fullUrl,
       });
 
       if (data.error) {
@@ -278,20 +287,23 @@ function AdminContent() {
       setPayment(null);
     }
 
-    addFlowLog({
-      type: "api_request",
-      label: silent ? "Refresh Payment" : "Get Payment Details",
-      method: "GET",
-      endpoint: `/api/afterpay/payment/${targetOrderId} → /v2/payments/${targetOrderId}`,
-      data: { orderId: targetOrderId },
-    });
-
     const startTime = Date.now();
 
     try {
       const response = await fetch(`/api/afterpay/payment/${targetOrderId}`);
       const data = await response.json();
       const duration = Date.now() - startTime;
+
+      // Log request with metadata from _meta
+      addFlowLog({
+        type: "api_request",
+        label: silent ? "Refresh Payment" : "Get Payment Details",
+        method: "GET",
+        endpoint: `/api/afterpay/payment/${targetOrderId} → /v2/payments/${targetOrderId}`,
+        data: { orderId: targetOrderId },
+        fullUrl: data._meta?.fullUrl,
+        headers: data._meta?.headers,
+      });
 
       addFlowLog({
         type: "api_response",
@@ -301,6 +313,7 @@ function AdminContent() {
         status: response.status,
         data: data,
         duration,
+        fullUrl: data._meta?.fullUrl,
       });
 
       if (data.error) {
@@ -340,15 +353,7 @@ function AdminContent() {
       void: `/v2/payments/${payment.id}/void`,
     };
 
-    const requestBody = { orderId: payment.id, amount };
-
-    addFlowLog({
-      type: "api_request",
-      label: `${action.charAt(0).toUpperCase() + action.slice(1)} Payment`,
-      method: "POST",
-      endpoint: `${endpoints[action]} → ${afterpayEndpoints[action]}`,
-      data: requestBody,
-    });
+    const clientRequestBody = { orderId: payment.id, amount };
 
     const startTime = Date.now();
 
@@ -356,11 +361,22 @@ function AdminContent() {
       const response = await fetch(endpoints[action], {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify(clientRequestBody),
       });
 
       const data = await response.json();
       const duration = Date.now() - startTime;
+
+      // Log request with FULL server-side payload from _meta
+      addFlowLog({
+        type: "api_request",
+        label: `${action.charAt(0).toUpperCase() + action.slice(1)} Payment`,
+        method: "POST",
+        endpoint: `${endpoints[action]} → ${afterpayEndpoints[action]}`,
+        data: data._meta?.requestBody || clientRequestBody,
+        fullUrl: data._meta?.fullUrl,
+        headers: data._meta?.headers,
+      });
 
       addFlowLog({
         type: "api_response",
@@ -370,6 +386,7 @@ function AdminContent() {
         status: response.status,
         data: data,
         duration,
+        fullUrl: data._meta?.fullUrl,
       });
 
       if (data.error) {

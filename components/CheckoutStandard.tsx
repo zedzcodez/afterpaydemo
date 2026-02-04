@@ -115,25 +115,28 @@ export function CheckoutStandard({ onLog, onLogUpdate }: CheckoutStandardProps) 
 
           if (isImmediateCapture) {
             // Immediate Capture Mode: Use Capture Full Payment API (combines auth + capture)
-            const captureFullRequest = { token: event.data.orderToken };
-
-            addFlowLog({
-              type: "api_request",
-              label: "Capture Full Payment (Immediate Mode)",
-              method: "POST",
-              endpoint: "/api/afterpay/capture-full → /v2/payments/capture",
-              data: captureFullRequest,
-            });
+            const captureFullClientRequest = { token: event.data.orderToken };
 
             const startTime = Date.now();
             const response = await fetch("/api/afterpay/capture-full", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(captureFullRequest),
+              body: JSON.stringify(captureFullClientRequest),
             });
 
             const data = await response.json();
             const duration = Date.now() - startTime;
+
+            // Log request with FULL server-side payload from _meta
+            addFlowLog({
+              type: "api_request",
+              label: "Capture Full Payment (Immediate Mode)",
+              method: "POST",
+              endpoint: "/api/afterpay/capture-full → /v2/payments/capture",
+              data: data._meta?.requestBody || captureFullClientRequest,
+              fullUrl: data._meta?.fullUrl,
+              headers: data._meta?.headers,
+            });
 
             addFlowLog({
               type: "api_response",
@@ -143,6 +146,7 @@ export function CheckoutStandard({ onLog, onLogUpdate }: CheckoutStandardProps) 
               status: response.status,
               data: data,
               duration,
+              fullUrl: data._meta?.fullUrl,
             });
 
             if (data.error) {
@@ -156,25 +160,28 @@ export function CheckoutStandard({ onLog, onLogUpdate }: CheckoutStandardProps) 
             orderId = data.id;
           } else {
             // Deferred Capture Mode: Only authorize, capture later from Admin Panel
-            const authRequest = { token: event.data.orderToken };
-
-            addFlowLog({
-              type: "api_request",
-              label: "Authorize Payment (Deferred Mode)",
-              method: "POST",
-              endpoint: "/api/afterpay/auth → /v2/payments/auth",
-              data: authRequest,
-            });
+            const authClientRequest = { token: event.data.orderToken };
 
             const startTime = Date.now();
             const response = await fetch("/api/afterpay/auth", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(authRequest),
+              body: JSON.stringify(authClientRequest),
             });
 
             const data = await response.json();
             const duration = Date.now() - startTime;
+
+            // Log request with FULL server-side payload from _meta
+            addFlowLog({
+              type: "api_request",
+              label: "Authorize Payment (Deferred Mode)",
+              method: "POST",
+              endpoint: "/api/afterpay/auth → /v2/payments/auth",
+              data: data._meta?.requestBody || authClientRequest,
+              fullUrl: data._meta?.fullUrl,
+              headers: data._meta?.headers,
+            });
 
             addFlowLog({
               type: "api_response",
@@ -184,6 +191,7 @@ export function CheckoutStandard({ onLog, onLogUpdate }: CheckoutStandardProps) 
               status: response.status,
               data: data,
               duration,
+              fullUrl: data._meta?.fullUrl,
             });
 
             if (data.error) {
@@ -262,7 +270,7 @@ export function CheckoutStandard({ onLog, onLogUpdate }: CheckoutStandardProps) 
 
     try {
       // Step 1: Create checkout
-      const checkoutRequest = {
+      const checkoutClientRequest = {
         items,
         total: finalTotal,
         mode: "standard",
@@ -284,26 +292,29 @@ export function CheckoutStandard({ onLog, onLogUpdate }: CheckoutStandardProps) 
         },
       };
 
-      const logId = onLog?.("POST", "/api/afterpay/checkout", checkoutRequest);
-
-      addFlowLog({
-        type: "api_request",
-        label: "Create Checkout",
-        method: "POST",
-        endpoint: "/api/afterpay/checkout → /v2/checkouts",
-        data: checkoutRequest,
-      });
+      const logId = onLog?.("POST", "/api/afterpay/checkout", checkoutClientRequest);
 
       const startTime = Date.now();
       const response = await fetch("/api/afterpay/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(checkoutRequest),
+        body: JSON.stringify(checkoutClientRequest),
       });
 
       const data = await response.json();
       const duration = Date.now() - startTime;
       onLogUpdate?.(logId!, { response: data, status: response.status });
+
+      // Log request with FULL server-side payload from _meta (includes merchantReference, merchant URLs, etc.)
+      addFlowLog({
+        type: "api_request",
+        label: "Create Checkout",
+        method: "POST",
+        endpoint: "/api/afterpay/checkout → /v2/checkouts",
+        data: data._meta?.requestBody || checkoutClientRequest,
+        fullUrl: data._meta?.fullUrl,
+        headers: data._meta?.headers,
+      });
 
       addFlowLog({
         type: "api_response",
@@ -313,6 +324,7 @@ export function CheckoutStandard({ onLog, onLogUpdate }: CheckoutStandardProps) 
         status: response.status,
         data: data,
         duration,
+        fullUrl: data._meta?.fullUrl,
       });
 
       if (data.error) {

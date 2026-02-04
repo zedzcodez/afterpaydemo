@@ -197,33 +197,36 @@ function ShippingContent() {
       let orderId: string;
 
       // Authorize with adjusted amount + checksum (for deferred shipping)
-      const authRequest = {
+      const authClientRequest = {
         token: orderToken,
         amount: finalTotal,
         isCheckoutAdjusted: true,
         paymentScheduleChecksum,
       };
 
+      const authStartTime = Date.now();
+      const authResponse = await fetch("/api/afterpay/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(authClientRequest),
+      });
+
+      const authData = await authResponse.json();
+      const authDuration = Date.now() - authStartTime;
+
+      // Log request with FULL server-side payload from _meta
       addFlowLog({
         type: "api_request",
         label: `Authorize Payment (${isImmediateCapture ? "Immediate" : "Deferred"} Mode)`,
         method: "POST",
         endpoint: "/api/afterpay/auth → /v2/payments/auth",
-        data: {
-          ...authRequest,
+        data: authData._meta?.requestBody || {
+          ...authClientRequest,
           paymentScheduleChecksum: paymentScheduleChecksum.substring(0, 20) + "...",
         },
+        fullUrl: authData._meta?.fullUrl,
+        headers: authData._meta?.headers,
       });
-
-      const authStartTime = Date.now();
-      const authResponse = await fetch("/api/afterpay/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(authRequest),
-      });
-
-      const authData = await authResponse.json();
-      const authDuration = Date.now() - authStartTime;
 
       addFlowLog({
         type: "api_response",
@@ -233,6 +236,7 @@ function ShippingContent() {
         status: authResponse.status,
         data: authData,
         duration: authDuration,
+        fullUrl: authData._meta?.fullUrl,
       });
 
       if (authData.error) {
@@ -247,33 +251,36 @@ function ShippingContent() {
 
       // Only capture immediately if in Immediate Capture mode
       if (isImmediateCapture) {
-        const captureRequest = {
+        const captureClientRequest = {
           orderId: authData.id,
           amount: finalTotal,
           isCheckoutAdjusted: true,
           paymentScheduleChecksum,
         };
 
+        const captureStartTime = Date.now();
+        const captureResponse = await fetch("/api/afterpay/capture", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(captureClientRequest),
+        });
+
+        const captureData = await captureResponse.json();
+        const captureDuration = Date.now() - captureStartTime;
+
+        // Log request with FULL server-side payload from _meta
         addFlowLog({
           type: "api_request",
           label: "Capture Payment (Immediate Mode)",
           method: "POST",
           endpoint: `/api/afterpay/capture → /v2/payments/${authData.id}/capture`,
-          data: {
-            ...captureRequest,
+          data: captureData._meta?.requestBody || {
+            ...captureClientRequest,
             paymentScheduleChecksum: paymentScheduleChecksum.substring(0, 20) + "...",
           },
+          fullUrl: captureData._meta?.fullUrl,
+          headers: captureData._meta?.headers,
         });
-
-        const captureStartTime = Date.now();
-        const captureResponse = await fetch("/api/afterpay/capture", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(captureRequest),
-        });
-
-        const captureData = await captureResponse.json();
-        const captureDuration = Date.now() - captureStartTime;
 
         addFlowLog({
           type: "api_response",
@@ -283,6 +290,7 @@ function ShippingContent() {
           status: captureResponse.status,
           data: captureData,
           duration: captureDuration,
+          fullUrl: captureData._meta?.fullUrl,
         });
 
         if (captureData.error) {
