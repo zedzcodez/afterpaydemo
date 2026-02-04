@@ -6,13 +6,15 @@ This guide walks you through testing all features of the Afterpay Demo Shop, wit
 
 1. [Quick Start](#quick-start)
 2. [Design System](#design-system)
-3. [On-Site Messaging (OSM)](#on-site-messaging-osm)
-4. [Express Checkout](#express-checkout)
-5. [Standard Checkout](#standard-checkout)
-6. [Capture Modes](#capture-modes)
-7. [Custom API Credentials](#custom-api-credentials)
-8. [Payment Admin Panel](#payment-admin-panel)
-9. [Developer Tools](#developer-tools)
+3. [Dark Mode](#dark-mode)
+4. [On-Site Messaging (OSM)](#on-site-messaging-osm)
+5. [Express Checkout](#express-checkout)
+6. [Standard Checkout](#standard-checkout)
+7. [Capture Modes](#capture-modes)
+8. [Custom API Credentials](#custom-api-credentials)
+9. [Payment Admin Panel](#payment-admin-panel)
+10. [Developer Tools](#developer-tools)
+11. [UI Components](#ui-components)
 
 ---
 
@@ -66,6 +68,17 @@ Three button variants available via CSS utility classes:
 .btn-outline   /* Transparent with black border */
 ```
 
+### Form Styles
+
+Styled form elements with mint accents:
+
+```css
+.input-styled   /* Text inputs with gray bg, mint focus ring */
+.checkbox-mint  /* Custom checkbox with mint accent */
+.radio-mint     /* Custom radio with mint accent */
+.select-styled  /* Dropdown with custom arrow */
+```
+
 ### Animation Effects
 
 | Effect | Class | Usage |
@@ -73,6 +86,20 @@ Three button variants available via CSS utility classes:
 | Fade In Up | `animate-fade-in-up` | Hero text, page elements |
 | Card Hover | `hover-lift` | Product cards, info cards |
 | Mint Glow | `shadow-mint-glow` | Logo, featured elements |
+| Bounce Small | `animate-bounce-sm` | Cart icon on add |
+| Slide In Right | `animate-slide-in-right` | Tab indicators |
+
+### Animation Delays
+
+Staggered animation delays for sequenced reveals:
+
+```css
+.animate-delay-100  /* 100ms delay */
+.animate-delay-200  /* 200ms delay */
+.animate-delay-300  /* 300ms delay */
+.animate-delay-400  /* 400ms delay */
+.animate-delay-500  /* 500ms delay */
+```
 
 ### Technical Files
 
@@ -81,6 +108,65 @@ Three button variants available via CSS utility classes:
 | Tailwind Config | `tailwind.config.ts` |
 | Global Styles | `app/globals.css` |
 | Font Loading | `app/layout.tsx` |
+| Theme Provider | `components/ThemeProvider.tsx` |
+
+---
+
+## Dark Mode
+
+The demo includes full dark mode support with system preference detection.
+
+### How to Toggle
+
+1. Click the sun/moon icon in the header (right side, next to cart)
+2. Theme switches immediately
+3. Preference is saved to localStorage
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| System Detection | Automatically matches OS preference on first visit |
+| Manual Toggle | Click sun (dark mode) or moon (light mode) icon |
+| Persistence | Preference saved to localStorage |
+| Mint Accent | Brand colors preserved in dark theme |
+
+### Technical Details
+
+**Component:** `components/ThemeProvider.tsx`
+
+**Implementation:**
+```tsx
+// Theme context provides current theme and setter
+const { theme, resolvedTheme, setTheme } = useTheme();
+
+// Toggle between light and dark
+const toggleTheme = () => {
+  setTheme(resolvedTheme === "dark" ? "light" : "dark");
+};
+```
+
+**Tailwind Configuration:**
+```typescript
+// tailwind.config.ts
+{
+  darkMode: "class",  // Uses .dark class on <html>
+  // ...
+}
+```
+
+**CSS Classes:**
+- Light: Default styles
+- Dark: Add `dark:` prefix (e.g., `dark:bg-afterpay-gray-900`)
+
+### Supported Components
+
+| Component | Dark Mode Support |
+|-----------|-------------------|
+| Header | Glass effect, nav links, toggle button |
+| Product Cards | Background, text, borders |
+| Form Inputs | Background, borders, text |
+| Checkout Pages | Background, cards |
 
 ---
 
@@ -479,9 +565,9 @@ const getEffectiveStatus = () => {
 
 ## Developer Tools
 
-### Flow Logs Panel
+### Developer Panel
 
-**What It Does:** Displays real-time API requests and responses during checkout flows.
+**What It Does:** A comprehensive API inspection tool that displays real-time API requests and responses during checkout flows.
 
 **Where to Find:**
 - Bottom of checkout pages (fixed panel)
@@ -490,18 +576,46 @@ const getEffectiveStatus = () => {
 
 **Information Shown:**
 - Request method and endpoint
-- Request body
+- **Full API URL** (e.g., `https://global-api-sandbox.afterpay.com/v2/checkouts`)
+- **Path parameters** (for endpoints like `/v2/payments/{orderId}/capture`)
+- **Request headers** (Content-Type, Authorization masked as "Basic ***", User-Agent)
+- Request body with size indicator (e.g., "1.2 KB")
 - HTTP status code (color-coded: green for success, red for errors)
 - **API Status** (extracted from response: APPROVED, DECLINED, CAPTURED, etc.)
 - **Error messages** (prominently displayed when present)
-- Response body
+- Response body with size indicator
 - Duration (ms)
 - **Documentation links** (click "Docs" to view Afterpay API reference)
 
-**Features:**
-- Click any log entry to expand/collapse details
-- API status badges with color coding (green=approved, red=declined, yellow=pending)
-- Direct links to Afterpay API documentation for each endpoint
+### Panel Features
+
+#### Display Order
+- Events display in **reverse-chronological order** (most recent first)
+- Click any log entry to view full details
+
+#### Filter & Search
+- **Filter chips**: All, Requests, Responses, Events, Redirects
+- **Search box**: Search across labels, endpoints, and data content
+- Shows filtered count (e.g., "3/10 events")
+
+#### Collapsible Sections
+- **Headers**: View request headers (collapsed by default)
+- **Request Body**: View full JSON payload with size indicator
+- **Response Body**: View full JSON response with size indicator
+
+#### Copy as cURL
+- Click the **cURL** button in the detail view
+- Generates executable cURL command with:
+  - HTTP method
+  - Full URL
+  - Headers (Authorization as placeholder)
+  - Request body
+- Copies to clipboard with "Copied!" confirmation
+
+#### Export Logs
+- Click **Export** dropdown in panel header
+- **Export as JSON**: Download full flow logs as formatted JSON file
+- **Export as HAR**: Download in HTTP Archive format for import into browser DevTools
 
 ### Code Viewer
 
@@ -521,8 +635,134 @@ const getEffectiveStatus = () => {
 | Feature | File |
 |---------|------|
 | Flow Logs | `lib/flowLogs.ts` |
-| Flow Logs Panel | `components/FlowLogsDevPanel.tsx` |
+| Developer Panel | `components/FlowLogsDevPanel.tsx` |
 | Code Viewer | `components/CodeViewer.tsx` |
+| API Routes (with metadata) | `app/api/afterpay/*` |
+
+---
+
+## UI Components
+
+### Checkout Progress Timeline
+
+Visual stepper showing checkout flow progress.
+
+**Where to Find:** Top of checkout, shipping, review, and confirmation pages
+
+**Steps Shown:**
+- Cart
+- Checkout
+- Shipping (deferred shipping flow only)
+- Review (standard checkout only)
+- Confirm
+
+**Features:**
+- Completed steps show checkmark with mint background
+- Current step has ring highlight
+- Connector lines animate as steps complete
+
+**Technical Details:**
+
+**Component:** `components/CheckoutProgress.tsx`
+
+```tsx
+<CheckoutProgress
+  currentStep="checkout"
+  showShipping={false}  // Show shipping step?
+  showReview={false}    // Show review step?
+/>
+```
+
+### Loading States
+
+#### Product Grid Skeleton
+
+Shows animated placeholder cards while products load.
+
+**Component:** `components/ProductGrid.tsx`
+
+```tsx
+<ProductGrid products={[]} loading={true} />
+```
+
+#### Loading Spinner
+
+Mint-colored spinner for API operations.
+
+**Component:** `components/LoadingSpinner.tsx`
+
+```tsx
+<LoadingSpinner size="sm" />  // 16px
+<LoadingSpinner size="md" />  // 24px (default)
+<LoadingSpinner size="lg" />  // 32px
+```
+
+### Micro-interactions
+
+#### Cart Bounce Animation
+
+Cart icon badge bounces when items are added.
+
+**How It Works:**
+1. `CartProvider` increments `cartAnimationTrigger` on `addToCart`
+2. `Header` listens to trigger and applies `animate-bounce-sm` class
+3. Animation resets after 300ms
+
+**Files:**
+- `components/CartProvider.tsx` - Animation trigger state
+- `components/Header.tsx` - Animation application
+
+#### Tab Slide Indicator
+
+Checkout method tabs have sliding indicator.
+
+**How It Works:**
+- Single indicator element positioned absolutely
+- CSS transform animates position based on selected tab
+- 300ms ease-out transition
+
+**File:** `app/checkout/page.tsx`
+
+### Form Input Styling
+
+All form inputs use consistent mint-accented styling.
+
+**CSS Classes:**
+
+| Class | Usage |
+|-------|-------|
+| `input-styled` | Text inputs, textareas |
+| `checkbox-mint` | Checkboxes |
+| `radio-mint` | Radio buttons |
+| `select-styled` | Select dropdowns |
+
+**Features:**
+- Gray-50 background (dark: gray-800)
+- Mint focus ring
+- Smooth transitions
+- Dark mode support
+
+**File:** `app/globals.css`
+
+### Admin Amount Visualization
+
+Visual progress bar showing payment amount breakdown.
+
+**Location:** Admin Panel → Amount Breakdown section
+
+**Segments:**
+- Green: Captured amount
+- Blue: Open to capture
+- Orange: Refunded amount
+- Red: Voided amount
+
+**Features:**
+- Hover tooltips show exact amounts
+- Legend below bar
+- Animated transitions on state change
+- Gradient header styling
+
+**File:** `app/admin/page.tsx`
 
 ---
 
@@ -590,9 +830,41 @@ Use this checklist to verify all features work correctly:
 
 ### Developer Tools
 - [ ] Flow logs capture all API calls
+- [ ] Events display in reverse-chronological order (most recent first)
 - [ ] Logs expandable with details
+- [ ] Full URL displayed for each API call
+- [ ] Headers section shows Content-Type, Authorization (masked)
+- [ ] Request/response body sections are collapsible
+- [ ] Size indicators show payload sizes
+- [ ] API status badges display correctly
+- [ ] Documentation links open correct pages
+- [ ] Filter chips work (All, Requests, Responses, Events, Redirects)
+- [ ] Search filters results correctly
+- [ ] Copy as cURL generates valid command
+- [ ] Export as JSON downloads properly formatted file
+- [ ] Export as HAR downloads valid HAR file
 - [ ] Code viewer displays correct code
 - [ ] Code updates per checkout method
+
+### Dark Mode
+- [ ] Toggle icon visible in header
+- [ ] Click toggles between light/dark
+- [ ] System preference detected on first load
+- [ ] Preference persists after refresh
+- [ ] Product cards display correctly in dark mode
+- [ ] Form inputs readable in dark mode
+- [ ] Header glass effect works in dark mode
+
+### UI Components
+- [ ] Checkout progress timeline shows on checkout pages
+- [ ] Completed steps show checkmarks
+- [ ] Current step is highlighted
+- [ ] Cart icon bounces when adding items
+- [ ] Tab indicator slides between Express/Standard
+- [ ] Product skeleton shows when loading
+- [ ] Mint spinners display during API calls
+- [ ] Admin progress bar shows amount breakdown
+- [ ] Form inputs have mint focus rings
 
 ---
 

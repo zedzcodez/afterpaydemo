@@ -191,7 +191,7 @@ export function DevPanel({ logs, onClear }: DevPanelProps) {
                     </div>
                   </button>
                 );
-              }))
+              })
             )}
           </div>
 

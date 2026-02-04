@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createCheckout, toMoney, cartToCheckoutItems } from "@/lib/afterpay";
 import { CartItem } from "@/lib/types";
 
+const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
+
 // Generate a unique merchant reference/order ID
 function generateMerchantReference(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
@@ -10,6 +12,7 @@ function generateMerchantReference(): string {
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
   try {
     const body = await request.json();
     const {
@@ -70,8 +73,22 @@ export async function POST(request: NextRequest) {
     };
 
     const response = await createCheckout(checkoutRequest);
+    const duration = Date.now() - startTime;
 
-    return NextResponse.json(response);
+    // Return response with metadata for Developer Panel
+    return NextResponse.json({
+      ...response,
+      _meta: {
+        fullUrl: `${API_URL}/v2/checkouts`,
+        method: "POST",
+        duration,
+        requestBody: checkoutRequest,
+        headers: {
+          contentType: "application/json",
+          authorization: "Basic ***",
+        },
+      },
+    });
   } catch (error) {
     console.error("Checkout creation error:", error);
     return NextResponse.json(

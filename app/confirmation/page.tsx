@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/components/CartProvider";
 import { getFlowLogs, FlowLogs, FlowLogEntry } from "@/lib/flowLogs";
+import { CheckoutProgress } from "@/components/CheckoutProgress";
 
 function ConfirmationContent() {
   const searchParams = useSearchParams();
@@ -175,8 +176,19 @@ function ConfirmationContent() {
     );
   }
 
+  // Determine which steps to show based on the flow
+  const showShipping = orderDetails.flow.includes("deferred");
+  const showReview = orderDetails.flow.startsWith("standard");
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      {/* Progress Timeline */}
+      <CheckoutProgress
+        currentStep="confirmation"
+        showShipping={showShipping}
+        showReview={showReview}
+      />
+
       {/* Success Icon */}
       <div className="text-center mb-8">
         <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${

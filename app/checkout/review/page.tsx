@@ -8,6 +8,7 @@ import { useCart } from "@/components/CartProvider";
 import { formatPrice } from "@/lib/products";
 import { addFlowLog, getFlowLogs } from "@/lib/flowLogs";
 import { FlowLogsDevPanel } from "@/components/FlowLogsDevPanel";
+import { CheckoutProgress } from "@/components/CheckoutProgress";
 
 function ReviewContent() {
   const searchParams = useSearchParams();
@@ -190,6 +191,9 @@ function ReviewContent() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-72">
+      {/* Progress Timeline */}
+      <CheckoutProgress currentStep="review" showReview />
+
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold mb-2">Review Your Order</h1>

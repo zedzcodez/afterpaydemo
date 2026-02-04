@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { refundPayment, toMoney } from "@/lib/afterpay";
 
+const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
+
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
   try {
     const body = await request.json();
     const {
@@ -23,13 +26,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const refundAmount = toMoney(amount, currency);
+    const requestBody: Record<string, unknown> = { amount: refundAmount };
+    if (merchantReference) {
+      requestBody.merchantReference = merchantReference;
+    }
+
     const response = await refundPayment(
       orderId,
-      toMoney(amount, currency),
+      refundAmount,
       merchantReference
     );
+    const duration = Date.now() - startTime;
 
-    return NextResponse.json(response);
+    // Return response with metadata for Developer Panel
+    return NextResponse.json({
+      ...response,
+      _meta: {
+        fullUrl: `${API_URL}/v2/payments/${orderId}/refund`,
+        method: "POST",
+        duration,
+        requestBody,
+        pathParams: { orderId },
+        headers: {
+          contentType: "application/json",
+          authorization: "Basic ***",
+        },
+      },
+    });
   } catch (error) {
     console.error("Refund error:", error);
     return NextResponse.json(

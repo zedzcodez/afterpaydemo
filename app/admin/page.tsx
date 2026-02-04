@@ -45,7 +45,7 @@ function ActionModal({ action, orderId, maxAmount, onClose, onSubmit, isLoading 
               type="text"
               value={orderId}
               readOnly
-              className="w-full px-4 py-2 bg-afterpay-gray-100 border border-afterpay-gray-300 rounded-lg font-mono text-sm"
+              className="input-styled bg-afterpay-gray-100 font-mono text-sm"
             />
           </div>
 
@@ -58,7 +58,7 @@ function ActionModal({ action, orderId, maxAmount, onClose, onSubmit, isLoading 
               max={maxAmount}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-4 py-2 border border-afterpay-gray-300 rounded-lg focus:outline-none focus:border-afterpay-black"
+              className="input-styled"
             />
             <p className="text-xs text-afterpay-gray-500 mt-1">
               Maximum: {formatPrice(maxAmount)}
@@ -324,55 +324,97 @@ export default function AdminPage() {
       setSuccessMessage(`${action.charAt(0).toUpperCase() + action.slice(1)} of ${formatPrice(amount)} successful!`);
       setActiveAction(null);
 
-      // Apply optimistic update immediately
-      if (payment) {
-        const updatedPayment = { ...payment };
+      // Update payment state from API response
+      // The capture/refund/void responses contain updated payment details
+      if (data && payment) {
         const amountMoney = { amount: amount.toFixed(2), currency: "USD" };
         const now = new Date().toISOString();
 
-        if (action === "refund") {
-          // Add to refunds array
-          updatedPayment.refunds = [
-            ...(updatedPayment.refunds || []),
-            {
-              refundId: `temp-${Date.now()}`,
-              refundedAt: now,
-              amount: amountMoney,
-            },
-          ];
+        // Merge API response with current payment data
+        // API response may have updated fields like openToCaptureAmount, status, events
+        const updatedPayment: PaymentDetails = {
+          ...payment,
+          // Use API response values if available
+          status: data.status || payment.status,
+          openToCaptureAmount: data.openToCaptureAmount || payment.openToCaptureAmount,
+          paymentState: data.paymentState || payment.paymentState,
+          // Merge events - API response may have new events
+          events: data.events || payment.events,
+          // Merge refunds
+          refunds: data.refunds || payment.refunds,
+        };
+
+        // If the API response doesn't include updated events, add them optimistically
+        if (action === "refund" && !data.refunds?.some((r: { refundId: string }) => r.refundId !== payment.refunds?.find((pr) => pr.refundId === r.refundId))) {
+          // Add refund to refunds array if not already present
+          const refundExists = updatedPayment.refunds?.some((r) =>
+            parseFloat(r.amount.amount) === amount &&
+            new Date(r.refundedAt).getTime() > Date.now() - 60000
+          );
+          if (!refundExists) {
+            updatedPayment.refunds = [
+              ...(updatedPayment.refunds || []),
+              {
+                refundId: data.refundId || `temp-${Date.now()}`,
+                refundedAt: now,
+                amount: amountMoney,
+              },
+            ];
+          }
         } else if (action === "capture") {
-          // Add capture event and update open to capture
-          updatedPayment.events = [
-            ...updatedPayment.events,
-            {
-              id: `temp-${Date.now()}`,
-              created: now,
-              type: "CAPTURED",
-              amount: amountMoney,
-            },
-          ];
-          const newOpenToCapture = Math.max(0, parseFloat(updatedPayment.openToCaptureAmount.amount) - amount);
-          updatedPayment.openToCaptureAmount = { amount: newOpenToCapture.toFixed(2), currency: "USD" };
+          // Check if capture event exists in response
+          const captureEventExists = updatedPayment.events?.some((e) =>
+            (e.type === "CAPTURED" || e.type === "CAPTURE" || e.type === "CAPTURE_APPROVED") &&
+            parseFloat(e.amount.amount) === amount
+          );
+          if (!captureEventExists) {
+            updatedPayment.events = [
+              ...(updatedPayment.events || []),
+              {
+                id: `temp-${Date.now()}`,
+                created: now,
+                type: "CAPTURED",
+                amount: amountMoney,
+              },
+            ];
+          }
+          // Update openToCaptureAmount if not already updated
+          if (updatedPayment.openToCaptureAmount.amount === payment.openToCaptureAmount.amount) {
+            const newOpenToCapture = Math.max(0, parseFloat(payment.openToCaptureAmount.amount) - amount);
+            updatedPayment.openToCaptureAmount = { amount: newOpenToCapture.toFixed(2), currency: "USD" };
+          }
         } else if (action === "void") {
-          // Add void event and update open to capture
-          updatedPayment.events = [
-            ...updatedPayment.events,
-            {
-              id: `temp-${Date.now()}`,
-              created: now,
-              type: "VOID",
-              amount: amountMoney,
-            },
-          ];
-          const newOpenToCapture = Math.max(0, parseFloat(updatedPayment.openToCaptureAmount.amount) - amount);
-          updatedPayment.openToCaptureAmount = { amount: newOpenToCapture.toFixed(2), currency: "USD" };
+          // Check if void event exists in response
+          const voidEventExists = updatedPayment.events?.some((e) =>
+            (e.type === "VOID" || e.type === "VOIDED") &&
+            parseFloat(e.amount.amount) === amount
+          );
+          if (!voidEventExists) {
+            updatedPayment.events = [
+              ...(updatedPayment.events || []),
+              {
+                id: `temp-${Date.now()}`,
+                created: now,
+                type: "VOID",
+                amount: amountMoney,
+              },
+            ];
+          }
+          // Update openToCaptureAmount if not already updated
+          if (updatedPayment.openToCaptureAmount.amount === payment.openToCaptureAmount.amount) {
+            const newOpenToCapture = Math.max(0, parseFloat(payment.openToCaptureAmount.amount) - amount);
+            updatedPayment.openToCaptureAmount = { amount: newOpenToCapture.toFixed(2), currency: "USD" };
+          }
         }
 
         setPayment(updatedPayment);
       }
 
-      // Silently refresh to sync with server
-      await lookupPayment(true);
+      // Silently refresh to sync with server after a short delay
+      // This ensures we have the most up-to-date data from the API
+      setTimeout(() => {
+        lookupPayment(true);
+      }, 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : `${action} failed`);
     } finally {
@@ -391,19 +433,37 @@ export default function AdminPage() {
   };
 
   const getCapturedAmount = () => {
-    if (!payment?.events) return 0;
-    return payment.events
-      .filter((e) => e.type === "CAPTURED")
-      .reduce((sum, e) => sum + parseFloat(e.amount.amount), 0);
+    if (!payment) return 0;
+
+    // First try to calculate from events
+    if (payment.events) {
+      // Handle different event type naming conventions from Afterpay API
+      const capturedFromEvents = payment.events
+        .filter((e) => e.type === "CAPTURED" || e.type === "CAPTURE" || e.type === "CAPTURE_APPROVED")
+        .reduce((sum, e) => sum + parseFloat(e.amount.amount), 0);
+
+      if (capturedFromEvents > 0) return capturedFromEvents;
+    }
+
+    // Fallback: Calculate from original amount minus open to capture
+    // This is useful when events aren't populated but openToCaptureAmount is updated
+    const original = parseFloat(payment.originalAmount?.amount || "0");
+    const openToCapture = parseFloat(payment.openToCaptureAmount?.amount || "0");
+    const voided = payment.events
+      ?.filter((e) => e.type === "VOID" || e.type === "VOIDED")
+      .reduce((sum, e) => sum + parseFloat(e.amount.amount), 0) || 0;
+
+    // captured = original - openToCapture - voided
+    return Math.max(0, original - openToCapture - voided);
   };
 
   const getRefundedAmount = () => {
     let total = 0;
 
-    // Check events for REFUND type
+    // Check events for REFUND type - handle different naming conventions
     if (payment?.events) {
       total += payment.events
-        .filter((e) => e.type === "REFUND" || e.type === "REFUNDED")
+        .filter((e) => e.type === "REFUND" || e.type === "REFUNDED" || e.type === "REFUND_APPROVED")
         .reduce((sum, e) => sum + parseFloat(e.amount.amount), 0);
     }
 
@@ -417,8 +477,9 @@ export default function AdminPage() {
 
   const getVoidedAmount = () => {
     if (!payment?.events) return 0;
+    // Handle different event type naming conventions from Afterpay API
     return payment.events
-      .filter((e) => e.type === "VOID" || e.type === "VOIDED")
+      .filter((e) => e.type === "VOID" || e.type === "VOIDED" || e.type === "VOID_APPROVED")
       .reduce((sum, e) => sum + parseFloat(e.amount.amount), 0);
   };
 
@@ -578,7 +639,7 @@ export default function AdminPage() {
                     value={customMerchantId}
                     onChange={(e) => setCustomMerchantId(e.target.value)}
                     placeholder="Enter your Merchant ID"
-                    className="w-full px-4 py-2 border border-afterpay-gray-300 rounded-lg focus:outline-none focus:border-afterpay-black font-mono text-sm"
+                    className="input-styled font-mono text-sm"
                   />
                 </div>
                 <div>
@@ -588,7 +649,7 @@ export default function AdminPage() {
                     value={customSecretKey}
                     onChange={(e) => setCustomSecretKey(e.target.value)}
                     placeholder="Enter your Secret Key"
-                    className="w-full px-4 py-2 border border-afterpay-gray-300 rounded-lg focus:outline-none focus:border-afterpay-black font-mono text-sm"
+                    className="input-styled font-mono text-sm"
                   />
                 </div>
               </div>
@@ -655,7 +716,7 @@ export default function AdminPage() {
               value={orderId}
               onChange={(e) => setOrderId(e.target.value)}
               placeholder="Enter Order ID (e.g., 400296372065)"
-              className="flex-1 px-4 py-3 border border-afterpay-gray-300 rounded-lg focus:outline-none focus:border-afterpay-black font-mono"
+              className="flex-1 input-styled font-mono"
               onKeyDown={(e) => e.key === "Enter" && lookupPayment()}
             />
             <button
@@ -687,16 +748,13 @@ export default function AdminPage() {
           <div className="space-y-6">
             {/* Payment Overview */}
             <div className="bg-white rounded-lg shadow-sm border border-afterpay-gray-200 overflow-hidden">
-              <div className="px-6 py-4 bg-afterpay-gray-50 border-b border-afterpay-gray-200">
+              <div className="px-6 py-4 bg-gradient-to-r from-afterpay-gray-50 to-blue-50 border-b border-afterpay-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <h2 className="text-lg font-semibold">Payment Details</h2>
                     {isRefreshing && (
                       <span className="text-xs text-afterpay-gray-500 flex items-center gap-1">
-                        <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
+                        <div className="w-3 h-3 border-2 border-afterpay-mint border-t-transparent rounded-full animate-spin" />
                         Syncing...
                       </span>
                     )}
@@ -730,11 +788,72 @@ export default function AdminPage() {
 
             {/* Amount Breakdown */}
             <div className="bg-white rounded-lg shadow-sm border border-afterpay-gray-200 overflow-hidden">
-              <div className="px-6 py-4 bg-afterpay-gray-50 border-b border-afterpay-gray-200">
+              <div className="px-6 py-4 bg-gradient-to-r from-afterpay-gray-50 to-afterpay-mint/10 border-b border-afterpay-gray-200">
                 <h2 className="text-lg font-semibold">Amount Breakdown</h2>
               </div>
               <div className="p-6">
-                <div className="space-y-3">
+                {/* Visual Progress Bar */}
+                <div className="mb-6">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-afterpay-gray-600">Payment Progress</span>
+                    <span className="font-medium">{formatPrice(getOriginalAmount())}</span>
+                  </div>
+                  <div className="h-4 bg-afterpay-gray-100 rounded-full overflow-hidden flex">
+                    {/* Captured portion */}
+                    {getCapturedAmount() > 0 && (
+                      <div
+                        className="bg-green-500 h-full transition-all duration-500"
+                        style={{ width: `${(getCapturedAmount() / getOriginalAmount()) * 100}%` }}
+                        title={`Captured: ${formatPrice(getCapturedAmount())}`}
+                      />
+                    )}
+                    {/* Open to capture portion */}
+                    {getOpenToCapture() > 0 && (
+                      <div
+                        className="bg-blue-500 h-full transition-all duration-500"
+                        style={{ width: `${(getOpenToCapture() / getOriginalAmount()) * 100}%` }}
+                        title={`Open to Capture: ${formatPrice(getOpenToCapture())}`}
+                      />
+                    )}
+                    {/* Refunded portion */}
+                    {getRefundedAmount() > 0 && (
+                      <div
+                        className="bg-orange-500 h-full transition-all duration-500"
+                        style={{ width: `${(getRefundedAmount() / getOriginalAmount()) * 100}%` }}
+                        title={`Refunded: ${formatPrice(getRefundedAmount())}`}
+                      />
+                    )}
+                    {/* Voided portion */}
+                    {getVoidedAmount() > 0 && (
+                      <div
+                        className="bg-red-500 h-full transition-all duration-500"
+                        style={{ width: `${(getVoidedAmount() / getOriginalAmount()) * 100}%` }}
+                        title={`Voided: ${formatPrice(getVoidedAmount())}`}
+                      />
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-4 mt-3 text-xs">
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded bg-green-500" />
+                      <span>Captured</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded bg-blue-500" />
+                      <span>Open to Capture</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded bg-orange-500" />
+                      <span>Refunded</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded bg-red-500" />
+                      <span>Voided</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Amount Details */}
+                <div className="space-y-3 pt-4 border-t border-afterpay-gray-200">
                   <div className="flex justify-between items-center">
                     <span className="text-afterpay-gray-600">Original Amount</span>
                     <span className="font-medium">{formatPrice(getOriginalAmount())}</span>
@@ -765,7 +884,7 @@ export default function AdminPage() {
 
             {/* Actions */}
             <div className="bg-white rounded-lg shadow-sm border border-afterpay-gray-200 overflow-hidden">
-              <div className="px-6 py-4 bg-afterpay-gray-50 border-b border-afterpay-gray-200">
+              <div className="px-6 py-4 bg-gradient-to-r from-afterpay-gray-50 to-afterpay-mint/10 border-b border-afterpay-gray-200">
                 <h2 className="text-lg font-semibold">Actions</h2>
               </div>
               <div className="p-6">
@@ -803,20 +922,20 @@ export default function AdminPage() {
             {/* Event History */}
             {((payment.events && payment.events.length > 0) || (payment.refunds && payment.refunds.length > 0)) && (
               <div className="bg-white rounded-lg shadow-sm border border-afterpay-gray-200 overflow-hidden">
-                <div className="px-6 py-4 bg-afterpay-gray-50 border-b border-afterpay-gray-200">
+                <div className="px-6 py-4 bg-gradient-to-r from-afterpay-gray-50 to-purple-50 border-b border-afterpay-gray-200">
                   <h2 className="text-lg font-semibold">Event History</h2>
                 </div>
                 <div className="divide-y divide-afterpay-gray-200">
                   {/* Combine events and refunds into a unified timeline */}
                   {[
                     ...(payment.events || []).map((event) => ({
-                      id: event.id,
+                      id: `event-${event.id}`,
                       type: event.type,
                       created: event.created,
                       amount: event.amount,
                     })),
                     ...(payment.refunds || []).map((refund) => ({
-                      id: refund.refundId,
+                      id: `refund-${refund.refundId}`,
                       type: "REFUND",
                       created: refund.refundedAt,
                       amount: refund.amount,
@@ -827,10 +946,10 @@ export default function AdminPage() {
                       <div key={item.id} className="px-6 py-4 flex items-center justify-between">
                         <div>
                           <span className={`inline-block px-2 py-1 rounded text-xs font-medium mr-2 ${
-                            item.type === "AUTH_APPROVED" || item.type === "AUTH" ? "bg-blue-100 text-blue-800" :
-                            item.type === "CAPTURED" ? "bg-green-100 text-green-800" :
-                            item.type === "REFUND" || item.type === "REFUNDED" ? "bg-orange-100 text-orange-800" :
-                            item.type === "VOID" || item.type === "VOIDED" ? "bg-red-100 text-red-800" :
+                            item.type === "AUTH_APPROVED" || item.type === "AUTH" || item.type === "AUTH_PENDING" ? "bg-blue-100 text-blue-800" :
+                            item.type === "CAPTURED" || item.type === "CAPTURE" || item.type === "CAPTURE_APPROVED" ? "bg-green-100 text-green-800" :
+                            item.type === "REFUND" || item.type === "REFUNDED" || item.type === "REFUND_APPROVED" ? "bg-orange-100 text-orange-800" :
+                            item.type === "VOID" || item.type === "VOIDED" || item.type === "VOID_APPROVED" ? "bg-red-100 text-red-800" :
                             "bg-gray-100 text-gray-800"
                           }`}>
                             {item.type}

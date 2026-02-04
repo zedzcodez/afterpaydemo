@@ -4,6 +4,7 @@ import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/components/CartProvider";
 import { Header } from "@/components/Header";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -28,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${outfit.variable} ${plusJakarta.variable}`}>
+    <html lang="en" className={`${outfit.variable} ${plusJakarta.variable}`} suppressHydrationWarning>
       <head>
         {/* Afterpay On-Site Messaging SDK */}
         <Script
@@ -41,11 +42,13 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
       </head>
-      <body className="bg-white text-afterpay-black min-h-screen font-body">
-        <CartProvider>
-          <Header />
-          <main>{children}</main>
-        </CartProvider>
+      <body className="bg-white dark:bg-afterpay-gray-900 text-afterpay-black dark:text-white min-h-screen font-body transition-colors duration-200">
+        <ThemeProvider>
+          <CartProvider>
+            <Header />
+            <main>{children}</main>
+          </CartProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

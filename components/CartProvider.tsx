@@ -16,6 +16,7 @@ interface CartContextType {
   items: CartItem[];
   total: number;
   itemCount: number;
+  cartAnimationTrigger: number;
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -27,6 +28,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [cartAnimationTrigger, setCartAnimationTrigger] = useState(0);
 
   useEffect(() => {
     setItems(getStoredCart());
@@ -41,6 +43,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = (product: Product) => {
     setItems((prev) => addToCartUtil(prev, product));
+    // Trigger cart animation
+    setCartAnimationTrigger((prev) => prev + 1);
   };
 
   const removeFromCart = (productId: string) => {
@@ -59,6 +63,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     items,
     total: calculateTotal(items),
     itemCount: getItemCount(items),
+    cartAnimationTrigger,
     addToCart,
     removeFromCart,
     updateQuantity,

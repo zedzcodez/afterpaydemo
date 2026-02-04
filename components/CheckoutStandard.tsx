@@ -512,7 +512,7 @@ Afterpay.transfer({ token });`;
               onChange={handleInputChange}
               placeholder="Email address"
               required
-              className="w-full px-4 py-3 border border-afterpay-gray-300 rounded-lg focus:outline-none focus:border-afterpay-black"
+              className="input-styled"
             />
             <input
               type="tel"
@@ -520,7 +520,7 @@ Afterpay.transfer({ token });`;
               value={formData.phone}
               onChange={handleInputChange}
               placeholder="Phone number"
-              className="w-full px-4 py-3 border border-afterpay-gray-300 rounded-lg focus:outline-none focus:border-afterpay-black"
+              className="input-styled"
             />
           </div>
         </div>
@@ -537,7 +537,7 @@ Afterpay.transfer({ token });`;
                 onChange={handleInputChange}
                 placeholder="First name"
                 required
-                className="px-4 py-3 border border-afterpay-gray-300 rounded-lg focus:outline-none focus:border-afterpay-black"
+                className="input-styled"
               />
               <input
                 type="text"
@@ -546,7 +546,7 @@ Afterpay.transfer({ token });`;
                 onChange={handleInputChange}
                 placeholder="Last name"
                 required
-                className="px-4 py-3 border border-afterpay-gray-300 rounded-lg focus:outline-none focus:border-afterpay-black"
+                className="input-styled"
               />
             </div>
             <input
@@ -556,7 +556,7 @@ Afterpay.transfer({ token });`;
               onChange={handleInputChange}
               placeholder="Address"
               required
-              className="w-full px-4 py-3 border border-afterpay-gray-300 rounded-lg focus:outline-none focus:border-afterpay-black"
+              className="input-styled"
             />
             <input
               type="text"
@@ -564,7 +564,7 @@ Afterpay.transfer({ token });`;
               value={formData.address2}
               onChange={handleInputChange}
               placeholder="Apartment, suite, etc. (optional)"
-              className="w-full px-4 py-3 border border-afterpay-gray-300 rounded-lg focus:outline-none focus:border-afterpay-black"
+              className="input-styled"
             />
             <div className="grid grid-cols-3 gap-4">
               <input
@@ -574,7 +574,7 @@ Afterpay.transfer({ token });`;
                 onChange={handleInputChange}
                 placeholder="City"
                 required
-                className="px-4 py-3 border border-afterpay-gray-300 rounded-lg focus:outline-none focus:border-afterpay-black"
+                className="input-styled"
               />
               <input
                 type="text"
@@ -583,7 +583,7 @@ Afterpay.transfer({ token });`;
                 onChange={handleInputChange}
                 placeholder="State"
                 required
-                className="px-4 py-3 border border-afterpay-gray-300 rounded-lg focus:outline-none focus:border-afterpay-black"
+                className="input-styled"
               />
               <input
                 type="text"
@@ -592,7 +592,7 @@ Afterpay.transfer({ token });`;
                 onChange={handleInputChange}
                 placeholder="ZIP code"
                 required
-                className="px-4 py-3 border border-afterpay-gray-300 rounded-lg focus:outline-none focus:border-afterpay-black"
+                className="input-styled"
               />
             </div>
           </div>
@@ -618,7 +618,7 @@ Afterpay.transfer({ token });`;
                     value={option.id}
                     checked={selectedShipping.id === option.id}
                     onChange={() => setSelectedShipping(option)}
-                    className="mr-3"
+                    className="radio-mint mr-3"
                   />
                   <span>{option.name}</span>
                 </div>
@@ -669,7 +669,10 @@ Afterpay.transfer({ token });`;
           className="w-full py-4 px-6 bg-afterpay-black text-white font-medium rounded-lg hover:bg-afterpay-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
-            "Processing..."
+            <span className="flex items-center justify-center gap-2">
+              <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span>Processing...</span>
+            </span>
           ) : (
             <span className="flex items-center justify-center gap-2">
               <span>Continue to</span>

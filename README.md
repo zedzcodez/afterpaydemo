@@ -37,9 +37,23 @@ Full payment management interface at `/admin`:
 
 ### Developer Features
 - **Code Viewer**: Implementation snippets for each checkout method
-- **Developer Panel**: API requests/responses displayed in real-time
+- **Developer Panel**: Enhanced API inspection tool with:
+  - Real-time request/response logging (reverse-chronological order)
+  - Full API details: complete URLs, path parameters, headers, request/response bodies
+  - Collapsible sections for headers and body data with size indicators
+  - Filter by event type (Requests, Responses, Events, Redirects)
+  - Search across labels, endpoints, and data content
+  - **Copy as cURL**: One-click copy of any request as executable cURL command
+  - **Export logs**: Download as JSON or HAR format (for browser DevTools import)
+  - Links to Afterpay API documentation for each endpoint
 - **Flow Logs**: Complete transaction timeline on confirmation page
 - **Toggle Controls**: Compare different checkout approaches side-by-side
+
+### UI Features
+- **Dark Mode**: System preference detection with manual toggle, persisted to localStorage
+- **Checkout Progress Timeline**: Visual stepper showing Cart → Checkout → Shipping → Review → Confirm
+- **Micro-interactions**: Cart bounce animation on add, sliding tab indicators
+- **Loading States**: Skeleton loaders for products, mint-colored spinners throughout
 
 ## Getting Started
 
@@ -123,15 +137,19 @@ If `popupOriginUrl` doesn't match `window.location.origin`, the browser won't di
     /configuration/route.ts     # Get merchant configuration
 
 /components
-  Header.tsx                    # Navigation with cart icon
-  ProductCard.tsx               # Product display card
-  ProductGrid.tsx               # Homepage product grid
-  CartProvider.tsx              # Cart state (Context + localStorage)
+  Header.tsx                    # Navigation with cart icon and dark mode toggle
+  ProductCard.tsx               # Product display card with dark mode support
+  ProductGrid.tsx               # Homepage product grid with skeleton loading
+  CartProvider.tsx              # Cart state (Context + localStorage + animation trigger)
+  ThemeProvider.tsx             # Dark mode state (Context + localStorage + system preference)
+  CheckoutProgress.tsx          # Visual checkout progress stepper
+  LoadingSpinner.tsx            # Reusable mint-colored loading spinner
   OSMPlacement.tsx              # Afterpay OSM wrapper
   CheckoutExpress.tsx           # Express checkout component
   CheckoutStandard.tsx          # Standard checkout component
   CodeViewer.tsx                # Expandable code snippets
-  FlowLogsDevPanel.tsx          # API request/response panel
+  FlowLogsDevPanel.tsx          # Enhanced dev panel with filters, search, cURL export, HAR export
+  DevPanel.tsx                  # Legacy developer panel component
 
 /lib
   products.ts                   # Static product data
@@ -214,12 +232,13 @@ Or deploy directly:
 
 ## Design System
 
-The demo features a polished, distinctive UI built on Afterpay's brand colors:
+The demo features a polished, distinctive UI built on Afterpay's brand colors with full dark mode support:
 
 ### Colors
 - **Primary**: Afterpay Mint (`#B2FCE4`) - Used for CTAs, accents, and highlights
 - **Mint Dark**: `#8EEBC8` - Hover states
 - **Mint Light**: `#D4FEF0` - Subtle backgrounds
+- **Dark Mode**: Charcoal backgrounds with mint accents
 
 ### Typography
 - **Display Font**: Outfit - Bold, geometric sans-serif for headings
@@ -228,12 +247,23 @@ The demo features a polished, distinctive UI built on Afterpay's brand colors:
 ### Components
 - **Buttons**: Three variants - `btn-primary` (mint), `btn-secondary` (black), `btn-outline`
 - **Cards**: Elevated with shadows, hover lift effects, and mint glow
-- **Forms**: Mint focus ring states on all inputs
+- **Forms**: Styled inputs with mint focus ring, custom checkboxes/radios
+- **Progress Stepper**: Visual checkout timeline with completed step indicators
+- **Loading States**: Skeleton screens and mint-colored spinners
 
 ### Animations
 - Page load: Staggered fade-in-up animations
 - Cards: Scale and shadow transitions on hover
 - Buttons: Scale transforms on hover/active states
+- Cart icon: Bounce animation when items added
+- Tab indicator: Smooth slide transitions between checkout methods
+- Progress bar: Animated segments in admin amount breakdown
+
+### Dark Mode
+- Toggle in header (sun/moon icon)
+- System preference detection
+- Persisted to localStorage
+- Mint accent colors preserved in dark theme
 
 ## License
 

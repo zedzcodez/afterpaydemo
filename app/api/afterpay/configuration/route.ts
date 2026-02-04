@@ -14,6 +14,7 @@ export interface ConfigurationResponse {
 // Get Afterpay merchant configuration
 // Supports custom credentials passed in request body, or falls back to env vars
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
   try {
     const body = await request.json().catch(() => ({}));
     const { merchantId, secretKey } = body as {
@@ -56,10 +57,22 @@ export async function POST(request: NextRequest) {
     }
 
     const data: ConfigurationResponse = await response.json();
+    const duration = Date.now() - startTime;
 
+    // Return response with metadata for Developer Panel
     return NextResponse.json({
       ...data,
       usingCustomCredentials: !!(merchantId && secretKey),
+      _meta: {
+        fullUrl: `${apiUrl}/v2/configuration`,
+        method: "GET",
+        duration,
+        headers: {
+          contentType: "application/json",
+          authorization: "Basic ***",
+          userAgent: "Afterpay-Demo-App/1.0",
+        },
+      },
     });
   } catch (error) {
     console.error("Configuration error:", error);

@@ -1,5 +1,16 @@
 // Utility for storing and retrieving checkout flow logs across page navigation
 
+export interface RequestHeaders {
+  contentType: string;
+  authorization: string;  // Masked as "Basic ***"
+  userAgent?: string;
+}
+
+export interface ResponseHeaders {
+  contentType?: string;
+  requestId?: string;  // Afterpay request tracking ID
+}
+
 export interface FlowLogEntry {
   id: string;
   timestamp: string;
@@ -10,6 +21,13 @@ export interface FlowLogEntry {
   status?: number;
   data?: object;
   duration?: number;
+  // Enhanced request details
+  fullUrl?: string;  // Complete URL (e.g., https://global-api-sandbox.afterpay.com/v2/checkouts)
+  pathParams?: Record<string, string>;  // Path parameters (e.g., { orderId: "123" })
+  headers?: RequestHeaders;
+  responseHeaders?: ResponseHeaders;
+  requestSize?: number;  // Request body size in bytes
+  responseSize?: number;  // Response body size in bytes
 }
 
 export interface FlowLogs {

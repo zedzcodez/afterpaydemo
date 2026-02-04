@@ -8,6 +8,7 @@ import { formatPrice } from "@/lib/products";
 import { CheckoutExpress } from "@/components/CheckoutExpress";
 import { CheckoutStandard } from "@/components/CheckoutStandard";
 import { DevPanel, useDevPanel } from "@/components/DevPanel";
+import { CheckoutProgress } from "@/components/CheckoutProgress";
 
 type CheckoutMethod = "express" | "standard";
 
@@ -54,15 +55,26 @@ export default function CheckoutPage() {
           </Link>
         </div>
 
+        {/* Progress Timeline */}
+        <CheckoutProgress currentStep="checkout" />
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2">
             {/* Method Toggle */}
             <div className="mb-8">
-              <div className="flex border-b border-afterpay-gray-200">
+              <div className="relative flex border-b border-afterpay-gray-200">
+                {/* Sliding indicator */}
+                <div
+                  className="absolute bottom-0 h-0.5 bg-afterpay-mint transition-all duration-300 ease-out"
+                  style={{
+                    width: "50%",
+                    transform: method === "express" ? "translateX(0)" : "translateX(100%)",
+                  }}
+                />
                 <button
                   onClick={() => setMethod("express")}
-                  className={`flex-1 py-4 px-6 text-center font-medium transition-colors relative ${
+                  className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
                     method === "express"
                       ? "text-afterpay-black"
                       : "text-afterpay-gray-500 hover:text-afterpay-gray-700"
@@ -72,13 +84,10 @@ export default function CheckoutPage() {
                   <span className="block text-xs font-normal mt-1">
                     Afterpay.js Popup
                   </span>
-                  {method === "express" && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-afterpay-mint" />
-                  )}
                 </button>
                 <button
                   onClick={() => setMethod("standard")}
-                  className={`flex-1 py-4 px-6 text-center font-medium transition-colors relative ${
+                  className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
                     method === "standard"
                       ? "text-afterpay-black"
                       : "text-afterpay-gray-500 hover:text-afterpay-gray-700"
@@ -88,9 +97,6 @@ export default function CheckoutPage() {
                   <span className="block text-xs font-normal mt-1">
                     API Integration
                   </span>
-                  {method === "standard" && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-afterpay-mint" />
-                  )}
                 </button>
               </div>
             </div>
