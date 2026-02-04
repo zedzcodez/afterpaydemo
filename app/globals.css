@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --afterpay-mint: #B2FCE4;
+  --afterpay-black: #000000;
+}
+
+body {
+  font-family: "Inter", system-ui, sans-serif;
+}

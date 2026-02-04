@@ -1,0 +1,39 @@
+import type { Metadata } from "next";
+import Script from "next/script";
+import "./globals.css";
+import { CartProvider } from "@/components/CartProvider";
+import { Header } from "@/components/Header";
+
+export const metadata: Metadata = {
+  title: "Afterpay Demo Shop",
+  description: "Merchant checkout integration demo for Afterpay",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <head>
+        {/* Afterpay On-Site Messaging SDK */}
+        <Script
+          src="https://js-sandbox.squarecdn.com/square-marketplace.js"
+          strategy="afterInteractive"
+        />
+        {/* Afterpay.js for Express Checkout */}
+        <Script
+          src="https://portal.sandbox.afterpay.com/afterpay.js"
+          strategy="afterInteractive"
+        />
+      </head>
+      <body className="bg-white text-afterpay-black min-h-screen">
+        <CartProvider>
+          <Header />
+          <main>{children}</main>
+        </CartProvider>
+      </body>
+    </html>
+  );
+}
