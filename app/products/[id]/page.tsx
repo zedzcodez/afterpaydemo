@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { getProduct, formatPrice, products } from "@/lib/products";
 import { useCart } from "@/components/CartProvider";
 import { OSMPlacement } from "@/components/OSMPlacement";
@@ -15,7 +16,7 @@ export default function ProductDetailPage() {
   if (!product) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-        <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
+        <h1 className="font-display text-2xl font-bold mb-4">Product Not Found</h1>
         <Link href="/" className="text-afterpay-mint hover:underline">
           Return to Shop
         </Link>
@@ -38,7 +39,7 @@ export default function ProductDetailPage() {
       <nav className="mb-8">
         <ol className="flex items-center space-x-2 text-sm text-afterpay-gray-500">
           <li>
-            <Link href="/" className="hover:text-afterpay-black">
+            <Link href="/" className="hover:text-afterpay-black transition-colors">
               Shop
             </Link>
           </li>
@@ -49,29 +50,23 @@ export default function ProductDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Product Image */}
-        <div className="aspect-square bg-afterpay-gray-100 rounded-lg flex items-center justify-center">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-32 w-32 text-afterpay-gray-300"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1}
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
+        <div className="aspect-square bg-afterpay-gray-50 rounded-2xl overflow-hidden relative shadow-card">
+          <Image
+            src={product.image}
+            alt={product.name}
+            fill
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            className="object-cover"
+            priority
+          />
         </div>
 
         {/* Product Info */}
         <div>
-          <p className="text-sm text-afterpay-gray-500 mb-2">
+          <p className="text-xs font-medium text-afterpay-gray-400 uppercase tracking-wider mb-2">
             {product.category}
           </p>
-          <h1 className="text-3xl font-bold text-afterpay-black mb-4">
+          <h1 className="font-display text-4xl font-bold text-afterpay-black mb-4">
             {product.name}
           </h1>
           <p className="text-afterpay-gray-600 mb-6">{product.description}</p>
@@ -103,13 +98,13 @@ export default function ProductDetailPage() {
           <div className="space-y-3">
             <button
               onClick={handleBuyNow}
-              className="w-full py-3 px-6 bg-afterpay-black text-white font-medium rounded-lg hover:bg-afterpay-gray-800 transition-colors"
+              className="w-full btn-primary"
             >
               Buy Now
             </button>
             <button
               onClick={handleAddToCart}
-              className="w-full py-3 px-6 bg-white text-afterpay-black font-medium rounded-lg border-2 border-afterpay-black hover:bg-afterpay-gray-50 transition-colors"
+              className="w-full btn-outline"
             >
               Add to Cart
             </button>
