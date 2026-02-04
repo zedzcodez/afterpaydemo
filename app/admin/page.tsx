@@ -97,7 +97,6 @@ type CaptureMode = "deferred" | "immediate";
 interface MerchantConfiguration {
   minimumAmount?: { amount: string; currency: string };
   maximumAmount?: { amount: string; currency: string };
-  usingCustomCredentials?: boolean;
 }
 
 function AdminContent() {
@@ -115,10 +114,7 @@ function AdminContent() {
   const [captureMode, setCaptureMode] = useState<CaptureMode>("deferred");
   const [hasAutoLoaded, setHasAutoLoaded] = useState(false);
 
-  // Custom credentials state
-  const [useCustomCredentials, setUseCustomCredentials] = useState(false);
-  const [customMerchantId, setCustomMerchantId] = useState("");
-  const [customSecretKey, setCustomSecretKey] = useState("");
+  // Configuration state
   const [configuration, setConfiguration] = useState<MerchantConfiguration | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
   const [configError, setConfigError] = useState<string | null>(null);
@@ -189,20 +185,17 @@ function AdminContent() {
     }
   }, [urlOrderId, hasAutoLoaded]);
 
-  // Fetch merchant configuration
-  const fetchConfiguration = async (merchantId?: string, secretKey?: string) => {
+  // Fetch merchant configuration (uses environment credentials only)
+  const fetchConfiguration = async () => {
     setIsLoadingConfig(true);
     setConfigError(null);
 
     try {
-      const body = merchantId && secretKey ? { merchantId, secretKey } : {};
-      const clientData = merchantId ? { merchantId, secretKey: "***" } : { usingEnvCredentials: true };
-
       const startTime = Date.now();
       const response = await fetch("/api/afterpay/configuration", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({}),
       });
 
       const data = await response.json();
@@ -214,7 +207,7 @@ function AdminContent() {
         label: "Get Configuration",
         method: "POST",
         endpoint: "/api/afterpay/configuration → /v2/configuration",
-        data: clientData,
+        data: { usingEnvCredentials: true },
         fullUrl: data._meta?.fullUrl,
         headers: data._meta?.headers,
       });
@@ -241,26 +234,6 @@ function AdminContent() {
     } finally {
       setIsLoadingConfig(false);
     }
-  };
-
-  // Handle custom credentials toggle
-  const handleUseCustomCredentials = (useCustom: boolean) => {
-    setUseCustomCredentials(useCustom);
-    if (!useCustom) {
-      setCustomMerchantId("");
-      setCustomSecretKey("");
-      setConfigError(null);
-      fetchConfiguration(); // Reload with default credentials
-    }
-  };
-
-  // Validate and fetch config with custom credentials
-  const handleValidateCredentials = () => {
-    if (!customMerchantId.trim() || !customSecretKey.trim()) {
-      setConfigError("Please enter both Merchant ID and Secret Key");
-      return;
-    }
-    fetchConfiguration(customMerchantId.trim(), customSecretKey.trim());
   };
 
   // Save capture mode to localStorage when it changes
@@ -665,95 +638,30 @@ function AdminContent() {
           </div>
         </div>
 
-        {/* API Credentials & Configuration */}
+        {/* Merchant Configuration */}
         <div className="bg-white rounded-lg shadow-sm border border-afterpay-gray-200 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold">API Credentials</h2>
+              <h2 className="text-lg font-semibold">Merchant Configuration</h2>
               <p className="text-sm text-afterpay-gray-600 mt-1">
-                {useCustomCredentials
-                  ? "Using custom sandbox credentials"
-                  : "Using default environment credentials"}
+                Using environment credentials
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleUseCustomCredentials(false)}
-                className={`px-4 py-2 rounded-l-lg border font-medium text-sm transition-colors ${
-                  !useCustomCredentials
-                    ? "bg-afterpay-black text-white border-afterpay-black"
-                    : "bg-white text-afterpay-gray-600 border-afterpay-gray-300 hover:bg-afterpay-gray-50"
-                }`}
-              >
-                Default
-              </button>
-              <button
-                onClick={() => handleUseCustomCredentials(true)}
-                className={`px-4 py-2 rounded-r-lg border-t border-r border-b font-medium text-sm transition-colors ${
-                  useCustomCredentials
-                    ? "bg-afterpay-black text-white border-afterpay-black"
-                    : "bg-white text-afterpay-gray-600 border-afterpay-gray-300 hover:bg-afterpay-gray-50"
-                }`}
-              >
-                Custom
-              </button>
-            </div>
+            {isLoadingConfig && (
+              <div className="animate-spin w-5 h-5 border-2 border-afterpay-mint border-t-transparent rounded-full" />
+            )}
           </div>
-
-          {/* Custom Credentials Input */}
-          {useCustomCredentials && (
-            <div className="border-t border-afterpay-gray-200 pt-4 mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Merchant ID</label>
-                  <input
-                    type="text"
-                    value={customMerchantId}
-                    onChange={(e) => setCustomMerchantId(e.target.value)}
-                    placeholder="Enter your Merchant ID"
-                    className="input-styled font-mono text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Secret Key</label>
-                  <input
-                    type="password"
-                    value={customSecretKey}
-                    onChange={(e) => setCustomSecretKey(e.target.value)}
-                    placeholder="Enter your Secret Key"
-                    className="input-styled font-mono text-sm"
-                  />
-                </div>
-              </div>
-              <button
-                onClick={handleValidateCredentials}
-                disabled={isLoadingConfig || !customMerchantId || !customSecretKey}
-                className="px-4 py-2 bg-afterpay-black text-white font-medium rounded-lg hover:bg-afterpay-gray-800 transition-colors disabled:opacity-50"
-              >
-                {isLoadingConfig ? "Validating..." : "Validate Credentials"}
-              </button>
-            </div>
-          )}
 
           {/* Configuration Error */}
           {configError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mt-4">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
               {configError}
             </div>
           )}
 
           {/* Configuration Display */}
           {configuration && !configError && (
-            <div className="border-t border-afterpay-gray-200 pt-4 mt-4">
-              <div className="flex items-center gap-2 mb-3">
-                <h3 className="font-medium">Merchant Configuration</h3>
-                {isLoadingConfig && (
-                  <div className="animate-spin w-4 h-4 border-2 border-afterpay-mint border-t-transparent rounded-full" />
-                )}
-                {configuration.usingCustomCredentials && (
-                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Custom</span>
-                )}
-              </div>
+            <div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-afterpay-gray-50 rounded-lg p-4">
                   <dt className="text-sm text-afterpay-gray-600 mb-1">Minimum Order</dt>

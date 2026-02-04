@@ -12,29 +12,23 @@ export interface ConfigurationResponse {
 }
 
 // Get Afterpay merchant configuration
-// Supports custom credentials passed in request body, or falls back to env vars
+// Uses environment variables for credentials (AFTERPAY_MERCHANT_ID, AFTERPAY_SECRET_KEY)
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   try {
-    const body = await request.json().catch(() => ({}));
-    const { merchantId, secretKey } = body as {
-      merchantId?: string;
-      secretKey?: string;
-    };
-
-    // Use custom credentials if provided, otherwise fall back to env vars
-    const useMerchantId = merchantId || process.env.AFTERPAY_MERCHANT_ID;
-    const useSecretKey = secretKey || process.env.AFTERPAY_SECRET_KEY;
+    // Always use environment variables for credentials
+    const merchantId = process.env.AFTERPAY_MERCHANT_ID;
+    const secretKey = process.env.AFTERPAY_SECRET_KEY;
     const apiUrl = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
 
-    if (!useMerchantId || !useSecretKey) {
+    if (!merchantId || !secretKey) {
       return NextResponse.json(
-        { error: "Merchant ID and Secret Key are required" },
-        { status: 400 }
+        { error: "Merchant credentials not configured. Set AFTERPAY_MERCHANT_ID and AFTERPAY_SECRET_KEY environment variables." },
+        { status: 500 }
       );
     }
 
-    const credentials = Buffer.from(`${useMerchantId}:${useSecretKey}`).toString("base64");
+    const credentials = Buffer.from(`${merchantId}:${secretKey}`).toString("base64");
 
     const response = await fetch(`${apiUrl}/v2/configuration`, {
       method: "GET",
@@ -62,7 +56,6 @@ export async function POST(request: NextRequest) {
     // Return response with metadata for Developer Panel
     return NextResponse.json({
       ...data,
-      usingCustomCredentials: !!(merchantId && secretKey),
       _meta: {
         fullUrl: `${apiUrl}/v2/configuration`,
         method: "GET",
