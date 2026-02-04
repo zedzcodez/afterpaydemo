@@ -195,44 +195,84 @@ export function CheckoutExpress({ onLog, onLogUpdate }: CheckoutExpressProps) {
                 let orderId: string;
 
                 if (isImmediateCapture) {
-                  // Immediate Capture Mode: Use Capture Full Payment API
-                  const captureFullRequest = { token: event.data.orderToken };
-                  const logId = onLogRef.current?.("POST", "/api/afterpay/capture-full", captureFullRequest);
+                  // Immediate Capture Mode: Auth first (to get correct amount), then capture
+                  // Express Checkout with integrated shipping changes the amount in the popup,
+                  // so we must auth first (which fetches the checkout to get the final amount)
+                  const authRequest = { token: event.data.orderToken };
+                  const authLogId = onLogRef.current?.("POST", "/api/afterpay/auth", authRequest);
 
                   addFlowLog({
                     type: "api_request",
-                    label: "Capture Full Payment (Immediate Mode)",
+                    label: "Authorize Payment (Immediate Mode - Step 1)",
                     method: "POST",
-                    endpoint: "/api/afterpay/capture-full → /v2/payments/capture",
-                    data: captureFullRequest,
+                    endpoint: "/api/afterpay/auth → /v2/payments/auth",
+                    data: authRequest,
                   });
 
-                  const startTime = Date.now();
-                  const response = await fetch("/api/afterpay/capture-full", {
+                  const authStartTime = Date.now();
+                  const authResponse = await fetch("/api/afterpay/auth", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(captureFullRequest),
+                    body: JSON.stringify(authRequest),
                   });
 
-                  const data = await response.json();
-                  const duration = Date.now() - startTime;
-                  onLogUpdateRef.current?.(logId!, { response: data, status: response.status });
+                  const authData = await authResponse.json();
+                  const authDuration = Date.now() - authStartTime;
+                  onLogUpdateRef.current?.(authLogId!, { response: authData, status: authResponse.status });
 
                   addFlowLog({
                     type: "api_response",
-                    label: "Capture Full Response",
+                    label: "Authorization Response",
                     method: "POST",
-                    endpoint: "/v2/payments/capture",
-                    status: response.status,
-                    data: data,
-                    duration,
+                    endpoint: "/v2/payments/auth",
+                    status: authResponse.status,
+                    data: authData,
+                    duration: authDuration,
                   });
 
-                  if (data.status !== "APPROVED") {
-                    throw new Error("Payment was not approved");
+                  if (authData.status !== "APPROVED") {
+                    throw new Error("Payment authorization failed");
                   }
 
-                  orderId = data.id;
+                  // Now capture the authorized amount
+                  const captureAmount = parseFloat(authData.amount?.amount || authData.originalAmount?.amount);
+                  const captureRequest = { orderId: authData.id, amount: captureAmount };
+                  const captureLogId = onLogRef.current?.("POST", "/api/afterpay/capture", captureRequest);
+
+                  addFlowLog({
+                    type: "api_request",
+                    label: "Capture Payment (Immediate Mode - Step 2)",
+                    method: "POST",
+                    endpoint: `/api/afterpay/capture → /v2/payments/${authData.id}/capture`,
+                    data: captureRequest,
+                  });
+
+                  const captureStartTime = Date.now();
+                  const captureResponse = await fetch("/api/afterpay/capture", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(captureRequest),
+                  });
+
+                  const captureData = await captureResponse.json();
+                  const captureDuration = Date.now() - captureStartTime;
+                  onLogUpdateRef.current?.(captureLogId!, { response: captureData, status: captureResponse.status });
+
+                  addFlowLog({
+                    type: "api_response",
+                    label: "Capture Response",
+                    method: "POST",
+                    endpoint: `/v2/payments/${authData.id}/capture`,
+                    status: captureResponse.status,
+                    data: captureData,
+                    duration: captureDuration,
+                  });
+
+                  if (captureData.error) {
+                    throw new Error(captureData.error);
+                  }
+
+                  orderId = authData.id;
                 } else {
                   // Deferred Capture Mode: Only authorize
                   const authRequest = { token: event.data.orderToken };
