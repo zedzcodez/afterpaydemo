@@ -27,13 +27,20 @@ Toggle between capture strategies from the Admin Panel:
 
 ### Payment Admin Panel
 Full payment management interface at `/admin`:
-- **Custom Credentials**: Use your own sandbox API credentials to test
 - **Merchant Configuration**: View min/max order thresholds and currency
 - Payment lookup by Order ID
 - Capture authorized payments
 - Process refunds (full or partial)
 - Void uncaptured authorizations
 - Real-time API request/response logging
+- **Webhook Demo**: Test webhook endpoint with simulated payment events
+
+### Order History
+Persistent order tracking at `/orders`:
+- View all completed orders with status badges
+- Order details including items, totals, and checkout flow used
+- Direct links to Admin Panel for order management
+- localStorage persistence (last 20 orders)
 
 ### Developer Features
 - **Code Viewer**: Implementation snippets for each checkout method
@@ -57,6 +64,17 @@ Full payment management interface at `/admin`:
 - **Checkout Progress Timeline**: Visual stepper showing Cart → Checkout → Shipping → Review → Confirm
 - **Micro-interactions**: Cart bounce animation on add, sliding tab indicators
 - **Loading States**: Skeleton loaders for products, mint-colored spinners throughout
+- **Error Boundaries**: Graceful error handling with user-friendly fallback UI
+
+### Security Features
+- **Input Validation**: All API routes validate input with Zod schemas
+- **Error Sanitization**: API errors are sanitized before returning to clients
+- **Security Headers**: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy
+
+### Testing
+- **Jest Test Suite**: 55 unit tests with 99.63% coverage on lib utilities
+- **Validation Tests**: Comprehensive tests for all Zod schemas
+- **Error Handling Tests**: Tests for error sanitization patterns
 
 ## Getting Started
 
@@ -122,12 +140,15 @@ If `popupOriginUrl` doesn't match `window.location.origin`, the browser won't di
 ```
 /app
   page.tsx                      # Homepage with product grid
+  error.tsx                     # Global error boundary
   /products/[id]/page.tsx       # Product detail page
   /cart/page.tsx                # Shopping cart
   /checkout/page.tsx            # Checkout (Express + Standard tabs)
+  /checkout/error.tsx           # Checkout-specific error boundary
   /checkout/review/page.tsx     # Standard checkout review page
   /checkout/shipping/page.tsx   # Deferred shipping selection
   /confirmation/page.tsx        # Order confirmation with flow logs
+  /orders/page.tsx              # Order history page
   /admin/page.tsx               # Payment management panel
   /api/afterpay
     /checkout/route.ts          # Create checkout
@@ -138,6 +159,8 @@ If `popupOriginUrl` doesn't match `window.location.origin`, the browser won't di
     /void/route.ts              # Void payment
     /payment/[orderId]/route.ts # Get payment details
     /configuration/route.ts     # Get merchant configuration
+  /api/webhooks/afterpay
+    /route.ts                   # Webhook endpoint for payment notifications
 
 /components
   Header.tsx                    # Navigation with cart icon and dark mode toggle
@@ -147,6 +170,7 @@ If `popupOriginUrl` doesn't match `window.location.origin`, the browser won't di
   ThemeProvider.tsx             # Dark mode state (Context + localStorage + system preference)
   CheckoutProgress.tsx          # Visual checkout progress stepper
   LoadingSpinner.tsx            # Reusable mint-colored loading spinner
+  ErrorBoundary.tsx             # Reusable error boundary component
   OSMPlacement.tsx              # Afterpay OSM wrapper
   CheckoutExpress.tsx           # Express checkout component
   CheckoutStandard.tsx          # Standard checkout component
@@ -160,6 +184,16 @@ If `popupOriginUrl` doesn't match `window.location.origin`, the browser won't di
   afterpay.ts                   # Server-side Afterpay API client
   flowLogs.ts                   # Flow logging utilities
   types.ts                      # TypeScript interfaces
+  errors.ts                     # Error sanitization utilities
+  validation.ts                 # Zod validation schemas
+  webhooks.ts                   # Webhook types and utilities
+  orders.ts                     # Order persistence utilities
+
+/__tests__
+  /lib
+    errors.test.ts              # Error utility tests
+    validation.test.ts          # Validation schema tests
+    products.test.ts            # Product utility tests
 ```
 
 ## API Endpoints
@@ -176,10 +210,26 @@ This demo wraps Afterpay's v2 API endpoints. Each local endpoint maps to an Afte
 | `POST /api/afterpay/void` | `POST /v2/payments/{id}/void` | Void authorization | [Void Payment](https://developers.cash.app/cash-app-afterpay/reference/void-payment) |
 | `GET /api/afterpay/payment/[id]` | `GET /v2/payments/{id}` | Get payment details | [Get Payment](https://developers.cash.app/cash-app-afterpay/reference/get-payment) |
 | `POST /api/afterpay/configuration` | `GET /v2/configuration` | Get merchant config | [Get Configuration](https://developers.cash.app/cash-app-afterpay/reference/get-configuration) |
+| `POST /api/webhooks/afterpay` | - | Receive webhook events (demo) | [Webhook Events](https://developers.afterpay.com/afterpay-online/reference/webhook-events) |
+| `GET /api/webhooks/afterpay` | - | Webhook health check | - |
 
 **API Base URL (Sandbox)**: `https://global-api-sandbox.afterpay.com`
 
 ## Testing
+
+### Unit Tests
+
+Run the test suite:
+
+```bash
+npm test              # Run all tests
+npm run test:watch    # Watch mode
+npm run test:coverage # Coverage report
+```
+
+Current coverage: **55 tests, 99.63% statement coverage** on lib utilities.
+
+### Sandbox Testing
 
 Use Afterpay's sandbox test accounts to complete checkout flows:
 
@@ -267,6 +317,40 @@ The demo features a polished, distinctive UI built on Afterpay's brand colors wi
 - System preference detection
 - Persisted to localStorage
 - Mint accent colors preserved in dark theme
+
+## Roadmap
+
+### Completed
+- [x] Express Checkout with integrated/deferred shipping
+- [x] Standard Checkout with redirect/popup modes
+- [x] Payment Admin Panel with capture/refund/void
+- [x] Developer Panel with cURL/HAR export
+- [x] Order History with localStorage persistence
+- [x] Webhook Handler Demo
+- [x] Error Boundaries for graceful error handling
+- [x] Jest Test Suite (55 tests, 99.63% coverage)
+- [x] Security: Input validation with Zod
+- [x] Security: Error message sanitization
+- [x] Security: HTTP security headers
+
+### In Progress / Planned
+
+#### Security Enhancements
+- [ ] **S2: Authentication middleware** - Add session-based auth for sensitive API routes
+- [ ] **S5: CSRF protection** - Add CSRF tokens for state-changing operations
+- [ ] **S9: Rate limiting** - Prevent API abuse with request throttling
+
+#### Feature Enhancements
+- [ ] **E6: Mobile-optimized views** - Better responsive design for Developer Panel and Admin
+- [ ] **E7: Analytics/event tracking demo** - Show checkout funnel tracking patterns
+- [ ] **E8: Multi-currency support** - Demonstrate international merchant capabilities
+- [ ] **E12: i18n/Localization** - Multi-language support
+
+#### Testing & Quality
+- [ ] **E2: Integration tests** - End-to-end checkout flow tests
+- [ ] **Component tests** - React Testing Library tests for UI components
+
+See [docs/plans/2026-02-04-app-analysis-and-roadmap.md](./docs/plans/2026-02-04-app-analysis-and-roadmap.md) for detailed implementation plans.
 
 ## License
 
