@@ -64,13 +64,13 @@ export default function ProductDetailPage() {
 
         {/* Product Info */}
         <div>
-          <p className="text-xs font-medium text-afterpay-gray-400 uppercase tracking-wider mb-2">
+          <p className="text-xs font-medium text-afterpay-gray-500 dark:text-afterpay-gray-400 uppercase tracking-wider mb-2">
             {product.category}
           </p>
           <h1 className="font-display text-4xl font-bold text-afterpay-black dark:text-white mb-4">
             {product.name}
           </h1>
-          <p className="text-afterpay-gray-600 mb-6">{product.description}</p>
+          <p className="text-afterpay-gray-600 dark:text-afterpay-gray-300 mb-6">{product.description}</p>
 
           {/* Price */}
           <div className="mb-4">
@@ -91,7 +91,7 @@ export default function ProductDetailPage() {
           </div>
 
           {/* SKU */}
-          <p className="text-sm text-afterpay-gray-500 mb-6">
+          <p className="text-sm text-afterpay-gray-500 dark:text-afterpay-gray-400 mb-6">
             SKU: {product.sku}
           </p>
 
@@ -121,8 +121,8 @@ export default function ProductDetailPage() {
 
           {/* Features */}
           <div className="mt-8 pt-8 border-t border-afterpay-gray-200 dark:border-afterpay-gray-700">
-            <h3 className="font-medium mb-4">Why shop with Afterpay?</h3>
-            <ul className="space-y-3 text-sm text-afterpay-gray-600">
+            <h3 className="font-medium mb-4 dark:text-white">Why shop with Afterpay?</h3>
+            <ul className="space-y-3 text-sm text-afterpay-gray-600 dark:text-afterpay-gray-300">
               <li className="flex items-center">
                 <svg
                   className="w-5 h-5 text-afterpay-mint mr-2"

@@ -63,6 +63,13 @@ export function clearOrders(): void {
   localStorage.removeItem(ORDERS_STORAGE_KEY);
 }
 
+export function deleteOrder(orderId: string): void {
+  if (typeof window === 'undefined') return;
+  const orders = getOrders();
+  const filtered = orders.filter(o => o.orderId !== orderId);
+  localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(filtered));
+}
+
 export function formatOrderDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',

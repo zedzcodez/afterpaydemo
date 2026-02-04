@@ -141,6 +141,17 @@ function ReviewContent() {
         orderId = data.id;
       }
 
+      // Store cart data in sessionStorage before clearing (for confirmation page)
+      sessionStorage.setItem('afterpay_pending_order', JSON.stringify({
+        items: items.map(item => ({
+          productId: item.product.id,
+          productName: item.product.name,
+          quantity: item.quantity,
+          price: item.product.price,
+        })),
+        total: total,
+      }));
+
       // Clear cart and redirect to confirmation
       clearCart();
 

@@ -330,6 +330,19 @@ export function CheckoutExpress({ onLog, onLogUpdate, initialShippingFlow }: Che
                   orderId = data.id;
                 }
 
+                // Store cart data in sessionStorage before redirecting (for confirmation page)
+                const currentItems = itemsRef.current;
+                const currentTotal = totalRef.current;
+                sessionStorage.setItem('afterpay_pending_order', JSON.stringify({
+                  items: currentItems.map(item => ({
+                    productId: item.product.id,
+                    productName: item.product.name,
+                    quantity: item.quantity,
+                    price: item.product.price,
+                  })),
+                  total: currentTotal,
+                }));
+
                 const flowSuffix = isImmediateCapture ? "immediate" : "deferred";
                 addFlowLog({
                   type: "redirect",
@@ -370,6 +383,19 @@ export function CheckoutExpress({ onLog, onLogUpdate, initialShippingFlow }: Che
             });
 
             if (event.data.status === "SUCCESS") {
+              // Store cart data in sessionStorage for shipping page
+              const currentItems = itemsRef.current;
+              const currentTotal = totalRef.current;
+              sessionStorage.setItem('afterpay_checkout_cart', JSON.stringify({
+                items: currentItems.map(item => ({
+                  productId: item.product.id,
+                  productName: item.product.name,
+                  quantity: item.quantity,
+                  price: item.product.price,
+                })),
+                total: currentTotal,
+              }));
+
               const params = new URLSearchParams({
                 token: event.data.orderToken,
                 flow: "deferred",

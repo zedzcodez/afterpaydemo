@@ -38,20 +38,40 @@ function ConfirmationContent() {
       hasProcessed.current = true;
       const isCaptured = flow.endsWith("-immediate");
 
-      // Save order to localStorage before clearing cart
-      const cartItems = getStoredCart();
-      const orderItems: OrderItem[] = cartItems.map(item => ({
-        productId: item.product.id,
-        productName: item.product.name,
-        quantity: item.quantity,
-        price: item.product.price,
-      }));
+      // Try to get order data from sessionStorage first (set by review page for standard flow)
+      // Fall back to localStorage cart for express flow
+      let orderItems: OrderItem[] = [];
+      let orderTotal = 0;
+
+      const pendingOrderData = sessionStorage.getItem('afterpay_pending_order');
+      if (pendingOrderData) {
+        try {
+          const parsed = JSON.parse(pendingOrderData);
+          orderItems = parsed.items || [];
+          orderTotal = parsed.total || 0;
+          sessionStorage.removeItem('afterpay_pending_order');
+        } catch {
+          // Fall back to cart
+        }
+      }
+
+      // If no pending order data, try cart (for express flow)
+      if (orderItems.length === 0) {
+        const cartItems = getStoredCart();
+        orderItems = cartItems.map(item => ({
+          productId: item.product.id,
+          productName: item.product.name,
+          quantity: item.quantity,
+          price: item.product.price,
+        }));
+        orderTotal = calculateTotal(cartItems);
+      }
 
       const order: Order = {
         id: `local-${Date.now()}`,
         orderId,
         status: isCaptured ? "captured" : "authorized",
-        total: calculateTotal(cartItems),
+        total: orderTotal,
         items: orderItems,
         createdAt: new Date().toISOString(),
         flow,

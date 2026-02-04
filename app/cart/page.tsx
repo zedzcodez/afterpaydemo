@@ -73,7 +73,7 @@ export default function CartPage() {
                   >
                     {item.product.name}
                   </Link>
-                  <p className="text-sm text-afterpay-gray-500">
+                  <p className="text-sm text-afterpay-gray-500 dark:text-afterpay-gray-400">
                     {item.product.category}
                   </p>
                   <p className="font-medium mt-1">
@@ -142,19 +142,19 @@ export default function CartPage() {
         {/* Order Summary */}
         <div className="lg:col-span-1">
           <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-lg p-6 sticky top-24">
-            <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+            <h2 className="text-xl font-semibold mb-4 dark:text-white">Order Summary</h2>
 
             <div className="space-y-3 mb-6">
-              <div className="flex justify-between text-afterpay-gray-600">
+              <div className="flex justify-between text-afterpay-gray-600 dark:text-afterpay-gray-300">
                 <span>Subtotal</span>
                 <span>{formatPrice(total)}</span>
               </div>
-              <div className="flex justify-between text-afterpay-gray-600">
+              <div className="flex justify-between text-afterpay-gray-600 dark:text-afterpay-gray-300">
                 <span>Shipping</span>
                 <span>Calculated at checkout</span>
               </div>
               <div className="border-t border-afterpay-gray-200 dark:border-afterpay-gray-700 pt-3">
-                <div className="flex justify-between text-lg font-semibold">
+                <div className="flex justify-between text-lg font-semibold dark:text-white">
                   <span>Total</span>
                   <span>{formatPrice(total)}</span>
                 </div>
@@ -181,7 +181,7 @@ export default function CartPage() {
 
             <Link
               href="/"
-              className="block w-full mt-3 py-3 px-6 text-afterpay-gray-600 text-center hover:text-afterpay-black transition-colors"
+              className="block w-full mt-3 py-3 px-6 text-afterpay-gray-600 dark:text-afterpay-gray-400 text-center hover:text-afterpay-black dark:hover:text-white transition-colors"
             >
               Continue Shopping
             </Link>

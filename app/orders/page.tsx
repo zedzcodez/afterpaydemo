@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getOrders, clearOrders, formatOrderDate, Order } from "@/lib/orders";
+import { getOrders, clearOrders, deleteOrder, formatOrderDate, Order } from "@/lib/orders";
 import { formatPrice } from "@/lib/products";
 
 function OrderStatusBadge({ status }: { status: Order["status"] }) {
@@ -37,8 +37,9 @@ function CaptureModeTag({ mode }: { mode: "deferred" | "immediate" }) {
   );
 }
 
-function OrderCard({ order }: { order: Order }) {
+function OrderCard({ order, onDelete }: { order: Order; onDelete: (orderId: string) => void }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   return (
     <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 overflow-hidden">
@@ -122,7 +123,7 @@ function OrderCard({ order }: { order: Order }) {
           )}
 
           {/* Actions */}
-          <div className="flex gap-3">
+          <div className="flex items-center justify-between">
             <Link
               href={`/admin?orderId=${order.orderId}`}
               className="inline-flex items-center gap-1 text-sm font-medium text-afterpay-black dark:text-afterpay-mint hover:underline"
@@ -149,6 +150,46 @@ function OrderCard({ order }: { order: Order }) {
               </svg>
               Manage in Admin
             </Link>
+
+            {/* Delete Button */}
+            {showDeleteConfirm ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-afterpay-gray-500 dark:text-afterpay-gray-400">Delete?</span>
+                <button
+                  onClick={() => onDelete(order.orderId)}
+                  className="px-2 py-1 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition-colors"
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-2 py-1 bg-afterpay-gray-200 dark:bg-afterpay-gray-600 text-afterpay-gray-700 dark:text-afterpay-gray-300 text-xs font-medium rounded hover:bg-afterpay-gray-300 dark:hover:bg-afterpay-gray-500 transition-colors"
+                >
+                  No
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="inline-flex items-center gap-1 text-sm text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+                Delete
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -170,6 +211,11 @@ export default function OrdersPage() {
     clearOrders();
     setOrders([]);
     setShowClearConfirm(false);
+  };
+
+  const handleDeleteOrder = (orderId: string) => {
+    deleteOrder(orderId);
+    setOrders(orders.filter(o => o.orderId !== orderId));
   };
 
   if (!mounted) {
@@ -254,7 +300,7 @@ export default function OrdersPage() {
         {orders.length > 0 ? (
           <div className="space-y-4">
             {orders.map((order) => (
-              <OrderCard key={order.id} order={order} />
+              <OrderCard key={order.id} order={order} onDelete={handleDeleteOrder} />
             ))}
           </div>
         ) : (

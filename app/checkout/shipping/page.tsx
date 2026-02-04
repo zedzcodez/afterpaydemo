@@ -67,20 +67,36 @@ function ShippingContent() {
   const [orderToken, setOrderToken] = useState<string | null>(null);
   const [widgetReady, setWidgetReady] = useState(false);
   const [checksum, setChecksum] = useState<string | null>(null);
+  const [storedCartTotal, setStoredCartTotal] = useState<number | null>(null);
 
   const widgetRef = useRef<PaymentScheduleWidget | null>(null);
   const widgetInitialized = useRef(false);
 
-  const finalTotal = total + selectedShipping.price;
+  // Use stored cart total from sessionStorage, fallback to cart context
+  const cartTotal = storedCartTotal ?? total;
+  const finalTotal = cartTotal + selectedShipping.price;
+
+  // Load stored cart data on mount
+  useEffect(() => {
+    const storedData = sessionStorage.getItem('afterpay_checkout_cart');
+    if (storedData) {
+      try {
+        const parsed = JSON.parse(storedData);
+        setStoredCartTotal(parsed.total || 0);
+      } catch {
+        // Fall back to cart context
+      }
+    }
+  }, []);
 
   // Initialize the widget when token is available
-  const initializeWidget = useCallback((token: string) => {
+  const initializeWidget = useCallback((token: string, baseTotal: number) => {
     if (widgetInitialized.current || !window.AfterPay) return;
 
     widgetInitialized.current = true;
 
     const initialAmount = {
-      amount: (total + SHIPPING_OPTIONS[0].price).toFixed(2),
+      amount: (baseTotal + SHIPPING_OPTIONS[0].price).toFixed(2),
       currency: "USD"
     };
 
@@ -129,7 +145,7 @@ function ShippingContent() {
     } catch (err) {
       console.error("Failed to initialize widget:", err);
     }
-  }, [total]);
+  }, []);
 
   useEffect(() => {
     const token = searchParams.get("token");
@@ -142,20 +158,25 @@ function ShippingContent() {
         label: "Customer returned for shipping selection",
         data: { flow: "deferred", token: token.substring(0, 20) + "..." },
       });
-
-      // Wait for AfterPay to be available, then initialize widget
-      const checkAndInit = () => {
-        if (window.AfterPay) {
-          initializeWidget(token);
-        } else {
-          setTimeout(checkAndInit, 100);
-        }
-      };
-      checkAndInit();
     } else {
       setError("Invalid checkout session");
     }
-  }, [searchParams, initializeWidget]);
+  }, [searchParams]);
+
+  // Initialize widget only after we have the stored cart total
+  useEffect(() => {
+    if (!orderToken || storedCartTotal === null) return;
+
+    // Wait for AfterPay to be available, then initialize widget
+    const checkAndInit = () => {
+      if (window.AfterPay) {
+        initializeWidget(orderToken, storedCartTotal);
+      } else {
+        setTimeout(checkAndInit, 100);
+      }
+    };
+    checkAndInit();
+  }, [orderToken, storedCartTotal, initializeWidget]);
 
   // Update widget when shipping option changes
   useEffect(() => {
@@ -298,6 +319,30 @@ function ShippingContent() {
         }
       }
 
+      // Store cart data in sessionStorage before clearing (for confirmation page)
+      // Use stored cart data if available, otherwise use cart context
+      const storedCartData = sessionStorage.getItem('afterpay_checkout_cart');
+      let orderItems = items.map(item => ({
+        productId: item.product.id,
+        productName: item.product.name,
+        quantity: item.quantity,
+        price: item.product.price,
+      }));
+      if (storedCartData && orderItems.length === 0) {
+        try {
+          const parsed = JSON.parse(storedCartData);
+          orderItems = parsed.items || [];
+        } catch {
+          // Use empty items
+        }
+      }
+      sessionStorage.setItem('afterpay_pending_order', JSON.stringify({
+        items: orderItems,
+        total: cartTotal + selectedShipping.price,
+      }));
+      // Clean up the checkout cart data
+      sessionStorage.removeItem('afterpay_checkout_cart');
+
       // Clear cart and redirect to confirmation
       clearCart();
 
@@ -358,29 +403,6 @@ function ShippingContent() {
         <p className="text-afterpay-gray-600">
           Choose your preferred shipping option to complete your order.
         </p>
-      </div>
-
-      {/* Afterpay Payment Schedule Widget */}
-      <div className="bg-white border border-afterpay-gray-200 rounded-lg overflow-hidden mb-6">
-        <div className="px-6 py-4 bg-afterpay-mint/20 border-b border-afterpay-mint">
-          <div className="flex items-center gap-3">
-            <span className="bg-afterpay-mint text-afterpay-black px-2 py-1 rounded text-sm font-bold">
-              Afterpay
-            </span>
-            <span className="font-medium">Payment Schedule</span>
-          </div>
-        </div>
-        <div className="p-6">
-          {/* Widget container */}
-          <div id="afterpay-widget" className="min-h-[100px]">
-            {!widgetReady && (
-              <div className="flex items-center justify-center py-4">
-                <div className="animate-spin w-6 h-6 border-2 border-afterpay-mint border-t-transparent rounded-full mr-3" />
-                <span className="text-afterpay-gray-600">Loading payment schedule...</span>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* Order Summary */}
@@ -450,6 +472,29 @@ function ShippingContent() {
               <span className="font-medium">{formatPrice(option.price)}</span>
             </label>
           ))}
+        </div>
+      </div>
+
+      {/* Afterpay Payment Schedule Widget */}
+      <div className="bg-white border border-afterpay-gray-200 rounded-lg overflow-hidden mb-6">
+        <div className="px-6 py-4 bg-afterpay-mint/20 border-b border-afterpay-mint">
+          <div className="flex items-center gap-3">
+            <span className="bg-afterpay-mint text-afterpay-black px-2 py-1 rounded text-sm font-bold">
+              Afterpay
+            </span>
+            <span className="font-medium">Payment Schedule</span>
+          </div>
+        </div>
+        <div className="p-6">
+          {/* Widget container */}
+          <div id="afterpay-widget" className="min-h-[100px]">
+            {!widgetReady && (
+              <div className="flex items-center justify-center py-4">
+                <div className="animate-spin w-6 h-6 border-2 border-afterpay-mint border-t-transparent rounded-full mr-3" />
+                <span className="text-afterpay-gray-600">Loading payment schedule...</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
