@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { formatPrice } from "@/lib/products";
 import { FlowLogsDevPanel } from "@/components/FlowLogsDevPanel";
@@ -99,8 +100,11 @@ interface MerchantConfiguration {
   usingCustomCredentials?: boolean;
 }
 
-export default function AdminPage() {
-  const [orderId, setOrderId] = useState("");
+function AdminContent() {
+  const searchParams = useSearchParams();
+  const urlOrderId = searchParams.get("orderId");
+
+  const [orderId, setOrderId] = useState(urlOrderId || "");
   const [payment, setPayment] = useState<PaymentDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -109,6 +113,7 @@ export default function AdminPage() {
   const [activeAction, setActiveAction] = useState<ActionType | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [captureMode, setCaptureMode] = useState<CaptureMode>("deferred");
+  const [hasAutoLoaded, setHasAutoLoaded] = useState(false);
 
   // Custom credentials state
   const [useCustomCredentials, setUseCustomCredentials] = useState(false);
@@ -129,6 +134,56 @@ export default function AdminPage() {
     // Load default configuration on mount
     fetchConfiguration();
   }, []);
+
+  // Auto-lookup payment if orderId is provided in URL params
+  useEffect(() => {
+    if (urlOrderId && !hasAutoLoaded) {
+      setHasAutoLoaded(true);
+      // Trigger lookup asynchronously
+      const autoLookup = async () => {
+        setIsLoading(true);
+        setError(null);
+
+        addFlowLog({
+          type: "api_request",
+          label: "Get Payment Details (Auto)",
+          method: "GET",
+          endpoint: `/api/afterpay/payment/${urlOrderId} → /v2/payments/${urlOrderId}`,
+          data: { orderId: urlOrderId },
+        });
+
+        const startTime = Date.now();
+
+        try {
+          const response = await fetch(`/api/afterpay/payment/${urlOrderId}`);
+          const data = await response.json();
+          const duration = Date.now() - startTime;
+
+          addFlowLog({
+            type: "api_response",
+            label: "Payment Details",
+            method: "GET",
+            endpoint: `/v2/payments/${urlOrderId}`,
+            status: response.status,
+            data: data,
+            duration,
+          });
+
+          if (data.error) {
+            throw new Error(data.error);
+          }
+
+          setPayment(data);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Failed to lookup payment");
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      autoLookup();
+    }
+  }, [urlOrderId, hasAutoLoaded]);
 
   // Fetch merchant configuration
   const fetchConfiguration = async (merchantId?: string, secretKey?: string) => {
@@ -1002,5 +1057,22 @@ export default function AdminPage() {
       {/* Developer Panel */}
       <FlowLogsDevPanel />
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-afterpay-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin w-12 h-12 border-4 border-afterpay-mint border-t-transparent rounded-full mx-auto mb-4" />
+            <p className="text-afterpay-gray-600">Loading Admin Panel...</p>
+          </div>
+        </div>
+      }
+    >
+      <AdminContent />
+    </Suspense>
   );
 }

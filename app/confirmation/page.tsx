@@ -237,7 +237,7 @@ function ConfirmationContent() {
                 within 13 days using the Admin Panel.
               </p>
               <Link
-                href="/admin"
+                href={`/admin?orderId=${orderDetails.orderId}`}
                 className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium mt-2"
               >
                 Go to Admin Panel
