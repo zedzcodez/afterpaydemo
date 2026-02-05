@@ -393,6 +393,10 @@ The demo features a polished, distinctive UI built on Afterpay's brand colors wi
 
 See [docs/plans/roadmap.md](./docs/plans/roadmap.md) for detailed implementation plans.
 
+## Author
+
+**[@zedzcodez](https://github.com/zedzcodez)**
+
 ## License
 
 MIT

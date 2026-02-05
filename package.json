@@ -1,7 +1,15 @@
 {
   "name": "afterpay-demo-v2",
-  "version": "0.1.0",
+  "version": "2.6.0",
   "private": true,
+  "author": {
+    "name": "zedzcodez",
+    "url": "https://github.com/zedzcodez"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zedzcodez/afterpaydemo"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
