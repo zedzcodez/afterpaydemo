@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 import Link from "next/link";
 
 type DocTab = "readme" | "how-to-use";
@@ -171,6 +172,16 @@ const MarkdownComponents = {
     </blockquote>
   ),
   hr: () => <hr className="my-8 border-afterpay-gray-200 dark:border-afterpay-gray-700" />,
+  details: ({ children, ...props }: React.HTMLAttributes<HTMLDetailsElement>) => (
+    <details className="my-4 rounded-lg border border-afterpay-gray-200 dark:border-afterpay-gray-700 bg-afterpay-gray-50/50 dark:bg-afterpay-gray-800/50" {...props}>
+      {children}
+    </details>
+  ),
+  summary: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => (
+    <summary className="px-4 py-3 cursor-pointer font-medium text-afterpay-black dark:text-white hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-700/50 rounded-lg transition-colors select-none" {...props}>
+      {children}
+    </summary>
+  ),
 };
 
 export default function DocsPage() {
@@ -360,6 +371,7 @@ export default function DocsPage() {
               <article className="prose-article">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
                   components={MarkdownComponents}
                 >
                   {content || "No content available."}
