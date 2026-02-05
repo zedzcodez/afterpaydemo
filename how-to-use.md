@@ -8,7 +8,7 @@ This guide walks you through testing all features of the Afterpay Demo Shop, wit
 
 | Feature | What It Does | Demo URL | Afterpay Docs |
 |---------|--------------|----------|---------------|
-| On-Site Messaging | "Pay in 4" installment badges | `/products/1` | [OSM Guide](https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging) |
+| On-Site Messaging | "Pay in 4" or "Pay Monthly" badges | `/products/1` | [OSM Guide](https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging) |
 | Express Checkout | Popup checkout with shipping options | `/checkout` | [Express Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout) |
 | Standard Checkout | Redirect or popup to Afterpay | `/checkout` | [API Quickstart](https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart) |
 | Deferred Capture | Authorize now, capture later | `/admin` | [Deferred Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart/deferred-capture) |
@@ -98,7 +98,7 @@ See [Test Customer Accounts](https://developers.cash.app/cash-app-afterpay/guide
 ## On-Site Messaging (OSM)
 
 ### What It Does
-Displays "Pay in 4 interest-free payments of $X.XX" badges to inform customers about Afterpay availability.
+Displays "Pay in 4 interest-free payments of $X.XX" badges (or "Pay Monthly" messaging, if the feature is enabled for the merchant account) to inform customers about Afterpay availability.
 
 ### Where to Test
 
