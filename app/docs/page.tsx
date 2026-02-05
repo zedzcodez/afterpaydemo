@@ -13,48 +13,8 @@ interface TocItem {
   level: number;
 }
 
-// ID generator class to ensure consistent unique IDs
-class HeadingIdGenerator {
-  private idCounts: Record<string, number> = {};
-
-  reset() {
-    this.idCounts = {};
-  }
-
-  generateId(text: string): string {
-    const baseId = text
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/\s+/g, "-");
-
-    const count = this.idCounts[baseId] || 0;
-    const id = count === 0 ? baseId : `${baseId}-${count}`;
-    this.idCounts[baseId] = count + 1;
-
-    return id;
-  }
-}
-
-// Recursively extract plain text from React children
-function getPlainText(children: React.ReactNode): string {
-  if (typeof children === 'string') return children;
-  if (typeof children === 'number') return String(children);
-  if (!children) return '';
-  if (Array.isArray(children)) {
-    return children.map(getPlainText).join('');
-  }
-  if (React.isValidElement(children)) {
-    const element = children as React.ReactElement<{ children?: React.ReactNode }>;
-    if (element.props?.children) {
-      return getPlainText(element.props.children);
-    }
-  }
-  return '';
-}
-
 // Extract headings from markdown for table of contents
-function extractHeadings(markdown: string, idGenerator: HeadingIdGenerator): TocItem[] {
-  idGenerator.reset();
+function extractHeadings(markdown: string): TocItem[] {
   const headingRegex = /^(#{1,3})\s+(.+)$/gm;
   const headings: TocItem[] = [];
   let match;
@@ -62,152 +22,155 @@ function extractHeadings(markdown: string, idGenerator: HeadingIdGenerator): Toc
   while ((match = headingRegex.exec(markdown)) !== null) {
     const level = match[1].length;
     const text = match[2].trim();
-    const id = idGenerator.generateId(text);
+    const id = text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-");
     headings.push({ id, text, level });
   }
 
   return headings;
 }
 
-// Create markdown components with shared ID generator
-function createMarkdownComponents(idGenerator: HeadingIdGenerator) {
-  // Reset the generator before rendering to ensure IDs match TOC
-  idGenerator.reset();
-
-  return {
-    h1: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
-      const id = idGenerator.generateId(getPlainText(children));
+// Custom components for markdown rendering
+const MarkdownComponents = {
+  h1: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
+    const id = String(children)
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-");
+    return (
+      <h1 id={id} className="scroll-mt-24 text-3xl sm:text-4xl font-display font-bold text-afterpay-black dark:text-white mt-12 mb-6 first:mt-0" {...props}>
+        {children}
+      </h1>
+    );
+  },
+  h2: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
+    const id = String(children)
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-");
+    return (
+      <h2 id={id} className="scroll-mt-24 text-2xl font-display font-bold text-afterpay-black dark:text-white mt-12 mb-4 pb-3 border-b border-afterpay-gray-200 dark:border-afterpay-gray-700" {...props}>
+        {children}
+      </h2>
+    );
+  },
+  h3: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
+    const id = String(children)
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-");
+    return (
+      <h3 id={id} className="scroll-mt-24 text-xl font-display font-semibold text-afterpay-black dark:text-white mt-8 mb-3" {...props}>
+        {children}
+      </h3>
+    );
+  },
+  p: ({ children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
+    <p className="text-afterpay-gray-700 dark:text-afterpay-gray-300 leading-relaxed mb-4" {...props}>
+      {children}
+    </p>
+  ),
+  ul: ({ children, ...props }: React.HTMLAttributes<HTMLUListElement>) => (
+    <ul className="list-disc list-outside ml-6 mb-4 space-y-2 text-afterpay-gray-700 dark:text-afterpay-gray-300" {...props}>
+      {children}
+    </ul>
+  ),
+  ol: ({ children, ...props }: React.HTMLAttributes<HTMLOListElement>) => (
+    <ol className="list-decimal list-outside ml-6 mb-4 space-y-2 text-afterpay-gray-700 dark:text-afterpay-gray-300" {...props}>
+      {children}
+    </ol>
+  ),
+  li: ({ children, ...props }: React.HTMLAttributes<HTMLLIElement>) => (
+    <li className="leading-relaxed" {...props}>
+      {children}
+    </li>
+  ),
+  a: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+    <a
+      href={href}
+      className="text-afterpay-mint hover:text-afterpay-mint-dark underline underline-offset-2 decoration-afterpay-mint/50 hover:decoration-afterpay-mint transition-colors"
+      target={href?.startsWith("http") ? "_blank" : undefined}
+      rel={href?.startsWith("http") ? "noopener noreferrer" : undefined}
+      {...props}
+    >
+      {children}
+    </a>
+  ),
+  code: ({ className, children, ...props }: React.HTMLAttributes<HTMLElement>) => {
+    const isInline = !className;
+    if (isInline) {
       return (
-        <h1 id={id} className="scroll-mt-24 text-3xl sm:text-4xl font-display font-bold text-afterpay-black dark:text-white mt-12 mb-6 first:mt-0" {...props}>
-          {children}
-        </h1>
-      );
-    },
-    h2: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
-      const id = idGenerator.generateId(getPlainText(children));
-      return (
-        <h2 id={id} className="scroll-mt-24 text-2xl font-display font-bold text-afterpay-black dark:text-white mt-12 mb-4 pb-3 border-b border-afterpay-gray-200 dark:border-afterpay-gray-700" {...props}>
-          {children}
-        </h2>
-      );
-    },
-    h3: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
-      const id = idGenerator.generateId(getPlainText(children));
-      return (
-        <h3 id={id} className="scroll-mt-24 text-xl font-display font-semibold text-afterpay-black dark:text-white mt-8 mb-3" {...props}>
-          {children}
-        </h3>
-      );
-    },
-    p: ({ children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
-      <p className="text-afterpay-gray-700 dark:text-afterpay-gray-300 leading-relaxed mb-4" {...props}>
-        {children}
-      </p>
-    ),
-    ul: ({ children, ...props }: React.HTMLAttributes<HTMLUListElement>) => (
-      <ul className="list-disc list-outside ml-6 mb-4 space-y-2 text-afterpay-gray-700 dark:text-afterpay-gray-300" {...props}>
-        {children}
-      </ul>
-    ),
-    ol: ({ children, ...props }: React.HTMLAttributes<HTMLOListElement>) => (
-      <ol className="list-decimal list-outside ml-6 mb-4 space-y-2 text-afterpay-gray-700 dark:text-afterpay-gray-300" {...props}>
-        {children}
-      </ol>
-    ),
-    li: ({ children, ...props }: React.HTMLAttributes<HTMLLIElement>) => (
-      <li className="leading-relaxed" {...props}>
-        {children}
-      </li>
-    ),
-    a: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
-      <a
-        href={href}
-        className="text-teal-600 dark:text-afterpay-mint hover:text-teal-700 dark:hover:text-afterpay-mint-dark underline underline-offset-2 decoration-teal-400/50 dark:decoration-afterpay-mint/50 hover:decoration-teal-600 dark:hover:decoration-afterpay-mint transition-colors"
-        target={href?.startsWith("http") ? "_blank" : undefined}
-        rel={href?.startsWith("http") ? "noopener noreferrer" : undefined}
-        {...props}
-      >
-        {children}
-      </a>
-    ),
-    code: ({ className, children, ...props }: React.HTMLAttributes<HTMLElement>) => {
-      const isInline = !className;
-      if (isInline) {
-        return (
-          <code className="px-1.5 py-0.5 bg-afterpay-gray-100 dark:bg-afterpay-gray-800 text-afterpay-gray-800 dark:text-afterpay-gray-200 rounded text-sm font-mono" {...props}>
-            {children}
-          </code>
-        );
-      }
-      // Block code inside pre - use light text color for dark background
-      return (
-        <code className="text-slate-200 font-mono" {...props}>
+        <code className="px-1.5 py-0.5 bg-afterpay-gray-100 dark:bg-afterpay-gray-800 text-afterpay-gray-800 dark:text-afterpay-gray-200 rounded text-sm font-mono" {...props}>
           {children}
         </code>
       );
-    },
-    pre: ({ children, ...props }: React.HTMLAttributes<HTMLPreElement> & { children?: React.ReactNode }) => {
-      const getCodeText = (): string => {
-        if (React.isValidElement(children)) {
-          const childElement = children as React.ReactElement<{ children?: React.ReactNode }>;
-          if (childElement.props?.children) {
-            return String(childElement.props.children);
-          }
+    }
+    return (
+      <code className={className} {...props}>
+        {children}
+      </code>
+    );
+  },
+  pre: ({ children, ...props }: React.HTMLAttributes<HTMLPreElement> & { children?: React.ReactNode }) => {
+    const getCodeText = (): string => {
+      if (React.isValidElement(children)) {
+        const childElement = children as React.ReactElement<{ children?: React.ReactNode }>;
+        if (childElement.props?.children) {
+          return String(childElement.props.children);
         }
-        return String(children || "");
-      };
-      return (
-        <pre className="relative group mb-6 rounded-xl bg-slate-800 dark:bg-slate-900 border border-slate-700 dark:border-slate-800 overflow-hidden" {...props}>
-          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={() => {
-                const code = getCodeText();
-                if (code) navigator.clipboard.writeText(code);
-              }}
-              className="px-2 py-1 text-xs font-medium text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-600 rounded transition-colors"
-            >
-              Copy
-            </button>
-          </div>
-          <div className="p-4 overflow-x-auto text-sm text-slate-200">
-            {children}
-          </div>
-        </pre>
-      );
-    },
-    table: ({ children, ...props }: React.HTMLAttributes<HTMLTableElement>) => (
-      <div className="mb-6 overflow-x-auto rounded-lg border border-afterpay-gray-200 dark:border-afterpay-gray-700">
-        <table className="w-full text-sm" {...props}>
+      }
+      return String(children || "");
+    };
+    return (
+      <pre className="relative group mb-6 rounded-xl bg-slate-900 dark:bg-slate-950 border border-slate-800 overflow-hidden" {...props}>
+        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => {
+              const code = getCodeText();
+              if (code) navigator.clipboard.writeText(code);
+            }}
+            className="px-2 py-1 text-xs font-medium text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded transition-colors"
+          >
+            Copy
+          </button>
+        </div>
+        <div className="p-4 overflow-x-auto text-sm">
           {children}
-        </table>
-      </div>
-    ),
-    thead: ({ children, ...props }: React.HTMLAttributes<HTMLTableSectionElement>) => (
-      <thead className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 border-b border-afterpay-gray-200 dark:border-afterpay-gray-700" {...props}>
+        </div>
+      </pre>
+    );
+  },
+  table: ({ children, ...props }: React.HTMLAttributes<HTMLTableElement>) => (
+    <div className="mb-6 overflow-x-auto rounded-lg border border-afterpay-gray-200 dark:border-afterpay-gray-700">
+      <table className="w-full text-sm" {...props}>
         {children}
-      </thead>
-    ),
-    th: ({ children, ...props }: React.HTMLAttributes<HTMLTableCellElement>) => (
-      <th className="px-4 py-3 text-left font-semibold text-afterpay-black dark:text-white" {...props}>
-        {children}
-      </th>
-    ),
-    td: ({ children, ...props }: React.HTMLAttributes<HTMLTableCellElement>) => (
-      <td className="px-4 py-3 text-afterpay-gray-700 dark:text-afterpay-gray-300 border-t border-afterpay-gray-200 dark:border-afterpay-gray-700" {...props}>
-        {children}
-      </td>
-    ),
-    blockquote: ({ children, ...props }: React.HTMLAttributes<HTMLQuoteElement>) => (
-      <blockquote className="border-l-4 border-afterpay-mint pl-4 py-1 my-4 text-afterpay-gray-600 dark:text-afterpay-gray-400 italic" {...props}>
-        {children}
-      </blockquote>
-    ),
-    hr: () => <hr className="my-8 border-afterpay-gray-200 dark:border-afterpay-gray-700" />,
-  };
-}
-
-// Shared ID generator instance
-const idGenerator = new HeadingIdGenerator();
+      </table>
+    </div>
+  ),
+  thead: ({ children, ...props }: React.HTMLAttributes<HTMLTableSectionElement>) => (
+    <thead className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 border-b border-afterpay-gray-200 dark:border-afterpay-gray-700" {...props}>
+      {children}
+    </thead>
+  ),
+  th: ({ children, ...props }: React.HTMLAttributes<HTMLTableCellElement>) => (
+    <th className="px-4 py-3 text-left font-semibold text-afterpay-black dark:text-white" {...props}>
+      {children}
+    </th>
+  ),
+  td: ({ children, ...props }: React.HTMLAttributes<HTMLTableCellElement>) => (
+    <td className="px-4 py-3 text-afterpay-gray-700 dark:text-afterpay-gray-300 border-t border-afterpay-gray-200 dark:border-afterpay-gray-700" {...props}>
+      {children}
+    </td>
+  ),
+  blockquote: ({ children, ...props }: React.HTMLAttributes<HTMLQuoteElement>) => (
+    <blockquote className="border-l-4 border-afterpay-mint pl-4 py-1 my-4 text-afterpay-gray-600 dark:text-afterpay-gray-400 italic" {...props}>
+      {children}
+    </blockquote>
+  ),
+  hr: () => <hr className="my-8 border-afterpay-gray-200 dark:border-afterpay-gray-700" />,
+};
 
 export default function DocsPage() {
   const [activeTab, setActiveTab] = useState<DocTab>("readme");
@@ -249,16 +212,9 @@ export default function DocsPage() {
   useEffect(() => {
     const content = activeTab === "readme" ? readmeContent : howToUseContent;
     if (content) {
-      setTocItems(extractHeadings(content, idGenerator));
+      setTocItems(extractHeadings(content));
     }
   }, [activeTab, readmeContent, howToUseContent]);
-
-  // Create markdown components with synchronized ID generator
-  const MarkdownComponents = React.useMemo(
-    () => createMarkdownComponents(idGenerator),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeTab, readmeContent, howToUseContent]
-  );
 
   // Track scroll position to highlight active section
   const handleScroll = useCallback(() => {
@@ -437,9 +393,9 @@ export default function DocsPage() {
                 </h4>
               </div>
               <nav className="space-y-1">
-                {tocItems.map((item, index) => (
+                {tocItems.map((item) => (
                   <button
-                    key={`${item.id}-${index}`}
+                    key={item.id}
                     onClick={() => scrollToSection(item.id)}
                     className={`
                       block w-full text-left text-sm py-1.5 transition-all duration-200 rounded
@@ -447,7 +403,7 @@ export default function DocsPage() {
                       ${item.level === 2 ? "pl-0" : ""}
                       ${item.level === 3 ? "pl-4" : ""}
                       ${activeSection === item.id
-                        ? "text-teal-600 dark:text-afterpay-mint font-medium"
+                        ? "text-afterpay-mint font-medium"
                         : "text-afterpay-gray-600 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white"
                       }
                     `}
