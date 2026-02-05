@@ -253,12 +253,13 @@ Current coverage: **55 tests, 99.63% statement coverage** on lib utilities.
 
 ### Sandbox Testing
 
-Use Afterpay's sandbox test accounts to complete checkout flows:
+#### Test Customer Accounts
 
-| Email | Phone | Result |
-|-------|-------|--------|
-| `approved@afterpay.com` | Any | Approved |
-| `declined@afterpay.com` | Any | Declined |
+You can create test customer accounts in the sandbox environment within your test checkout flow. Each customer account requires a unique email address and phone number.
+
+> **Note:** No SMS messages are sent in the sandbox. Use `111111` as the verification code.
+
+See [Test Customer Accounts](https://developers.cash.app/cash-app-afterpay/guides/api-development/test-environments#test-customer-accounts) and [Sandbox Business Hub](https://developers.cash.app/cash-app-afterpay/guides/api-development/test-environments#sandbox-business-hub) for more details.
 
 ### Test Credit Cards
 
