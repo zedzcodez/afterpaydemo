@@ -1,7 +1,7 @@
 # Afterpay Demo V2 - Release Summary
 
 **Date:** 2026-02-04
-**Version:** 1.0.0 (Security Hardening & Feature Enhancement Release)
+**Version:** 2.0.0 (Security Hardening, Features & Documentation Release)
 
 ---
 
@@ -81,6 +81,35 @@ This release completes Phase 1 (Security Hardening), Phase 3 (Testing Foundation
 | DevPanel resize | Added resize to legacy DevPanel component | `633c246` |
 | Dark mode | Full dark mode support on all pages | `a95eade` |
 | Type error | Fixed refund comparison logic in Admin | `ee49c61` |
+| Order history | Improved display, dark mode, individual deletion | `65be0be` |
+
+### UI/UX Enhancements (Latest)
+
+#### In-App Documentation (`/docs`)
+Premium documentation viewer with:
+- **Tabbed interface** - Switch between README and How-to-Use Guide
+- **Auto-generated TOC** - Sidebar navigation from markdown headings
+- **Section highlighting** - Active section tracked on scroll
+- **Quick links** - Fast access to Checkout Demo, Admin Panel, API Docs
+- **Premium typography** - Custom markdown components with elegant styling
+- **Dark mode support** - Full theme support throughout
+- **Mobile responsive** - Collapsible TOC sidebar on mobile
+
+#### Navigation Redesign
+- **Grouped navigation** - Demo (Shop, Checkout) | Tools (Admin, Orders, Docs)
+- **Mobile menu** - Slide-out drawer with grouped sections
+- **Active indicators** - Mint accent highlights current page
+- **Official branding** - Cash App Afterpay logo from CDN (light/dark variants)
+
+#### Developer Panel Updates
+- **Collapsed by default** - Panel starts closed to reduce visual noise
+- **Resizable** - Drag to adjust height, persisted to localStorage
+- **Reverse chronological** - Most recent events first
+
+#### Order History Updates
+- **Individual deletion** - Remove specific orders with trash icon
+- **Clear All** - Remove all orders at once
+- **Cart behavior** - Only cleared after successful payment authorization
 
 ---
 
@@ -92,6 +121,9 @@ __tests__/lib/errors.test.ts
 __tests__/lib/validation.test.ts
 __tests__/lib/products.test.ts
 app/api/webhooks/afterpay/route.ts
+app/api/docs/readme/route.ts
+app/api/docs/how-to-use/route.ts
+app/docs/page.tsx
 app/error.tsx
 app/checkout/error.tsx
 app/orders/page.tsx
@@ -166,8 +198,13 @@ README.md (documentation updates)
 | Error boundaries working | ✅ Verified |
 | Dark mode all pages | ✅ Verified |
 | Developer Panel resize | ✅ Verified |
+| Developer Panel starts collapsed | ✅ Verified |
 | Order history working | ✅ Verified |
+| Individual order deletion | ✅ Verified |
 | Webhook handler working | ✅ Verified |
+| In-app documentation | ✅ Verified |
+| Navigation redesign | ✅ Verified |
+| Official branding | ✅ Verified |
 
 ---
 
@@ -194,6 +231,14 @@ npm run build
 
 ## Documentation
 
+### In-App Documentation
+Access documentation directly within the app at `/docs`:
+- **README tab** - Project overview and setup instructions
+- **How to Use tab** - Detailed testing guide for all features
+- **Table of contents** - Auto-generated navigation sidebar
+- **Section highlighting** - Active section tracked on scroll
+
+### Documentation Files
 - [README.md](../../README.md) - Project overview and getting started
 - [how-to-use.md](../../how-to-use.md) - Detailed testing guide
 - [2026-02-04-app-analysis-and-roadmap.md](./2026-02-04-app-analysis-and-roadmap.md) - Full roadmap with task details
@@ -201,3 +246,4 @@ npm run build
 ---
 
 *Generated: 2026-02-04*
+*Updated: 2026-02-04 - Added documentation viewer, navigation redesign, and UI improvements*

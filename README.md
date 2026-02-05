@@ -39,12 +39,24 @@ Full payment management interface at `/admin`:
 Persistent order tracking at `/orders`:
 - View all completed orders with status badges
 - Order details including items, totals, and checkout flow used
+- **Individual order deletion** - Remove specific orders from history
 - Direct links to Admin Panel for order management
 - localStorage persistence (last 20 orders)
+- Cart is only cleared after successful payment authorization
+
+### In-App Documentation
+Access documentation directly within the app at `/docs`:
+- **README tab**: Project overview and setup instructions
+- **How to Use tab**: Detailed testing guide for all features
+- **Table of contents**: Auto-generated navigation sidebar
+- **Section highlighting**: Active section tracked on scroll
+- **Quick links**: Fast access to Checkout Demo, Admin Panel, and API docs
+- Full dark mode support with premium typography
 
 ### Developer Features
 - **Code Viewer**: Implementation snippets for each checkout method
 - **Developer Panel**: Enhanced API inspection tool with:
+  - **Collapsed by default**: Click the panel header to expand and view logs
   - **Resizable panel**: Drag the top edge to adjust height (persisted to localStorage)
   - Real-time request/response logging (reverse-chronological order)
   - **Full server-side request data**: See exactly what's sent to Afterpay APIs, including `merchantReference`, `merchant` URLs, and transformed payloads
@@ -60,9 +72,11 @@ Persistent order tracking at `/orders`:
 - **Official Afterpay Assets**: All checkout buttons use official Afterpay brand assets from CDN
 
 ### UI Features
+- **Official Branding**: Cash App Afterpay logo from CDN with dark/light mode variants
+- **Navigation**: Grouped navigation (Demo: Shop, Checkout | Tools: Admin, Orders, Docs) with mobile slide-out menu
 - **Dark Mode**: System preference detection with manual toggle, persisted to localStorage
 - **Checkout Progress Timeline**: Visual stepper showing Cart → Checkout → Shipping → Review → Confirm
-- **Micro-interactions**: Cart bounce animation on add, sliding tab indicators
+- **Micro-interactions**: Cart bounce animation on add, sliding tab indicators, active nav indicators
 - **Loading States**: Skeleton loaders for products, mint-colored spinners throughout
 - **Error Boundaries**: Graceful error handling with user-friendly fallback UI
 
@@ -150,6 +164,10 @@ If `popupOriginUrl` doesn't match `window.location.origin`, the browser won't di
   /confirmation/page.tsx        # Order confirmation with flow logs
   /orders/page.tsx              # Order history page
   /admin/page.tsx               # Payment management panel
+  /docs/page.tsx                # In-app documentation viewer
+  /api/docs
+    /readme/route.ts            # Serve README.md content
+    /how-to-use/route.ts        # Serve how-to-use.md content
   /api/afterpay
     /checkout/route.ts          # Create checkout
     /auth/route.ts              # Authorize payment
@@ -267,6 +285,7 @@ Or deploy directly:
 
 ## Documentation
 
+- **[In-App Documentation](/docs)** - View README and How-to-Use Guide within the app with TOC navigation
 - **[How to Use This Demo](./how-to-use.md)** - Detailed guide for testing all features
 - [Afterpay Developer Documentation](https://developers.cash.app/cash-app-afterpay)
 - [On-Site Messaging Guide](https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging)
@@ -324,14 +343,17 @@ The demo features a polished, distinctive UI built on Afterpay's brand colors wi
 - [x] Express Checkout with integrated/deferred shipping
 - [x] Standard Checkout with redirect/popup modes
 - [x] Payment Admin Panel with capture/refund/void
-- [x] Developer Panel with cURL/HAR export
-- [x] Order History with localStorage persistence
+- [x] Developer Panel with cURL/HAR export (collapsed by default)
+- [x] Order History with localStorage persistence and individual deletion
 - [x] Webhook Handler Demo
 - [x] Error Boundaries for graceful error handling
 - [x] Jest Test Suite (55 tests, 99.63% coverage)
 - [x] Security: Input validation with Zod
 - [x] Security: Error message sanitization
 - [x] Security: HTTP security headers
+- [x] In-App Documentation (`/docs`) with tabbed interface and TOC sidebar
+- [x] Navigation redesign with grouped items and mobile menu
+- [x] Official Cash App Afterpay branding
 
 ### In Progress / Planned
 

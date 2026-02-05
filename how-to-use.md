@@ -7,14 +7,17 @@ This guide walks you through testing all features of the Afterpay Demo Shop, wit
 1. [Quick Start](#quick-start)
 2. [Design System](#design-system)
 3. [Dark Mode](#dark-mode)
-4. [On-Site Messaging (OSM)](#on-site-messaging-osm)
-5. [Express Checkout](#express-checkout)
-6. [Standard Checkout](#standard-checkout)
-7. [Capture Modes](#capture-modes)
-8. [Custom API Credentials](#custom-api-credentials)
-9. [Payment Admin Panel](#payment-admin-panel)
-10. [Developer Tools](#developer-tools)
-11. [UI Components](#ui-components)
+4. [Navigation](#navigation)
+5. [On-Site Messaging (OSM)](#on-site-messaging-osm)
+6. [Express Checkout](#express-checkout)
+7. [Standard Checkout](#standard-checkout)
+8. [Capture Modes](#capture-modes)
+9. [Custom API Credentials](#custom-api-credentials)
+10. [Payment Admin Panel](#payment-admin-panel)
+11. [Order History](#order-history)
+12. [Developer Tools](#developer-tools)
+13. [In-App Documentation](#in-app-documentation)
+14. [UI Components](#ui-components)
 
 ---
 
@@ -167,6 +170,69 @@ const toggleTheme = () => {
 | Product Cards | Background, text, borders |
 | Form Inputs | Background, borders, text |
 | Checkout Pages | Background, cards |
+
+---
+
+## Navigation
+
+The demo features a redesigned header with grouped navigation and a mobile-friendly slide-out menu.
+
+### Desktop Navigation
+
+Navigation items are organized into two logical groups:
+
+| Group | Items | Purpose |
+|-------|-------|---------|
+| **Demo** | Shop, Checkout | Core shopping experience |
+| **Tools** | Admin, Orders, Docs | Developer and management tools |
+
+### Mobile Navigation
+
+On mobile devices (< 768px), the navigation collapses into a hamburger menu:
+
+1. Click the hamburger icon (☰) in the top-right
+2. Slide-out drawer appears from the right
+3. Navigation items shown in grouped sections
+4. Click outside or the × button to close
+
+### Active State Indicators
+
+- Current page is highlighted with mint accent color
+- Active nav items have a subtle mint background
+- Hover states provide visual feedback
+
+### Technical Details
+
+**Component:** `components/Header.tsx`
+
+**Implementation:**
+```tsx
+const demoNav = [
+  { href: "/", label: "Shop" },
+  { href: "/checkout", label: "Checkout" },
+];
+const toolsNav = [
+  { href: "/admin", label: "Admin" },
+  { href: "/orders", label: "Orders" },
+  { href: "/docs", label: "Docs" },
+];
+
+// Active state detection
+const isActive = (href: string) => {
+  if (href === "/") return pathname === "/";
+  return pathname.startsWith(href);
+};
+```
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| Grouped Navigation | Logical separation of demo vs tools |
+| Mobile Menu | Slide-out drawer on small screens |
+| Active Indicators | Mint highlight on current page |
+| Glass Effect | Backdrop blur on scroll (dark mode) |
+| Official Branding | Cash App Afterpay logo from CDN |
 
 ---
 
@@ -563,11 +629,94 @@ const getEffectiveStatus = () => {
 
 ---
 
+## Order History
+
+Track all completed orders with persistent storage and easy management.
+
+### URL: `/orders`
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| Order List | View all completed orders with status badges |
+| Order Details | Items, totals, checkout flow used, timestamps |
+| Individual Deletion | Remove specific orders from history |
+| Clear All | Remove all orders at once |
+| Admin Links | Direct links to Admin Panel for order management |
+| Persistence | Orders saved to localStorage (last 20 orders) |
+
+### How to Use
+
+#### Viewing Orders
+1. Navigate to `/orders` or click "Orders" in the navigation
+2. View list of completed orders with status badges
+3. Click an order to expand and see details
+
+#### Deleting Individual Orders
+1. Click on an order to expand it
+2. Click the trash icon (🗑️) next to the order
+3. Order is removed from history
+
+#### Clearing All Orders
+1. Click "Clear All" button at the top
+2. All orders are removed from localStorage
+
+#### Managing Orders in Admin
+1. Click "Manage in Admin" link on any order
+2. Opens Admin Panel with Order ID pre-filled
+3. Capture, refund, or void the payment
+
+### Technical Details
+
+**Files:**
+- `app/orders/page.tsx` - Order history UI
+- `lib/orders.ts` - Order persistence utilities
+
+**Storage:**
+```javascript
+// Orders stored in localStorage
+const STORAGE_KEY = 'afterpay_orders';
+const MAX_ORDERS = 20;
+
+// Order structure
+interface Order {
+  id: string;
+  orderId: string;
+  items: CartItem[];
+  subtotal: number;
+  shipping: number;
+  total: number;
+  status: 'authorized' | 'captured';
+  flow: string;  // e.g., "express-integrated", "standard-popup"
+  createdAt: string;
+}
+```
+
+### Cart Clearing Behavior
+
+The cart is only cleared after successful payment authorization:
+
+| Event | Cart Cleared? |
+|-------|---------------|
+| Checkout started | No |
+| Popup opened | No |
+| Popup cancelled | No |
+| Payment declined | No |
+| Payment authorized | **Yes** |
+| Payment captured | Already cleared |
+
+This ensures customers don't lose their cart if checkout is interrupted.
+
+---
+
 ## Developer Tools
 
 ### Developer Panel
 
 **What It Does:** A comprehensive API inspection tool that displays real-time API requests and responses during checkout flows.
+
+**Default State:** The panel starts **collapsed by default**. Click the panel header to expand and view logs.
 
 **Where to Find:**
 - Bottom of checkout pages (fixed panel)
@@ -649,6 +798,74 @@ const getEffectiveStatus = () => {
 | Developer Panel | `components/FlowLogsDevPanel.tsx` |
 | Code Viewer | `components/CodeViewer.tsx` |
 | API Routes (with metadata) | `app/api/afterpay/*` |
+
+---
+
+## In-App Documentation
+
+Access project documentation directly within the app with a premium reading experience.
+
+### URL: `/docs`
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| Tabbed Interface | Switch between README and How-to-Use Guide |
+| Table of Contents | Auto-generated sidebar navigation from headings |
+| Section Highlighting | Active section tracked as you scroll |
+| Quick Links | Fast access to Checkout Demo, Admin Panel, API Docs |
+| Premium Typography | Custom markdown rendering with elegant styling |
+| Dark Mode | Full dark mode support throughout |
+| Mobile Responsive | Collapsible TOC sidebar on mobile devices |
+
+### How to Use
+
+#### Navigating Documentation
+1. Go to `/docs` or click "Docs" in the navigation
+2. Select "README" or "How to Use" tab
+3. Use the sidebar to jump to specific sections
+4. Current section highlights as you scroll
+
+#### Using Quick Links
+The header includes quick access links:
+- **Checkout Demo** → `/checkout`
+- **Admin Panel** → `/admin`
+- **API Docs** → External Afterpay API documentation
+
+#### Mobile Navigation
+On mobile devices:
+1. Tap the menu icon to open the TOC sidebar
+2. Tap a section to navigate
+3. Sidebar closes automatically after selection
+
+### Technical Details
+
+**Files:**
+- `app/docs/page.tsx` - Documentation viewer UI
+- `app/api/docs/readme/route.ts` - Serves README.md content
+- `app/api/docs/how-to-use/route.ts` - Serves how-to-use.md content
+
+**Table of Contents Extraction:**
+```javascript
+function extractHeadings(markdown: string): TocItem[] {
+  const headingRegex = /^(#{1,3})\s+(.+)$/gm;
+  // Extracts h1, h2, h3 headings
+  // Generates IDs from heading text
+  // Returns array of { id, text, level }
+}
+```
+
+**Section Highlighting:**
+- Uses scroll event listener
+- Checks heading positions relative to viewport
+- Highlights the heading closest to top of screen
+
+**Custom Markdown Components:**
+- Premium styling for headings, paragraphs, lists
+- Syntax highlighting for code blocks
+- Styled tables with borders and zebra striping
+- Blockquotes with mint accent border
 
 ---
 
@@ -865,6 +1082,34 @@ Use this checklist to verify all features work correctly:
 - [ ] Product cards display correctly in dark mode
 - [ ] Form inputs readable in dark mode
 - [ ] Header glass effect works in dark mode
+
+### Navigation
+- [ ] Desktop shows grouped navigation (Demo | Tools)
+- [ ] Active page highlighted with mint accent
+- [ ] Mobile hamburger menu visible on small screens
+- [ ] Mobile menu slides in from right
+- [ ] Navigation items grouped in mobile menu
+- [ ] Official Afterpay logo displays correctly
+
+### Order History
+- [ ] Orders page accessible from navigation
+- [ ] Completed orders display with status badges
+- [ ] Order details expand on click
+- [ ] Individual orders can be deleted
+- [ ] Clear All removes all orders
+- [ ] Orders persist after page refresh
+- [ ] Admin links navigate to Admin Panel
+
+### In-App Documentation
+- [ ] Docs page accessible from navigation
+- [ ] README tab loads and displays correctly
+- [ ] How-to-Use tab loads and displays correctly
+- [ ] Table of contents generates from headings
+- [ ] Clicking TOC item scrolls to section
+- [ ] Active section highlights in TOC on scroll
+- [ ] Quick links navigate to correct pages
+- [ ] Dark mode displays correctly
+- [ ] Mobile TOC sidebar works
 
 ### UI Components
 - [ ] Checkout progress timeline shows on checkout pages
