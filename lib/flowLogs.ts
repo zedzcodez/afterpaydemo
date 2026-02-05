@@ -217,3 +217,53 @@ export function logRedirect(destination: string, reason: string): void {
     endpoint: destination,
   });
 }
+
+/**
+ * Format a flow string into a human-readable description
+ * @param flow - Flow string like "express-integrated-deferred" or "standard-popup-immediate"
+ * @returns Formatted string like "Express Checkout with Integrated Shipping (Deferred Capture)"
+ */
+export function formatFlowName(flow: string): string {
+  if (!flow) return "Unknown Flow";
+
+  const parts = flow.toLowerCase().split("-");
+
+  // Determine checkout type
+  const isExpress = parts[0] === "express";
+  const checkoutType = isExpress ? "Express Checkout" : "Standard Checkout";
+
+  // Determine shipping/method (second part)
+  let shippingOrMethod = "";
+  if (isExpress) {
+    if (parts[1] === "integrated") {
+      shippingOrMethod = "with Integrated Shipping";
+    } else if (parts[1] === "deferred") {
+      shippingOrMethod = "with Deferred Shipping";
+    }
+  } else {
+    // Standard checkout
+    if (parts[1] === "redirect") {
+      shippingOrMethod = "via Redirect";
+    } else if (parts[1] === "popup") {
+      shippingOrMethod = "via Popup";
+    }
+  }
+
+  // Determine capture mode (last part)
+  const lastPart = parts[parts.length - 1];
+  let captureMode = "";
+  if (lastPart === "deferred") {
+    captureMode = "Deferred Capture";
+  } else if (lastPart === "immediate") {
+    captureMode = "Immediate Capture";
+  }
+
+  // Build the full description
+  const description = [checkoutType, shippingOrMethod].filter(Boolean).join(" ");
+
+  if (captureMode) {
+    return `${description} (${captureMode})`;
+  }
+
+  return description || flow;
+}

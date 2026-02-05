@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getOrders, clearOrders, deleteOrder, formatOrderDate, Order } from "@/lib/orders";
 import { formatPrice } from "@/lib/products";
+import { formatFlowName } from "@/lib/flowLogs";
 
 function OrderStatusBadge({ status }: { status: Order["status"] }) {
   const styles = {
@@ -92,7 +93,7 @@ function OrderCard({ order, onDelete }: { order: Order; onDelete: (orderId: stri
           <div className="mb-4">
             <p className="text-sm text-afterpay-gray-600 dark:text-afterpay-gray-400">
               <span className="font-medium">Checkout Flow:</span>{" "}
-              <span className="capitalize">{order.flow.replace(/-/g, " ")}</span>
+              <span>{formatFlowName(order.flow)}</span>
             </p>
           </div>
 

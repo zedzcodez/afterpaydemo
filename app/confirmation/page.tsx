@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/components/CartProvider";
-import { getFlowLogs, FlowLogs, FlowLogEntry, FlowSummary } from "@/lib/flowLogs";
+import { getFlowLogs, FlowLogs, FlowLogEntry, FlowSummary, formatFlowName } from "@/lib/flowLogs";
 import { CheckoutProgress } from "@/components/CheckoutProgress";
 import { saveOrder, Order, OrderItem } from "@/lib/orders";
 import { getStoredCart, calculateTotal } from "@/lib/cart";
@@ -264,7 +264,7 @@ function ConfirmationContent() {
           </div>
           <div className="flex justify-between">
             <dt className="text-afterpay-gray-600 dark:text-afterpay-gray-400">Checkout Flow</dt>
-            <dd className="capitalize dark:text-white">{orderDetails.flow.replace(/-/g, " ")}</dd>
+            <dd className="text-right dark:text-white">{formatFlowName(orderDetails.flow)}</dd>
           </div>
         </dl>
       </div>
@@ -501,11 +501,7 @@ function FlowLogsSection({
 }) {
   const [isTimelineExpanded, setIsTimelineExpanded] = useState(false);
 
-  const flowName = flowLogs.flow === "express-integrated"
-    ? "Express Checkout (Integrated Shipping)"
-    : flowLogs.flow === "express-deferred"
-    ? "Express Checkout (Deferred Shipping)"
-    : "Standard Checkout (API)";
+  const flowName = formatFlowName(flowLogs.flow);
 
   const getLogIcon = (type: FlowLogEntry["type"]) => {
     const iconConfig = {
