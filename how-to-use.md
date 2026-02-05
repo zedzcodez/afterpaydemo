@@ -1661,6 +1661,16 @@ function extractHeadings(markdown: string): TocItem[] {
 
 ### February 2026
 
+#### v2.6.0 - Idempotency & Checkout UX
+- **Idempotency Support**: Added `requestId` to all payment operations (auth, capture, refund, void) for safe retries on timeout/network failures
+- **Dynamic Shipping Updates**: Order Summary sidebar updates shipping and total in real-time with subtle highlight animation
+- **Free Shipping**: Automatically offered for orders over $100 with "FREE" badge
+- **Wider Order Summary**: 60/40 grid split on desktop prevents OSM widget wrapping
+- **Scroll-to-Top Button**: Accessible, centered button appears on scroll with bouncy Afterpay mint hover effect
+- **Developer Panel**: Redesigned header, improved resize handle, requestId visible in event details
+- **Admin Panel**: Transaction status messages now appear above Actions section
+- **Orders Page**: Demo notice moved to top of list for better visibility
+
 #### v2.5.0 - Dark Mode & OSM Improvements
 - **OSM Dark Mode Support**: Added light background containers for OSM widget in dark mode to ensure proper widget visibility and accurate payment calculations
 - **Flow Log Deduplication**: Implemented duplicate detection in `addFlowLog()` to prevent repeated entries within 2-second window
