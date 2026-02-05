@@ -6,13 +6,14 @@ interface CodeViewerProps {
   title: string;
   code: string;
   language?: string;
+  className?: string;
 }
 
-export function CodeViewer({ title, code, language = "typescript" }: CodeViewerProps) {
+export function CodeViewer({ title, code, language = "typescript", className = "" }: CodeViewerProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="border border-afterpay-gray-200 dark:border-afterpay-gray-700 rounded-lg overflow-hidden">
+    <div className={`border border-afterpay-gray-200 dark:border-afterpay-gray-700 rounded-lg overflow-hidden ${className}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full px-4 py-3 bg-afterpay-gray-50 dark:bg-afterpay-gray-800 text-left flex items-center justify-between hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-700 transition-colors"

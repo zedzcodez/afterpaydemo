@@ -23,9 +23,17 @@ import { formatPrice } from "@/lib/products";
 import { OSMPlacement } from "./OSMPlacement";
 import { CodeViewer } from "./CodeViewer";
 import { getCartSkus, getCartCategories } from "@/lib/cart";
-import { initFlowLogs, addFlowLog, logCallback } from "@/lib/flowLogs";
+import { initFlowLogs, addFlowLog, logCallback, setFlowSummary, updateFlowSummary, FlowSummary } from "@/lib/flowLogs";
+import { toggleDevPanel, useDevPanelState } from "./FlowLogsDevPanel";
 
 type CheckoutMode = "redirect" | "popup";
+
+interface ShippingOption {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+}
 
 interface CheckoutStandardProps {
   onLog?: (method: string, endpoint: string, request?: object) => string;
@@ -33,6 +41,7 @@ interface CheckoutStandardProps {
     id: string,
     update: { response?: object; status?: number; error?: string }
   ) => void;
+  onShippingChange?: (option: ShippingOption) => void;
 }
 
 interface FormData {
@@ -48,18 +57,50 @@ interface FormData {
   country: string;
 }
 
-const SHIPPING_OPTIONS = [
-  { id: "standard", name: "Standard Shipping (5-7 days)", price: 5.99 },
-  { id: "express", name: "Express Shipping (2-3 days)", price: 12.99 },
-  { id: "overnight", name: "Overnight Shipping", price: 24.99 },
-];
+// Flow summary definitions
+const FLOW_SUMMARIES: Record<string, Omit<FlowSummary, 'requestConfig' | 'responseData'>> = {
+  'standard': {
+    flow: 'standard-redirect',
+    description: 'Full-page redirect to Afterpay where customer completes checkout, then returns to merchant site via redirectConfirmUrl for payment authorization.',
+    steps: ['Create Checkout', 'Redirect to Afterpay', 'Customer Returns', 'Authorize Payment'],
+    docsUrl: 'https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart',
+  },
+  'standard-popup': {
+    flow: 'standard-popup',
+    description: 'Modal popup checkout using Afterpay.js where customer stays on merchant site. Payment is authorized via the onComplete callback.',
+    steps: ['Create Checkout', 'Open Afterpay Popup', 'Authorize Payment'],
+    docsUrl: 'https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart/create-a-checkout#implement-the-popup-method',
+  },
+};
 
-export function CheckoutStandard({ onLog, onLogUpdate }: CheckoutStandardProps) {
+const FREE_SHIPPING_THRESHOLD = 100;
+
+const getShippingOptions = (cartTotal: number): ShippingOption[] => {
+  const options: ShippingOption[] = [
+    { id: "standard", name: "Standard Shipping", description: "5-7 business days", price: 5.99 },
+    { id: "express", name: "Express Shipping", description: "2-3 business days", price: 12.99 },
+    { id: "overnight", name: "Overnight Shipping", description: "Next business day", price: 24.99 },
+  ];
+
+  // Add free shipping for orders over threshold
+  if (cartTotal >= FREE_SHIPPING_THRESHOLD) {
+    options.unshift({
+      id: "free",
+      name: "Free Shipping",
+      description: `5-7 business days • Orders over $${FREE_SHIPPING_THRESHOLD}`,
+      price: 0,
+    });
+  }
+
+  return options;
+};
+
+export function CheckoutStandard({ onLog, onLogUpdate, onShippingChange }: CheckoutStandardProps) {
   const router = useRouter();
   const { items, total } = useCart();
+  const isDevPanelOpen = useDevPanelState();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedShipping, setSelectedShipping] = useState(SHIPPING_OPTIONS[0]);
   const [checkoutMode, setCheckoutMode] = useState<CheckoutMode>("redirect");
   const [isAfterpayReady, setIsAfterpayReady] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -75,7 +116,26 @@ export function CheckoutStandard({ onLog, onLogUpdate }: CheckoutStandardProps) 
     country: "US",
   });
 
+  // Compute shipping options based on cart total (includes free shipping for orders >= $100)
+  const shippingOptions = getShippingOptions(total);
+  const [selectedShipping, setSelectedShipping] = useState<ShippingOption>(shippingOptions[0]);
+
   const finalTotal = total + selectedShipping.price;
+
+  // Handle shipping selection change
+  const handleShippingSelect = (option: ShippingOption) => {
+    setSelectedShipping(option);
+    onShippingChange?.(option);
+  };
+
+  // Auto-select first shipping option on mount and when options change
+  useEffect(() => {
+    const options = getShippingOptions(total);
+    if (options.length > 0) {
+      setSelectedShipping(options[0]);
+      onShippingChange?.(options[0]);
+    }
+  }, [total, onShippingChange]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -157,6 +217,17 @@ export function CheckoutStandard({ onLog, onLogUpdate }: CheckoutStandardProps) 
               throw new Error("Payment was not approved");
             }
 
+            // Update flow summary with capture response data
+            updateFlowSummary({
+              responseData: {
+                'data.orderToken': event.data.orderToken,
+                id: data.id,
+                status: data.status,
+                originalAmount: data.originalAmount,
+                openToCaptureAmount: data.openToCapture,
+              },
+            });
+
             orderId = data.id;
           } else {
             // Deferred Capture Mode: Only authorize, capture later from Admin Panel
@@ -202,6 +273,17 @@ export function CheckoutStandard({ onLog, onLogUpdate }: CheckoutStandardProps) 
               throw new Error("Payment was not approved");
             }
 
+            // Update flow summary with auth response data
+            updateFlowSummary({
+              responseData: {
+                'data.orderToken': event.data.orderToken,
+                id: data.id,
+                status: data.status,
+                originalAmount: data.originalAmount,
+                openToCaptureAmount: data.openToCapture,
+              },
+            });
+
             orderId = data.id;
           }
 
@@ -236,7 +318,16 @@ export function CheckoutStandard({ onLog, onLogUpdate }: CheckoutStandardProps) 
     setError(null);
 
     // Initialize flow logs for standard checkout
-    initFlowLogs(checkoutMode === "popup" ? "standard-popup" : "standard");
+    const flowType = checkoutMode === "popup" ? "standard-popup" : "standard";
+    initFlowLogs(flowType);
+
+    // Initialize flow summary with base info
+    const baseSummary = FLOW_SUMMARIES[flowType];
+    setFlowSummary({
+      ...baseSummary,
+      requestConfig: {},
+      responseData: {},
+    });
 
     // For popup mode: open popup IMMEDIATELY (synchronously) to avoid popup blockers
     // The checkout will be created while the spinner shows, then token transferred
@@ -327,6 +418,22 @@ export function CheckoutStandard({ onLog, onLogUpdate }: CheckoutStandardProps) 
 
       if (data.error) {
         throw new Error(data.error);
+      }
+
+      // Extract request config from _meta for flow summary
+      const serverRequestBody = data._meta?.requestBody;
+      if (serverRequestBody) {
+        updateFlowSummary({
+          requestConfig: {
+            'merchant.redirectConfirmUrl': serverRequestBody.merchant?.redirectConfirmUrl,
+            'merchant.redirectCancelUrl': serverRequestBody.merchant?.redirectCancelUrl,
+            'merchant.popupOriginUrl': serverRequestBody.merchant?.popupOriginUrl,
+          },
+          responseData: {
+            token: data.token,
+            redirectCheckoutUrl: data.redirectCheckoutUrl,
+          },
+        });
       }
 
       // Step 2: Open Afterpay (redirect or popup)
@@ -502,13 +609,46 @@ Afterpay.transfer({ token });`;
           ) : (
             <>
               <p className="font-medium mb-2">Popup Flow</p>
-              <p className="text-afterpay-gray-600">
+              <p className="text-afterpay-gray-600 dark:text-afterpay-gray-400">
                 Uses Afterpay.js to open a modal popup. Customer completes checkout
                 without leaving your site. Payment is authorized and captured via
-                the <code>onComplete</code> callback.
+                the <code className="bg-afterpay-gray-200 dark:bg-afterpay-gray-700 px-1.5 py-0.5 rounded text-afterpay-black dark:text-afterpay-mint font-mono text-xs">onComplete</code> callback.
               </p>
             </>
           )}
+        </div>
+
+        {/* Developer Tools Section */}
+        <div className="space-y-3">
+          {/* Developer Panel Toggle */}
+          <div className="flex items-center justify-between p-3 bg-afterpay-gray-100 dark:bg-afterpay-gray-800 rounded-lg">
+            <div className="flex-1 mr-4">
+              <p className="text-sm font-medium text-afterpay-black dark:text-white">Developer Panel</p>
+              <p className="text-xs text-afterpay-gray-500 dark:text-afterpay-gray-400">
+                View API requests, responses, and integration flow logs
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => toggleDevPanel(25)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isDevPanelOpen
+                  ? "bg-afterpay-mint text-afterpay-black hover:bg-afterpay-mint-dark"
+                  : "bg-afterpay-gray-800 dark:bg-afterpay-gray-700 text-white hover:bg-afterpay-gray-700 dark:hover:bg-afterpay-gray-600"
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+              {isDevPanelOpen ? "Hide Developer Panel" : "Show Developer Panel"}
+            </button>
+          </div>
+
+          {/* Code Viewer */}
+          <CodeViewer
+            title={`View ${checkoutMode === "redirect" ? "Redirect" : "Popup"} Checkout Code`}
+            code={checkoutMode === "redirect" ? standardCode : popupCode}
+          />
         </div>
 
         {/* Contact Information */}
@@ -612,7 +752,7 @@ Afterpay.transfer({ token });`;
         <div>
           <h3 className="font-medium mb-4">Shipping Method</h3>
           <div className="space-y-2">
-            {SHIPPING_OPTIONS.map((option) => (
+            {shippingOptions.map((option) => (
               <label
                 key={option.id}
                 className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
@@ -627,12 +767,25 @@ Afterpay.transfer({ token });`;
                     name="shipping"
                     value={option.id}
                     checked={selectedShipping.id === option.id}
-                    onChange={() => setSelectedShipping(option)}
+                    onChange={() => handleShippingSelect(option)}
                     className="radio-mint mr-3"
                   />
-                  <span>{option.name}</span>
+                  <div>
+                    <span className="font-medium">{option.name}</span>
+                    {option.description && (
+                      <p className="text-sm text-afterpay-gray-500 dark:text-afterpay-gray-400">
+                        {option.description}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <span className="font-medium">{formatPrice(option.price)}</span>
+                <span className="font-medium">
+                  {option.price === 0 ? (
+                    <span className="text-green-600 dark:text-green-400">FREE</span>
+                  ) : (
+                    formatPrice(option.price)
+                  )}
+                </span>
               </label>
             ))}
           </div>
@@ -647,22 +800,19 @@ Afterpay.transfer({ token });`;
             </div>
             <div className="flex justify-between">
               <span>Shipping</span>
-              <span>{formatPrice(selectedShipping.price)}</span>
+              <span>
+                {selectedShipping.price === 0 ? (
+                  <span className="text-green-600 dark:text-green-400">FREE</span>
+                ) : (
+                  formatPrice(selectedShipping.price)
+                )}
+              </span>
             </div>
             <div className="flex justify-between font-semibold text-lg border-t border-afterpay-gray-200 dark:border-afterpay-gray-700 pt-2">
               <span>Total</span>
               <span>{formatPrice(finalTotal)}</span>
             </div>
           </div>
-
-          {/* OSM Placement */}
-          <OSMPlacement
-            pageType="cart"
-            amount={finalTotal}
-            currency="USD"
-            itemSkus={getCartSkus(items)}
-            itemCategories={getCartCategories(items)}
-          />
         </div>
 
         {/* Error Display */}
@@ -695,12 +845,6 @@ Afterpay.transfer({ token });`;
           )}
         </button>
       </form>
-
-      {/* Code Viewer */}
-      <CodeViewer
-        title={`View ${checkoutMode === "redirect" ? "Redirect" : "Popup"} Checkout Code`}
-        code={checkoutMode === "redirect" ? standardCode : popupCode}
-      />
     </div>
   );
 }

@@ -161,8 +161,8 @@ export default function CartPage() {
               </div>
             </div>
 
-            {/* Afterpay OSM - Below Total */}
-            <div className="mb-6 p-4 bg-white dark:bg-afterpay-gray-900 rounded-lg border border-afterpay-gray-200 dark:border-afterpay-gray-700">
+            {/* Afterpay OSM - Below Total (light background for widget visibility) */}
+            <div className="mb-6 p-4 bg-afterpay-gray-50 rounded-lg border border-afterpay-gray-200">
               <OSMPlacement
                 pageType="cart"
                 amount={total}

@@ -6,8 +6,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/components/CartProvider";
 import { formatPrice } from "@/lib/products";
-import { addFlowLog } from "@/lib/flowLogs";
-import { FlowLogsDevPanel } from "@/components/FlowLogsDevPanel";
+import { addFlowLog, updateFlowSummary } from "@/lib/flowLogs";
+import { FlowLogsDevPanel, toggleDevPanel, useDevPanelState } from "@/components/FlowLogsDevPanel";
+import { PaymentScheduleCodeSection } from "@/components/OSMInfoSection";
 import { CheckoutProgress } from "@/components/CheckoutProgress";
 
 // Declare Afterpay widget types
@@ -70,6 +71,7 @@ function ShippingContent() {
   const [checksum, setChecksum] = useState<string | null>(null);
   const [storedCartTotal, setStoredCartTotal] = useState<number | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const isDevPanelOpen = useDevPanelState();
 
   const widgetRef = useRef<PaymentScheduleWidget | null>(null);
   const widgetInitialized = useRef(false);
@@ -292,6 +294,27 @@ function ShippingContent() {
         throw new Error("Payment was not approved");
       }
 
+      // Update flow summary with adjustment details and auth response
+      updateFlowSummary({
+        requestConfig: {
+          isCheckoutAdjusted: true,
+          paymentScheduleChecksum: paymentScheduleChecksum,
+        },
+        responseData: {
+          id: authData.id,
+          status: authData.status,
+          originalAmount: authData.originalAmount,
+          openToCaptureAmount: authData.openToCapture,
+        },
+        adjustment: {
+          originalAmount: { amount: cartTotal.toFixed(2), currency: "USD" },
+          shippingAmount: { amount: selectedShipping.price.toFixed(2), currency: "USD" },
+          shippingName: selectedShipping.name,
+          adjustedAmount: { amount: finalTotal.toFixed(2), currency: "USD" },
+          checksum: paymentScheduleChecksum,
+        },
+      });
+
       orderId = authData.id;
 
       // Only capture immediately if in Immediate Capture mode
@@ -497,6 +520,30 @@ function ShippingContent() {
         </div>
       </div>
 
+      {/* Developer Panel Toggle */}
+      <div className="flex items-center justify-between p-3 bg-afterpay-gray-100 dark:bg-afterpay-gray-800 rounded-lg mb-6">
+        <div className="flex-1 mr-4">
+          <p className="text-sm font-medium text-afterpay-black dark:text-white">Developer Panel</p>
+          <p className="text-xs text-afterpay-gray-500 dark:text-afterpay-gray-400">
+            View API requests, responses, and integration flow logs
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => toggleDevPanel(25)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            isDevPanelOpen
+              ? "bg-afterpay-mint text-afterpay-black hover:bg-afterpay-mint-dark"
+              : "bg-afterpay-gray-800 dark:bg-afterpay-gray-700 text-white hover:bg-afterpay-gray-700 dark:hover:bg-afterpay-gray-600"
+          }`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+          </svg>
+          {isDevPanelOpen ? "Hide Developer Panel" : "Show Developer Panel"}
+        </button>
+      </div>
+
       {/* Afterpay Payment Schedule Widget */}
       <div className="bg-white dark:bg-afterpay-gray-700 border border-afterpay-gray-200 dark:border-afterpay-gray-600 rounded-lg overflow-hidden mb-6">
         <div className="px-6 py-4 bg-afterpay-mint/20 dark:bg-afterpay-gray-600 border-b border-afterpay-mint dark:border-afterpay-gray-500">
@@ -504,8 +551,8 @@ function ShippingContent() {
             <img
               alt="Cash App Afterpay"
               src={isDarkMode
-                ? "https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-mono-white-32.svg"
-                : "https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-mono-black-32.svg"
+                ? "https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-color-white-32.svg"
+                : "https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-color-black-32.svg"
               }
               height="24"
               className="h-6"
@@ -523,6 +570,14 @@ function ShippingContent() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Payment Schedule Widget Code Section */}
+        <div className="p-6 pt-0">
+          <PaymentScheduleCodeSection
+            amount={finalTotal}
+            currency="USD"
+          />
         </div>
       </div>
 

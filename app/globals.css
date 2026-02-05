@@ -117,17 +117,59 @@ body {
   }
 }
 
-/* Afterpay widget dark mode overrides */
-.dark square-placement,
-.dark .afterpay-osm,
-.dark [data-afterpay-placement] {
-  background: transparent !important;
-  color-scheme: dark;
+/* Afterpay OSM widget styling - force light mode appearance for readability */
+.afterpay-osm {
+  color-scheme: light !important;
+  white-space: nowrap;
 }
 
-.dark square-placement *,
+.afterpay-osm square-placement,
+.afterpay-osm [data-afterpay-placement] {
+  color-scheme: light !important;
+}
+
+/* Force dark text color for widget content in dark mode */
+.dark .afterpay-osm,
 .dark .afterpay-osm * {
-  color: inherit;
+  color: #000000 !important;
+  --tw-text-opacity: 1 !important;
+}
+
+/* Fade in up animation for tooltips */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out forwards;
+}
+
+/* Highlight update animation for shipping/total changes */
+@keyframes highlight-update {
+  0% {
+    background-color: rgba(178, 252, 228, 0.5);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.animate-highlight-update {
+  animation: highlight-update 1s ease-out;
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .animate-highlight-update {
+    animation: none;
+  }
 }
 
 /* Custom scrollbar */

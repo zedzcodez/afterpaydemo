@@ -6,8 +6,6 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import Link from "next/link";
 
-type DocTab = "readme" | "how-to-use";
-
 interface TocItem {
   id: string;
   text: string;
@@ -185,9 +183,7 @@ const MarkdownComponents = {
 };
 
 export default function DocsPage() {
-  const [activeTab, setActiveTab] = useState<DocTab>("readme");
-  const [readmeContent, setReadmeContent] = useState<string>("");
-  const [howToUseContent, setHowToUseContent] = useState<string>("");
+  const [content, setContent] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<string>("");
   const [tocItems, setTocItems] = useState<TocItem[]>([]);
@@ -197,18 +193,10 @@ export default function DocsPage() {
   useEffect(() => {
     async function loadDocs() {
       try {
-        const [readmeRes, howToUseRes] = await Promise.all([
-          fetch("/api/docs/readme"),
-          fetch("/api/docs/how-to-use"),
-        ]);
-
-        if (readmeRes.ok) {
-          const data = await readmeRes.json();
-          setReadmeContent(data.content);
-        }
-        if (howToUseRes.ok) {
-          const data = await howToUseRes.json();
-          setHowToUseContent(data.content);
+        const res = await fetch("/api/docs/how-to-use");
+        if (res.ok) {
+          const data = await res.json();
+          setContent(data.content);
         }
       } catch (error) {
         console.error("Failed to load docs:", error);
@@ -222,11 +210,10 @@ export default function DocsPage() {
 
   // Extract TOC when content changes
   useEffect(() => {
-    const content = activeTab === "readme" ? readmeContent : howToUseContent;
     if (content) {
       setTocItems(extractHeadings(content));
     }
-  }, [activeTab, readmeContent, howToUseContent]);
+  }, [content]);
 
   // Track scroll position to highlight active section
   const handleScroll = useCallback(() => {
@@ -249,29 +236,6 @@ export default function DocsPage() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
-
-  const tabs: { id: DocTab; label: string; icon: React.ReactNode }[] = [
-    {
-      id: "readme",
-      label: "README",
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
-    },
-    {
-      id: "how-to-use",
-      label: "How to Use",
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-        </svg>
-      ),
-    },
-  ];
-
-  const content = activeTab === "readme" ? readmeContent : howToUseContent;
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -306,41 +270,25 @@ export default function DocsPage() {
                 </span>
               </div>
               <h1 className="text-3xl sm:text-4xl font-display font-bold text-afterpay-black dark:text-white mb-2">
-                Documentation
+                User Guide
               </h1>
               <p className="text-afterpay-gray-600 dark:text-afterpay-gray-400 text-lg max-w-2xl">
-                Everything you need to understand, test, and integrate the Afterpay demo application.
+                Learn how to test all features of the Afterpay demo application.
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Sticky Tab Bar */}
+      {/* Sticky Navigation Bar */}
       <div className="sticky top-16 z-40 bg-white/95 dark:bg-afterpay-gray-900/95 backdrop-blur-md border-b border-afterpay-gray-200 dark:border-afterpay-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="flex gap-1 py-2">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    window.scrollTo({ top: 0 });
-                  }}
-                  className={`relative flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
-                    activeTab === tab.id
-                      ? "text-afterpay-black dark:text-white"
-                      : "text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-800"
-                  }`}
-                >
-                  {tab.icon}
-                  {tab.label}
-                  {activeTab === tab.id && (
-                    <span className="absolute inset-0 bg-afterpay-mint/20 dark:bg-afterpay-mint/10 rounded-lg -z-10" />
-                  )}
-                </button>
-              ))}
+          <div className="flex items-center justify-between py-2">
+            <div className="flex items-center gap-2 text-sm text-afterpay-gray-600 dark:text-afterpay-gray-400">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              <span className="font-medium text-afterpay-black dark:text-white">How to Use This Demo</span>
             </div>
 
             {/* Mobile TOC Toggle */}

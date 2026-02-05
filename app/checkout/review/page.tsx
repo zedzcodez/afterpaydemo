@@ -17,6 +17,13 @@ function ReviewContent() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderToken, setOrderToken] = useState<string | null>(null);
+  const [captureMode, setCaptureMode] = useState<"deferred" | "immediate">("deferred");
+
+  // Read capture mode on mount
+  useEffect(() => {
+    const mode = localStorage.getItem("afterpay_capture_mode") || "deferred";
+    setCaptureMode(mode as "deferred" | "immediate");
+  }, []);
 
   useEffect(() => {
     const token = searchParams.get("orderToken");
@@ -258,16 +265,34 @@ function ReviewContent() {
       </div>
 
       {/* Afterpay Payment Info */}
-      <div className="bg-afterpay-mint/20 border border-afterpay-mint rounded-lg p-6 mb-6">
+      <div className="bg-afterpay-mint/20 dark:bg-afterpay-mint/10 border border-afterpay-mint rounded-lg p-6 mb-6">
         <div className="flex items-center gap-3 mb-3">
-          <span className="bg-afterpay-mint text-afterpay-black px-2 py-1 rounded text-sm font-bold">
-            Afterpay
-          </span>
-          <span className="font-medium">Payment Confirmed</span>
+          <img
+            alt="Cash App Afterpay"
+            src="https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-color-black-32.svg"
+            height="24"
+            className="h-6 dark:hidden"
+          />
+          <img
+            alt="Cash App Afterpay"
+            src="https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-color-white-32.svg"
+            height="24"
+            className="h-6 hidden dark:block"
+          />
+          <span className="font-medium dark:text-white">Ready to Complete</span>
         </div>
-        <p className="text-sm text-afterpay-gray-700">
-          Your payment schedule has been set up with Afterpay. Click &quot;Place Order&quot; below
-          to complete your purchase. You&apos;ll pay in 4 interest-free installments.
+        <p className="text-sm text-afterpay-gray-700 dark:text-afterpay-gray-300">
+          {captureMode === "immediate" ? (
+            <>
+              You&apos;ve completed the Afterpay checkout. Click &quot;Place Order&quot; to authorize
+              and capture your payment.
+            </>
+          ) : (
+            <>
+              You&apos;ve completed the Afterpay checkout. Click &quot;Place Order&quot; to authorize
+              your payment.
+            </>
+          )}
         </p>
       </div>
 
@@ -319,9 +344,17 @@ function ReviewContent() {
       </div>
 
       {/* Note */}
-      <p className="text-xs text-afterpay-gray-500 text-center mt-6">
-        By clicking &quot;Place Order&quot;, you agree to complete your purchase using Afterpay.
-        Your payment will be authorized and captured.
+      <p className="text-xs text-afterpay-gray-500 dark:text-afterpay-gray-400 text-center mt-6">
+        {captureMode === "immediate" ? (
+          <>
+            By clicking &quot;Place Order&quot;, your payment will be authorized and captured immediately.
+          </>
+        ) : (
+          <>
+            By clicking &quot;Place Order&quot;, your payment will be authorized. The merchant will capture
+            the payment when fulfilling your order.
+          </>
+        )}
       </p>
       </div>
 

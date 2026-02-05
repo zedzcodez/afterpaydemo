@@ -1,10 +1,13 @@
 # Afterpay Demo Shop
 
+> **Demo Users:** Visit the live demo at [afterpay-demo-v2.vercel.app](https://afterpay-demo-v2.vercel.app)
+> and see [how-to-use.md](./how-to-use.md) for testing instructions.
+>
+> This README is for developers maintaining or extending this project.
+
 A comprehensive merchant checkout integration demo showcasing Afterpay's payment solutions. This demo serves merchants evaluating Afterpay, developers learning integration patterns, and stakeholders understanding payment flows.
 
 **Live Demo:** [afterpay-demo-v2.vercel.app](https://afterpay-demo-v2.vercel.app)
-
-**GitHub Repository:** [github.com/zedzcodez/afterpaydemo](https://github.com/zedzcodez/afterpaydemo)
 
 ## Features
 
@@ -49,9 +52,8 @@ Persistent order tracking at `/orders`:
 - Cart is only cleared after successful payment authorization
 
 ### In-App Documentation
-Access documentation directly within the app at `/docs`:
-- **README tab**: Project overview and setup instructions
-- **How to Use tab**: Detailed testing guide for all features
+Access the testing guide directly within the app at `/docs`:
+- **How to Use Guide**: Detailed testing guide for all features
 - **Table of contents**: Auto-generated navigation sidebar
 - **Section highlighting**: Active section tracked on scroll
 - **Quick links**: Fast access to Checkout Demo, Admin Panel, and API docs
@@ -72,6 +74,12 @@ Access documentation directly within the app at `/docs`:
   - **Export logs**: Download as JSON or HAR format (for browser DevTools import)
   - Links to Afterpay API documentation for each endpoint
 - **Flow Logs**: Complete transaction timeline on confirmation page
+- **Integration Flow Summary**: On the confirmation page, view a summary of your checkout flow including:
+  - Flow description and steps executed
+  - Critical request configuration (mode, popupOriginUrl, checksums)
+  - Checkout adjustment breakdown (deferred shipping flows)
+  - Key response data with links to Afterpay documentation
+  - Copy button for sharing flow configuration
 - **Toggle Controls**: Compare different checkout approaches side-by-side
 - **Official Afterpay Assets**: All checkout buttons use official Afterpay brand assets from CDN
 
@@ -291,8 +299,10 @@ Or deploy directly:
 
 ## Documentation
 
-- **[In-App Documentation](https://afterpay-demo-v2.vercel.app/docs)** - View README and How-to-Use Guide within the app with TOC navigation
-- **[How to Use This Demo](https://github.com/zedzcodez/afterpaydemo/blob/main/how-to-use.md)** - Detailed guide for testing all features
+- **[In-App Documentation](https://afterpay-demo-v2.vercel.app/docs)** - View the How-to-Use Guide within the app with TOC navigation
+- **[how-to-use.md](./how-to-use.md)** - Detailed guide for testing all features
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Technical overview for maintainers
+- **[CHANGELOG.md](./CHANGELOG.md)** - Version history
 - [Afterpay Developer Documentation](https://developers.cash.app/cash-app-afterpay)
 - [On-Site Messaging Guide](https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging)
 - [Express Checkout Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout)
@@ -357,9 +367,12 @@ The demo features a polished, distinctive UI built on Afterpay's brand colors wi
 - [x] Security: Input validation with Zod
 - [x] Security: Error message sanitization
 - [x] Security: HTTP security headers
-- [x] In-App Documentation (`/docs`) with tabbed interface and TOC sidebar
+- [x] In-App Documentation (`/docs`) with TOC sidebar
 - [x] Navigation redesign with grouped items and mobile menu
 - [x] Official Cash App Afterpay branding
+- [x] Integration Flow Summary on confirmation page
+- [x] Pay Monthly messaging option for OSM
+- [x] Documentation restructure and audit
 
 ### In Progress / Planned
 
@@ -378,7 +391,7 @@ The demo features a polished, distinctive UI built on Afterpay's brand colors wi
 - [ ] **E2: Integration tests** - End-to-end checkout flow tests
 - [ ] **Component tests** - React Testing Library tests for UI components
 
-See [docs/plans/2026-02-04-app-analysis-and-roadmap.md](./docs/plans/2026-02-04-app-analysis-and-roadmap.md) for detailed implementation plans.
+See [docs/plans/roadmap.md](./docs/plans/roadmap.md) for detailed implementation plans.
 
 ## License
 

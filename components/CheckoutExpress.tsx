@@ -6,7 +6,8 @@ import { OSMPlacement } from "./OSMPlacement";
 import { CodeViewer } from "./CodeViewer";
 import { getCartSkus, getCartCategories } from "@/lib/cart";
 import { AfterpayShippingOption } from "@/lib/types";
-import { initFlowLogs, addFlowLog, logCallback } from "@/lib/flowLogs";
+import { initFlowLogs, addFlowLog, logCallback, setFlowSummary, updateFlowSummary, FlowSummary } from "@/lib/flowLogs";
+import { toggleDevPanel, useDevPanelState } from "./FlowLogsDevPanel";
 
 type ShippingFlow = "integrated" | "deferred";
 
@@ -18,6 +19,22 @@ interface CheckoutExpressProps {
   ) => void;
   initialShippingFlow?: ShippingFlow;
 }
+
+// Flow summary definitions
+const FLOW_SUMMARIES: Record<string, Omit<FlowSummary, 'requestConfig' | 'responseData'>> = {
+  'express-integrated': {
+    flow: 'express-integrated',
+    description: 'Popup-based checkout where customer selects shipping options directly within the Afterpay popup using the onShippingAddressChange callback.',
+    steps: ['Create Checkout', 'Afterpay Popup (with shipping)', 'Authorize Payment'],
+    docsUrl: 'https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout',
+  },
+  'express-deferred': {
+    flow: 'express-deferred',
+    description: 'Popup-based checkout where customer completes payment in Afterpay, then returns to merchant site to select shipping before authorization.',
+    steps: ['Create Checkout', 'Afterpay Popup', 'Select Shipping', 'Authorize Payment'],
+    docsUrl: 'https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout#deferred-shipping',
+  },
+};
 
 const SHIPPING_OPTIONS = [
   {
@@ -42,6 +59,7 @@ const SHIPPING_OPTIONS = [
 
 export function CheckoutExpress({ onLog, onLogUpdate, initialShippingFlow }: CheckoutExpressProps) {
   const { items, total } = useCart();
+  const isDevPanelOpen = useDevPanelState();
   const [shippingFlow, setShippingFlow] = useState<ShippingFlow>(initialShippingFlow || "integrated");
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +124,23 @@ export function CheckoutExpress({ onLog, onLogUpdate, initialShippingFlow }: Che
       throw new Error(data.error);
     }
 
+    // Extract request config from _meta for flow summary
+    const serverRequestBody = data._meta?.requestBody;
+    if (serverRequestBody) {
+      updateFlowSummary({
+        requestConfig: {
+          mode: serverRequestBody.mode,
+          'merchant.popupOriginUrl': serverRequestBody.merchant?.popupOriginUrl,
+          'merchant.redirectConfirmUrl': serverRequestBody.merchant?.redirectConfirmUrl,
+          'merchant.redirectCancelUrl': serverRequestBody.merchant?.redirectCancelUrl,
+        },
+        responseData: {
+          token: data.token,
+          redirectCheckoutUrl: data.redirectCheckoutUrl,
+        },
+      });
+    }
+
     return data.token;
   }, []);
 
@@ -133,9 +168,9 @@ export function CheckoutExpress({ onLog, onLogUpdate, initialShippingFlow }: Che
   }, []);
 
   useEffect(() => {
-    // Check if Afterpay.js is loaded
+    // Check if Afterpay.js is fully loaded with initializeForPopup available
     const checkAfterpay = () => {
-      if (typeof window !== "undefined" && window.Afterpay) {
+      if (typeof window !== "undefined" && window.Afterpay && typeof window.Afterpay.initializeForPopup === 'function') {
         setIsReady(true);
       } else {
         setTimeout(checkAfterpay, 100);
@@ -145,10 +180,19 @@ export function CheckoutExpress({ onLog, onLogUpdate, initialShippingFlow }: Che
   }, []);
 
   useEffect(() => {
-    if (!isReady || !window.Afterpay) return;
+    if (!isReady || !window.Afterpay || typeof window.Afterpay.initializeForPopup !== 'function') return;
 
     // Initialize flow logs when starting checkout
-    initFlowLogs(shippingFlow === "integrated" ? "express-integrated" : "express-deferred");
+    const flowType = shippingFlow === "integrated" ? "express-integrated" : "express-deferred";
+    initFlowLogs(flowType);
+
+    // Initialize flow summary with base info
+    const baseSummary = FLOW_SUMMARIES[flowType];
+    setFlowSummary({
+      ...baseSummary,
+      requestConfig: {},
+      responseData: {},
+    });
 
     const config = shippingFlow === "integrated"
       ? {
@@ -284,6 +328,18 @@ export function CheckoutExpress({ onLog, onLogUpdate, initialShippingFlow }: Che
                     throw new Error(captureData.error);
                   }
 
+                  // Update flow summary with auth and capture response data
+                  updateFlowSummary({
+                    responseData: {
+                      token: authData.token,
+                      'data.orderToken': event.data.orderToken,
+                      id: authData.id,
+                      status: captureData.status || 'CAPTURED',
+                      originalAmount: authData.originalAmount,
+                      openToCaptureAmount: captureData.openToCapture,
+                    },
+                  });
+
                   orderId = authData.id;
                 } else {
                   // Deferred Capture Mode: Only authorize
@@ -327,6 +383,18 @@ export function CheckoutExpress({ onLog, onLogUpdate, initialShippingFlow }: Che
                     throw new Error("Payment was not approved");
                   }
 
+                  // Update flow summary with auth response data
+                  updateFlowSummary({
+                    responseData: {
+                      token: data.token,
+                      'data.orderToken': event.data.orderToken,
+                      id: data.id,
+                      status: data.status,
+                      originalAmount: data.originalAmount,
+                      openToCaptureAmount: data.openToCapture,
+                    },
+                  });
+
                   orderId = data.id;
                 }
 
@@ -364,6 +432,14 @@ export function CheckoutExpress({ onLog, onLogUpdate, initialShippingFlow }: Che
           shippingOptionRequired: false,
           onCommenceCheckout: async (actions: { resolve: (token: string) => void; reject: (error: { message: string }) => void }) => {
             logCallback("onCommenceCheckout", { flow: "deferred" });
+
+            // Add deferred-specific config to summary
+            updateFlowSummary({
+              requestConfig: {
+                shippingOptionRequired: false,
+              },
+            });
+
             try {
               const token = await createCheckoutToken();
               logCallback("onCommenceCheckout resolved", { token: token.substring(0, 20) + "..." });
@@ -395,6 +471,13 @@ export function CheckoutExpress({ onLog, onLogUpdate, initialShippingFlow }: Che
                 })),
                 total: currentTotal,
               }));
+
+              // Update flow summary with orderToken before redirect
+              updateFlowSummary({
+                responseData: {
+                  'data.orderToken': event.data.orderToken,
+                },
+              });
 
               const params = new URLSearchParams({
                 token: event.data.orderToken,
@@ -522,16 +605,16 @@ Afterpay.initializeForPopup({
         {shippingFlow === "integrated" ? (
           <>
             <p className="font-medium mb-2">Integrated Shipping Flow</p>
-            <p className="text-afterpay-gray-600">
+            <p className="text-afterpay-gray-600 dark:text-afterpay-gray-400">
               Customer selects shipping options directly within the Afterpay
-              popup. Uses <code>onShippingAddressChange</code> callback to
+              popup. Uses <code className="bg-afterpay-gray-200 dark:bg-afterpay-gray-700 px-1.5 py-0.5 rounded text-afterpay-black dark:text-afterpay-mint font-mono text-xs">onShippingAddressChange</code> callback to
               provide dynamic shipping options.
             </p>
           </>
         ) : (
           <>
             <p className="font-medium mb-2">Deferred Shipping Flow</p>
-            <p className="text-afterpay-gray-600">
+            <p className="text-afterpay-gray-600 dark:text-afterpay-gray-400">
               Customer confirms address in Afterpay, then returns to your site
               to select shipping. Requires displaying the checkout widget with
               payment schedule.
@@ -540,14 +623,36 @@ Afterpay.initializeForPopup({
         )}
       </div>
 
-      {/* OSM Placement */}
-      <div className="p-4 bg-afterpay-gray-50 dark:bg-afterpay-gray-700 rounded-lg [&_.afterpay-osm]:dark:bg-transparent">
-        <OSMPlacement
-          pageType="cart"
-          amount={total}
-          currency="USD"
-          itemSkus={getCartSkus(items)}
-          itemCategories={getCartCategories(items)}
+      {/* Developer Tools Section */}
+      <div className="space-y-3">
+        {/* Developer Panel Toggle */}
+        <div className="flex items-center justify-between p-3 bg-afterpay-gray-100 dark:bg-afterpay-gray-800 rounded-lg">
+          <div className="flex-1 mr-4">
+            <p className="text-sm font-medium text-afterpay-black dark:text-white">Developer Panel</p>
+            <p className="text-xs text-afterpay-gray-500 dark:text-afterpay-gray-400">
+              View API requests, responses, and integration flow logs
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => toggleDevPanel(25)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              isDevPanelOpen
+                ? "bg-afterpay-mint text-afterpay-black hover:bg-afterpay-mint-dark"
+                : "bg-afterpay-gray-800 dark:bg-afterpay-gray-700 text-white hover:bg-afterpay-gray-700 dark:hover:bg-afterpay-gray-600"
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+            </svg>
+            {isDevPanelOpen ? "Hide Developer Panel" : "Show Developer Panel"}
+          </button>
+        </div>
+
+        {/* Code Viewer */}
+        <CodeViewer
+          title={`View ${shippingFlow === "integrated" ? "Integrated" : "Deferred"} Shipping Code`}
+          code={shippingFlow === "integrated" ? integratedCode : deferredCode}
         />
       </div>
 
@@ -573,12 +678,6 @@ Afterpay.initializeForPopup({
           className="h-12"
         />
       </button>
-
-      {/* Code Viewer */}
-      <CodeViewer
-        title={`View ${shippingFlow === "integrated" ? "Integrated" : "Deferred"} Shipping Code`}
-        code={shippingFlow === "integrated" ? integratedCode : deferredCode}
-      />
     </div>
   );
 }

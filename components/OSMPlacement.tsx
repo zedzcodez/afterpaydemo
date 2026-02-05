@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 interface OSMPlacementProps {
   pageType: "product" | "cart";
@@ -10,25 +10,6 @@ interface OSMPlacementProps {
   itemSkus?: string;
   itemCategories?: string;
   isEligible?: boolean;
-}
-
-// Dark mode fallback component with official Afterpay branding
-function DarkModeFallback({ amount }: { amount: number }) {
-  return (
-    <div className="flex items-center gap-2 text-sm">
-      <span className="text-afterpay-gray-300">
-        or 4 interest-free payments of{" "}
-        <span className="font-semibold text-white">${(amount / 4).toFixed(2)}</span>
-        {" "}with
-      </span>
-      <img
-        alt="Afterpay"
-        src="https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-mono-white-32.svg"
-        height="20"
-        className="h-5 inline-block"
-      />
-    </div>
-  );
 }
 
 export function OSMPlacement({
@@ -41,7 +22,6 @@ export function OSMPlacement({
   isEligible = true,
 }: OSMPlacementProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const mpid = process.env.NEXT_PUBLIC_AFTERPAY_MPID;
   const placementId =
@@ -49,27 +29,7 @@ export function OSMPlacement({
       ? process.env.NEXT_PUBLIC_OSM_PDP_PLACEMENT_ID
       : process.env.NEXT_PUBLIC_OSM_CART_PLACEMENT_ID;
 
-  // Detect dark mode
   useEffect(() => {
-    const checkDarkMode = () => {
-      setIsDarkMode(document.documentElement.classList.contains("dark"));
-    };
-
-    checkDarkMode();
-
-    // Watch for dark mode changes
-    const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    // Don't render widget in dark mode - use fallback instead
-    if (isDarkMode) return;
     if (!containerRef.current || !mpid || !placementId) return;
 
     // Clear any existing content
@@ -98,28 +58,26 @@ export function OSMPlacement({
     isEligible,
     mpid,
     placementId,
-    isDarkMode,
   ]);
-
-  // Show dark mode fallback
-  if (isDarkMode) {
-    return <DarkModeFallback amount={amount} />;
-  }
 
   // Fallback display when env vars are missing
   if (!mpid || !placementId) {
     return (
-      <div className="flex items-center gap-2 text-sm text-afterpay-gray-500">
+      <div className="flex items-center gap-2 text-sm text-afterpay-gray-600 dark:text-afterpay-gray-300">
         <span>
-          or 4 interest-free payments of{" "}
-          <span className="font-semibold">${(amount / 4).toFixed(2)}</span>
-          {" "}with
+          Pay in 4 interest-free payments with
         </span>
         <img
-          alt="Afterpay"
-          src="https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-mono-black-32.svg"
+          alt="Cash App Afterpay"
+          src="https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-color-black-32.svg"
           height="20"
-          className="h-5 inline-block"
+          className="h-5 inline-block dark:hidden"
+        />
+        <img
+          alt="Cash App Afterpay"
+          src="https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-color-white-32.svg"
+          height="20"
+          className="h-5 hidden dark:inline-block"
         />
       </div>
     );

@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getProduct, formatPrice, products } from "@/lib/products";
 import { useCart } from "@/components/CartProvider";
-import { OSMPlacement } from "@/components/OSMPlacement";
+import { OSMInfoSection } from "@/components/OSMInfoSection";
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -79,14 +79,14 @@ export default function ProductDetailPage() {
             </p>
           </div>
 
-          {/* Afterpay OSM - Below Price */}
-          <div className="mb-8 p-4 bg-afterpay-gray-50 dark:bg-afterpay-gray-700 rounded-lg">
-            <OSMPlacement
+          {/* Afterpay OSM & Developer Info */}
+          <div className="mb-8">
+            <OSMInfoSection
               pageType="product"
               amount={product.price}
               currency={product.currency}
-              itemSkus={product.sku}
-              itemCategories={product.category}
+              productSku={product.sku}
+              productCategory={product.category}
             />
           </div>
 
@@ -121,7 +121,22 @@ export default function ProductDetailPage() {
 
           {/* Features */}
           <div className="mt-8 pt-8 border-t border-afterpay-gray-200 dark:border-afterpay-gray-700">
-            <h3 className="font-medium mb-4 dark:text-white">Why shop with Afterpay?</h3>
+            <h3 className="font-medium mb-4 dark:text-white flex items-center gap-2">
+              Why shop with
+              <img
+                alt="Cash App Afterpay"
+                src="https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-color-black-32.svg"
+                height="20"
+                className="h-5 dark:hidden"
+              />
+              <img
+                alt="Cash App Afterpay"
+                src="https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-color-white-32.svg"
+                height="20"
+                className="h-5 hidden dark:block"
+              />
+              ?
+            </h3>
             <ul className="space-y-3 text-sm text-afterpay-gray-600 dark:text-afterpay-gray-300">
               <li className="flex items-center">
                 <svg

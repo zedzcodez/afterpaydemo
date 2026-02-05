@@ -13,17 +13,44 @@ const DEFAULT_PANEL_HEIGHT = 320;
 const MIN_PANEL_HEIGHT = 200;
 const MAX_PANEL_HEIGHT_RATIO = 0.8; // 80% of viewport height
 
+// Custom events for controlling the dev panel externally
+export const openDevPanel = (heightPercent: number = 25) => {
+  const height = Math.round(window.innerHeight * (heightPercent / 100));
+  window.dispatchEvent(new CustomEvent("openDevPanel", { detail: { height } }));
+};
+
+export const closeDevPanel = () => {
+  window.dispatchEvent(new CustomEvent("closeDevPanel"));
+};
+
+export const toggleDevPanel = (heightPercent: number = 25) => {
+  window.dispatchEvent(new CustomEvent("toggleDevPanel", { detail: { heightPercent } }));
+};
+
+// Hook to track dev panel state from other components
+export const useDevPanelState = () => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const handleStateChange = (e: CustomEvent<{ isOpen: boolean }>) => {
+      setIsOpen(e.detail.isOpen);
+    };
+
+    window.addEventListener("devPanelStateChange", handleStateChange as EventListener);
+    return () => window.removeEventListener("devPanelStateChange", handleStateChange as EventListener);
+  }, []);
+
+  return isOpen;
+};
+
 export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedLog, setSelectedLog] = useState<string | null>(null);
+  const [showResizeHint, setShowResizeHint] = useState(false);
   const [flowLogs, setFlowLogs] = useState<FlowLogs | null>(null);
   const [filter, setFilter] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    headers: true,
-    request: true,
-    response: true,
-  });
+  const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
+  const [isEventsListExpanded, setIsEventsListExpanded] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
   // Resize state
@@ -81,6 +108,50 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
     setIsResizing(true);
   };
 
+  // Listen for external open/close/toggle events
+  useEffect(() => {
+    const handleOpenDevPanel = (e: CustomEvent<{ height: number }>) => {
+      const height = Math.max(MIN_PANEL_HEIGHT, Math.min(e.detail.height, window.innerHeight * MAX_PANEL_HEIGHT_RATIO));
+      setPanelHeight(height);
+      setIsOpen(true);
+      setShowResizeHint(true);
+      // Hide hint after 5 seconds
+      setTimeout(() => setShowResizeHint(false), 5000);
+    };
+
+    const handleCloseDevPanel = () => {
+      setIsOpen(false);
+    };
+
+    const handleToggleDevPanel = (e: CustomEvent<{ heightPercent: number }>) => {
+      if (isOpen) {
+        setIsOpen(false);
+      } else {
+        const height = Math.round(window.innerHeight * (e.detail.heightPercent / 100));
+        const clampedHeight = Math.max(MIN_PANEL_HEIGHT, Math.min(height, window.innerHeight * MAX_PANEL_HEIGHT_RATIO));
+        setPanelHeight(clampedHeight);
+        setIsOpen(true);
+        setShowResizeHint(true);
+        setTimeout(() => setShowResizeHint(false), 5000);
+      }
+    };
+
+    window.addEventListener("openDevPanel", handleOpenDevPanel as EventListener);
+    window.addEventListener("closeDevPanel", handleCloseDevPanel);
+    window.addEventListener("toggleDevPanel", handleToggleDevPanel as EventListener);
+
+    return () => {
+      window.removeEventListener("openDevPanel", handleOpenDevPanel as EventListener);
+      window.removeEventListener("closeDevPanel", handleCloseDevPanel);
+      window.removeEventListener("toggleDevPanel", handleToggleDevPanel as EventListener);
+    };
+  }, [isOpen]);
+
+  // Notify other components when panel state changes
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("devPanelStateChange", { detail: { isOpen } }));
+  }, [isOpen]);
+
   useEffect(() => {
     setFlowLogs(getFlowLogs());
     const interval = setInterval(() => {
@@ -109,10 +180,6 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
         JSON.stringify(log.data).toLowerCase().includes(query)
       );
     });
-
-  const toggleSection = (section: string) => {
-    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
-  };
 
   const getMethodColor = (type: FlowLogEntry["type"]) => {
     switch (type) {
@@ -186,6 +253,91 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const formatRelativeTime = (timestamp: string): string => {
+    const now = Date.now();
+    const time = new Date(timestamp).getTime();
+    const diff = Math.floor((now - time) / 1000);
+    if (diff < 5) return "just now";
+    if (diff < 60) return `${diff}s ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    return new Date(timestamp).toLocaleTimeString();
+  };
+
+  const toggleEventExpanded = (id: string) => {
+    setExpandedEvents(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const getEventIcon = (type: FlowLogEntry["type"]) => {
+    switch (type) {
+      case "api_request":
+        return (
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+          </svg>
+        );
+      case "api_response":
+        return (
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
+        );
+      case "callback":
+        return (
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        );
+      case "redirect":
+        return (
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        );
+      default:
+        return (
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        );
+    }
+  };
+
+  const getEventIconBg = (type: FlowLogEntry["type"]) => {
+    switch (type) {
+      case "api_request":
+        return "bg-blue-600";
+      case "api_response":
+        return "bg-green-600";
+      case "callback":
+        return "bg-purple-600";
+      case "redirect":
+        return "bg-orange-600";
+      default:
+        return "bg-gray-600";
+    }
+  };
+
+  const getEventTypeLabel = (type: FlowLogEntry["type"]) => {
+    switch (type) {
+      case "api_request":
+        return { label: "REQUEST", color: "text-blue-400" };
+      case "api_response":
+        return { label: "RESPONSE", color: "text-green-400" };
+      case "callback":
+        return { label: "CALLBACK", color: "text-purple-400" };
+      case "redirect":
+        return { label: "REDIRECT", color: "text-orange-400" };
+    }
   };
 
   // Generate cURL command from log entry
@@ -282,32 +434,44 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
 
   return (
     <div ref={panelRef} className={`fixed bottom-0 left-0 right-0 bg-afterpay-gray-900 text-white z-50 ${className}`}>
-      {/* Resize Handle */}
+      {/* Resize Handle - positioned above header with higher z-index */}
       {isOpen && (
         <div
           onMouseDown={handleResizeStart}
-          className={`absolute top-0 left-0 right-0 h-2 cursor-ns-resize group flex items-center justify-center ${
+          className={`absolute top-0 left-0 right-0 h-3 cursor-ns-resize group flex items-center justify-center z-20 ${
             isResizing ? "bg-afterpay-mint/30" : "hover:bg-afterpay-mint/20"
           }`}
         >
           {/* Visual grip indicator */}
-          <div className={`w-12 h-1 rounded-full transition-colors ${
+          <div className={`w-16 h-1 rounded-full transition-colors ${
             isResizing ? "bg-afterpay-mint" : "bg-afterpay-gray-600 group-hover:bg-afterpay-mint"
           }`} />
         </div>
       )}
       {/* Header */}
-      <div className="w-full px-4 py-2 bg-afterpay-gray-800 flex items-center justify-between">
+      <div
+        className="w-full px-4 py-2 bg-afterpay-gray-800 flex items-center justify-center relative group/header"
+        onMouseEnter={() => isOpen && setShowResizeHint(true)}
+        onMouseLeave={() => setShowResizeHint(false)}
+      >
+        {/* Resize tooltip - shown on header hover when panel is open */}
+        {isOpen && showResizeHint && (
+          <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-afterpay-black text-white text-xs px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap animate-fade-in-up z-10">
+            Drag to resize panel
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-afterpay-black" />
+          </div>
+        )}
+        {/* Centered title section */}
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-2"
         >
-          <span className="text-sm font-medium">Developer Panel</span>
-          <span className="text-xs bg-afterpay-mint text-afterpay-black px-2 py-0.5 rounded-full">
+          <span className="text-sm font-bold">Developer Panel</span>
+          <span className="text-xs bg-afterpay-mint text-afterpay-black px-2 py-0.5 rounded-full font-semibold">
             {filteredLogs.length}{filter !== "all" || searchQuery ? `/${logs.length}` : ""} events
           </span>
           {flowLogs?.flow && (
-            <span className="text-xs text-afterpay-gray-400">
+            <span className="text-xs text-afterpay-gray-300 font-medium">
               {flowLogs.flow === "express-integrated"
                 ? "Express (Integrated)"
                 : flowLogs.flow === "express-deferred"
@@ -318,7 +482,8 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
             </span>
           )}
         </button>
-        <div className="flex items-center gap-2">
+        {/* Right side controls - absolutely positioned */}
+        <div className="absolute right-4 flex items-center gap-2">
           {isOpen && (
             <>
               {/* Export Dropdown */}
@@ -404,247 +569,249 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
             )}
           </div>
 
-          {/* Main Content */}
-          <div className="flex-1 flex overflow-hidden">
-            {/* Log List */}
-            <div className="w-1/3 border-r border-afterpay-gray-700 overflow-y-auto">
-              {filteredLogs.length === 0 ? (
-                <div className="p-4 text-afterpay-gray-500 text-sm">
-                  {logs.length === 0 ? "No events recorded yet" : "No matching events"}
+          {/* Main Content - Card-style Collapsible Events */}
+          <div className="flex-1 overflow-y-auto p-4">
+            {/* Events List Header - Collapsible */}
+            <div className="mb-3">
+              <button
+                onClick={() => setIsEventsListExpanded(!isEventsListExpanded)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-afterpay-gray-800 rounded-lg hover:bg-afterpay-gray-750 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-white">Events Timeline</span>
+                  <span className="text-xs bg-afterpay-mint text-afterpay-black px-2 py-0.5 rounded-full font-medium">
+                    {filteredLogs.length}
+                  </span>
+                  {/* Quick status indicators when collapsed */}
+                  {!isEventsListExpanded && filteredLogs.length > 0 && (
+                    <div className="flex items-center gap-1 ml-2">
+                      {filteredLogs.slice(0, 8).map((log, i) => (
+                        <div
+                          key={log.id}
+                          className={`w-2 h-2 rounded-full ${getEventIconBg(log.type)}`}
+                          title={log.label}
+                        />
+                      ))}
+                      {filteredLogs.length > 8 && (
+                        <span className="text-xs text-afterpay-gray-500 ml-1">+{filteredLogs.length - 8}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
-              ) : (
-                filteredLogs.map((log) => {
-                  const apiStatus = getApiStatus(log.data as Record<string, unknown> | undefined);
-                  const errorMsg = getErrorMessage(log.data as Record<string, unknown> | undefined);
-                  const docUrl = getDocUrl(log.endpoint);
-
-                  return (
-                    <button
-                      key={log.id}
-                      onClick={() => setSelectedLog(log.id)}
-                      className={`w-full p-3 text-left border-b border-afterpay-gray-700 hover:bg-afterpay-gray-800 ${
-                        selectedLog === log.id ? "bg-afterpay-gray-800" : ""
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${getMethodColor(log.type)}`}>
-                          {getTypeLabel(log)}
-                        </span>
-                        {log.status && (
-                          <span className={`text-xs font-mono ${log.status >= 400 ? "text-red-400" : "text-green-400"}`}>
-                            {log.status}
-                          </span>
-                        )}
-                        {apiStatus && (
-                          <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${getApiStatusColor(apiStatus)}`}>
-                            {apiStatus}
-                          </span>
-                        )}
-                        {log.duration && (
-                          <span className="text-xs text-afterpay-gray-500">{log.duration}ms</span>
-                        )}
-                      </div>
-                      <div className="text-sm text-white truncate">{log.label}</div>
-                      {log.endpoint && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-afterpay-gray-400 truncate flex-1">
-                            {log.fullUrl || log.endpoint}
-                          </span>
-                          {docUrl && (
-                            <a
-                              href={docUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-xs text-afterpay-mint hover:underline flex-shrink-0"
-                              title="View API documentation"
-                            >
-                              Docs
-                            </a>
-                          )}
-                        </div>
-                      )}
-                      {errorMsg && (
-                        <div className="text-xs text-red-400 mt-1 truncate">{errorMsg}</div>
-                      )}
-                      <div className="text-xs text-afterpay-gray-500">
-                        {new Date(log.timestamp).toLocaleTimeString()}
-                      </div>
-                    </button>
-                  );
-                })
-              )}
+                <div className="flex items-center gap-2">
+                  {!isEventsListExpanded && filteredLogs.length > 0 && (
+                    <span className="text-xs text-afterpay-gray-400">
+                      Latest: {filteredLogs[0]?.label.substring(0, 30)}{filteredLogs[0]?.label.length > 30 ? "..." : ""}
+                    </span>
+                  )}
+                  <svg
+                    className={`w-5 h-5 text-afterpay-gray-400 transition-transform duration-200 ${
+                      isEventsListExpanded ? "rotate-180" : ""
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </button>
             </div>
 
-            {/* Log Detail */}
-            <div className="flex-1 overflow-y-auto p-4">
-              {selectedLog ? (
-                (() => {
-                  const log = logs.find((l) => l.id === selectedLog);
-                  if (!log) return null;
+            {/* Events List Content */}
+            <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
+              isEventsListExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+            }`}>
+              {filteredLogs.length === 0 ? (
+                <div className="text-afterpay-gray-500 text-sm text-center py-8">
+                  {logs.length === 0 ? "No events recorded yet. Start a checkout flow to see events." : "No matching events"}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredLogs.map((log) => {
                   const apiStatus = getApiStatus(log.data as Record<string, unknown> | undefined);
                   const errorMsg = getErrorMessage(log.data as Record<string, unknown> | undefined);
                   const docUrl = getDocUrl(log.endpoint);
-                  const fullUrl = log.fullUrl || (log.endpoint ? `https://global-api-sandbox.afterpay.com${log.endpoint}` : null);
+                  const isExpanded = expandedEvents.has(log.id);
+                  const typeInfo = getEventTypeLabel(log.type);
                   const dataSize = log.data ? new Blob([JSON.stringify(log.data)]).size : 0;
 
                   return (
-                    <div className="space-y-4">
-                      {/* Request Overview */}
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className={`text-xs font-mono px-2 py-1 rounded ${getMethodColor(log.type)}`}>
-                              {getTypeLabel(log)}
+                    <div
+                      key={log.id}
+                      className="bg-afterpay-gray-800/50 rounded-lg overflow-hidden"
+                    >
+                      {/* Event Header - Always Visible */}
+                      <button
+                        onClick={() => toggleEventExpanded(log.id)}
+                        className="w-full flex items-center gap-4 p-4 hover:bg-afterpay-gray-800 transition-colors text-left"
+                      >
+                        {/* Icon */}
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${getEventIconBg(log.type)}`}>
+                          {getEventIcon(log.type)}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`text-xs font-semibold ${typeInfo.color}`}>
+                              {typeInfo.label}
                             </span>
-                            <h4 className="text-sm font-medium text-white">{log.label}</h4>
+                            {log.status && (
+                              <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${
+                                log.status >= 400
+                                  ? "bg-red-900/50 text-red-400"
+                                  : "bg-green-900/50 text-green-400"
+                              }`}>
+                                {log.status}
+                              </span>
+                            )}
+                            {log.duration && (
+                              <span className="text-xs text-afterpay-gray-500">{log.duration}ms</span>
+                            )}
+                            {apiStatus && (
+                              <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${getApiStatusColor(apiStatus)}`}>
+                                {apiStatus}
+                              </span>
+                            )}
                           </div>
-                          {fullUrl && (
-                            <div className="text-xs text-afterpay-gray-400 font-mono break-all mb-2">
-                              {fullUrl}
+                          <div className="text-sm font-medium text-white truncate">
+                            {log.label}
+                          </div>
+                          {log.endpoint && (
+                            <div className="text-xs text-afterpay-gray-400 font-mono truncate mt-0.5">
+                              {log.method && <span className="text-afterpay-gray-500">{log.method} </span>}
+                              {log.endpoint}
                             </div>
                           )}
-                          <div className="flex items-center gap-3 text-xs text-afterpay-gray-500">
-                            <span>{new Date(log.timestamp).toLocaleString()}</span>
-                            {log.duration && <span>{log.duration}ms</span>}
-                            {dataSize > 0 && <span>{formatBytes(dataSize)}</span>}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {docUrl && (
-                            <a
-                              href={docUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-afterpay-mint hover:underline flex items-center gap-1"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                              </svg>
-                              Docs
-                            </a>
-                          )}
-                          {(log.type === "api_request" || log.type === "api_response") && log.endpoint && (
-                            <button
-                              onClick={() => copyToClipboard(generateCurl(log))}
-                              className="text-xs text-afterpay-gray-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded hover:bg-afterpay-gray-700"
-                              title="Copy as cURL"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                              </svg>
-                              {copySuccess ? "Copied!" : "cURL"}
-                            </button>
+                          {errorMsg && !isExpanded && (
+                            <div className="text-xs text-red-400 mt-1 truncate">{errorMsg}</div>
                           )}
                         </div>
-                      </div>
 
-                      {/* API Status Badge */}
-                      {apiStatus && (
-                        <div className={`inline-block text-sm font-semibold px-3 py-1.5 rounded ${getApiStatusColor(apiStatus)}`}>
-                          Status: {apiStatus}
-                        </div>
-                      )}
-
-                      {/* Error Message */}
-                      {errorMsg && (
-                        <div className="bg-red-900/30 border border-red-700 rounded p-3">
-                          <div className="text-xs font-medium text-red-400 mb-1">Error</div>
-                          <div className="text-sm text-red-300">{errorMsg}</div>
-                        </div>
-                      )}
-
-                      {/* Path Parameters */}
-                      {log.pathParams && Object.keys(log.pathParams).length > 0 && (
-                        <div>
-                          <h5 className="text-xs font-medium text-afterpay-gray-400 mb-2">PATH PARAMETERS</h5>
-                          <div className="bg-afterpay-gray-800 rounded p-3">
-                            {Object.entries(log.pathParams).map(([key, value]) => (
-                              <div key={key} className="flex text-xs">
-                                <span className="text-afterpay-mint font-mono">{key}:</span>
-                                <span className="text-white ml-2 font-mono">{value}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Headers Section */}
-                      {(log.headers || log.type === "api_request" || log.type === "api_response") && (
-                        <div>
-                          <button
-                            onClick={() => toggleSection("headers")}
-                            className="flex items-center gap-2 text-xs font-medium text-afterpay-gray-400 mb-2 hover:text-white"
+                        {/* Timestamp & Chevron */}
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <span className="text-xs text-afterpay-gray-500">
+                            {new Date(log.timestamp).toLocaleTimeString()}
+                          </span>
+                          <svg
+                            className={`w-5 h-5 text-afterpay-gray-500 transition-transform duration-200 ${
+                              isExpanded ? "rotate-180" : ""
+                            }`}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
                           >
-                            <svg
-                              className={`w-3 h-3 transition-transform ${expandedSections.headers ? "rotate-90" : ""}`}
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                            HEADERS
-                          </button>
-                          {expandedSections.headers && (
-                            <div className="bg-afterpay-gray-800 rounded p-3 text-xs font-mono space-y-1">
-                              <div className="flex">
-                                <span className="text-afterpay-mint">Content-Type:</span>
-                                <span className="text-white ml-2">{log.headers?.contentType || "application/json"}</span>
-                              </div>
-                              <div className="flex">
-                                <span className="text-afterpay-mint">Authorization:</span>
-                                <span className="text-white ml-2">{log.headers?.authorization || "Basic ***"}</span>
-                              </div>
-                              {log.headers?.userAgent && (
-                                <div className="flex">
-                                  <span className="text-afterpay-mint">User-Agent:</span>
-                                  <span className="text-white ml-2">{log.headers.userAgent}</span>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </button>
+
+                      {/* Expanded Content */}
+                      {isExpanded && (
+                        <div className="px-4 pb-4 pt-0 border-t border-afterpay-gray-700/50">
+                          <div className="pl-14 space-y-3">
+                            {/* Full URL */}
+                            {(log.fullUrl || log.endpoint) && (
+                              <div>
+                                <div className="text-xs font-medium text-afterpay-gray-400 mb-1">URL</div>
+                                <div className="text-xs text-white font-mono break-all bg-afterpay-gray-800 rounded p-2">
+                                  {log.fullUrl || `https://global-api-sandbox.afterpay.com${log.endpoint}`}
                                 </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                              </div>
+                            )}
 
-                      {/* Request/Response Data */}
-                      {log.data && (
-                        <div>
-                          <button
-                            onClick={() => toggleSection(log.type === "api_request" ? "request" : "response")}
-                            className="flex items-center gap-2 text-xs font-medium text-afterpay-gray-400 mb-2 hover:text-white"
-                          >
-                            <svg
-                              className={`w-3 h-3 transition-transform ${
-                                expandedSections[log.type === "api_request" ? "request" : "response"] ? "rotate-90" : ""
-                              }`}
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                            {log.type === "api_request" ? "REQUEST BODY" : "RESPONSE BODY"}
-                            <span className="text-afterpay-gray-500 font-normal">({formatBytes(dataSize)})</span>
-                          </button>
-                          {expandedSections[log.type === "api_request" ? "request" : "response"] && (
-                            <pre className="text-xs bg-afterpay-gray-800 p-3 rounded overflow-x-auto max-h-64">
-                              {JSON.stringify(log.data, null, 2)}
-                            </pre>
-                          )}
+                            {/* Error Message */}
+                            {errorMsg && (
+                              <div className="bg-red-900/30 border border-red-700/50 rounded p-3">
+                                <div className="text-xs font-medium text-red-400 mb-1">Error</div>
+                                <div className="text-sm text-red-300">{errorMsg}</div>
+                              </div>
+                            )}
+
+                            {/* Request ID - shown prominently for idempotency debugging */}
+                            {((log.data as Record<string, unknown>)?.requestBody as Record<string, unknown>)?.requestId || ((log.data as Record<string, unknown>)?._meta as Record<string, unknown>)?.requestId ? (
+                              <div className="bg-afterpay-gray-800 rounded p-3">
+                                <span className="text-xs text-afterpay-gray-400">Request ID: </span>
+                                <code className="text-xs text-afterpay-mint font-mono">
+                                  {(((log.data as Record<string, unknown>)?.requestBody as Record<string, unknown>)?.requestId || ((log.data as Record<string, unknown>)?._meta as Record<string, unknown>)?.requestId) as string}
+                                </code>
+                              </div>
+                            ) : null}
+
+                            {/* Data/Payload */}
+                            {log.data && (
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-xs font-medium text-afterpay-gray-400">
+                                    {log.type === "api_request" ? "Request Body" : log.type === "api_response" ? "Response Body" : "Data"}
+                                    <span className="text-afterpay-gray-500 font-normal ml-2">({formatBytes(dataSize)})</span>
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    {docUrl && (
+                                      <a
+                                        href={docUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs text-afterpay-mint hover:underline flex items-center gap-1"
+                                      >
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                        Docs
+                                      </a>
+                                    )}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        copyToClipboard(JSON.stringify(log.data, null, 2));
+                                      }}
+                                      className="text-xs text-afterpay-gray-400 hover:text-white flex items-center gap-1"
+                                    >
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                      </svg>
+                                      {copySuccess ? "Copied!" : "Copy"}
+                                    </button>
+                                  </div>
+                                </div>
+                                <pre className="text-xs bg-afterpay-gray-800 p-3 rounded overflow-x-auto max-h-48 text-afterpay-gray-100">
+                                  {JSON.stringify(log.data, null, 2)}
+                                </pre>
+                              </div>
+                            )}
+
+                            {/* cURL Command for API calls */}
+                            {(log.type === "api_request" || log.type === "api_response") && log.endpoint && (
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-xs font-medium text-afterpay-gray-400">cURL</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyToClipboard(generateCurl(log));
+                                    }}
+                                    className="text-xs text-afterpay-gray-400 hover:text-white flex items-center gap-1"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                    Copy
+                                  </button>
+                                </div>
+                                <pre className="text-xs bg-afterpay-gray-800 p-3 rounded overflow-x-auto text-afterpay-gray-100 font-mono">
+                                  {generateCurl(log)}
+                                </pre>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
-                      {!log.data && log.type !== "redirect" && log.type !== "callback" && (
-                        <p className="text-sm text-afterpay-gray-500">No data available</p>
                       )}
                     </div>
                   );
-                })()
-              ) : (
-                <div className="text-afterpay-gray-500 text-sm">
-                  Select an event to view details
-                </div>
-              )}
+                })}
+              </div>
+            )}
             </div>
           </div>
         </div>

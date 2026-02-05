@@ -47,7 +47,7 @@ const demoNav = [
 const toolsNav = [
   { href: "/admin", label: "Admin" },
   { href: "/orders", label: "Orders" },
-  { href: "/docs", label: "Docs" },
+  { href: "/docs", label: "User Guide" },
 ];
 
 export function Header() {
@@ -113,7 +113,7 @@ export function Header() {
     return (
       <Link
         href={href}
-        className={`relative px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
+        className={`relative px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all duration-200 ${
           active
             ? "text-afterpay-black dark:text-white"
             : "text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white"
@@ -170,7 +170,7 @@ export function Header() {
               {/* Theme Toggle - Text Label */}
               <button
                 onClick={toggleTheme}
-                className="px-3 py-1.5 text-sm font-medium text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white transition-all duration-200"
+                className="px-3 py-1.5 text-sm font-medium whitespace-nowrap text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white transition-all duration-200"
                 aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               >
                 {resolvedTheme === "dark" ? "Light Mode" : "Dark Mode"}

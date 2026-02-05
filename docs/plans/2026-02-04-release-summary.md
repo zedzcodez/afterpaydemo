@@ -111,6 +111,27 @@ Premium documentation viewer with:
 - **Clear All** - Remove all orders at once
 - **Cart behavior** - Only cleared after successful payment authorization
 
+### Latest Updates (Post-2.0.0)
+
+#### Integration Flow Summary
+New summary panel on the confirmation page showing:
+- **Flow description and steps** - What flow was executed and sequence
+- **Request configuration** - Critical API parameters (mode, popupOriginUrl, checksums)
+- **Checkout adjustment** - Amount breakdown for deferred shipping flows
+- **Response data** - Key values from API responses (token, orderId, status)
+- **Documentation links** - Direct links to Afterpay docs for each parameter
+- **Copy button** - Export flow data as JSON with disclaimer
+
+#### On-Site Messaging (OSM) Update
+- **Pay Monthly messaging** - Added documentation for Pay Monthly option when enabled for merchant account
+
+#### Documentation Audit
+- **CHANGELOG.md** - New version history document
+- **ARCHITECTURE.md** - New technical overview for maintainers
+- **User Guide focus** - /docs page now shows only How-to-Use guide
+- **Audience split** - Public docs vs internal maintainer docs
+- **Archive structure** - Completed design docs moved to docs/archive/
+
 ---
 
 ## Files Created/Modified
@@ -205,6 +226,10 @@ README.md (documentation updates)
 | In-app documentation | ✅ Verified |
 | Navigation redesign | ✅ Verified |
 | Official branding | ✅ Verified |
+| Integration Flow Summary | ✅ Verified |
+| CHANGELOG.md created | ✅ Verified |
+| ARCHITECTURE.md created | ✅ Verified |
+| Documentation audit complete | ✅ Verified |
 
 ---
 
@@ -231,12 +256,17 @@ npm run build
 
 ## Documentation
 
-### In-App Documentation
-Access documentation directly within the app at `/docs`:
-- **README tab** - Project overview and setup instructions
-- **How to Use tab** - Detailed testing guide for all features
+### In-App User Guide
+Access the testing guide directly within the app at `/docs`:
+- **How to Use Guide** - Detailed testing guide for all features
 - **Table of contents** - Auto-generated navigation sidebar
 - **Section highlighting** - Active section tracked on scroll
+
+### Repository Documentation
+- **README.md** - Project overview (for maintainers)
+- **ARCHITECTURE.md** - Technical overview and patterns
+- **CHANGELOG.md** - Version history
+- **how-to-use.md** - Testing guide (rendered in-app)
 
 ### Documentation Files
 - [README.md](../../README.md) - Project overview and getting started

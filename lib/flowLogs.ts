@@ -30,10 +30,27 @@ export interface FlowLogEntry {
   responseSize?: number;  // Response body size in bytes
 }
 
+export interface FlowSummary {
+  flow: string;
+  description: string;
+  steps: string[];
+  docsUrl: string;
+  requestConfig: Record<string, unknown>;
+  responseData: Record<string, unknown>;
+  adjustment?: {
+    originalAmount: { amount: string; currency: string };
+    shippingAmount: { amount: string; currency: string };
+    shippingName: string;
+    adjustedAmount: { amount: string; currency: string };
+    checksum: string;
+  };
+}
+
 export interface FlowLogs {
   flow: string;
   startTime: string;
   entries: FlowLogEntry[];
+  summary?: FlowSummary;
 }
 
 const STORAGE_KEY = "afterpay-flow-logs";
@@ -59,6 +76,35 @@ export function initFlowLogs(flow: string): void {
   }
 }
 
+// Check if two entries are duplicates based on key fields
+function isDuplicateEntry(
+  existing: FlowLogEntry,
+  newEntry: Omit<FlowLogEntry, "id" | "timestamp">,
+  timeWindowMs: number = 2000
+): boolean {
+  // Check if the existing entry is within the time window
+  const existingTime = new Date(existing.timestamp).getTime();
+  const now = Date.now();
+  if (now - existingTime > timeWindowMs) {
+    return false;
+  }
+
+  // Compare key fields
+  if (existing.type !== newEntry.type) return false;
+  if (existing.label !== newEntry.label) return false;
+  if (existing.method !== newEntry.method) return false;
+  if (existing.endpoint !== newEntry.endpoint) return false;
+
+  // For callbacks and redirects, also compare data if present
+  if (newEntry.type === "callback" || newEntry.type === "redirect") {
+    const existingData = JSON.stringify(existing.data || {});
+    const newData = JSON.stringify(newEntry.data || {});
+    if (existingData !== newData) return false;
+  }
+
+  return true;
+}
+
 export function addFlowLog(entry: Omit<FlowLogEntry, "id" | "timestamp">): void {
   if (typeof window === "undefined") return;
 
@@ -66,6 +112,18 @@ export function addFlowLog(entry: Omit<FlowLogEntry, "id" | "timestamp">): void 
   if (!stored) return;
 
   const logs: FlowLogs = JSON.parse(stored);
+
+  // Check for duplicates in recent entries (last 10 entries within 2 second window)
+  const recentEntries = logs.entries.slice(-10);
+  const isDuplicate = recentEntries.some((existing) =>
+    isDuplicateEntry(existing, entry)
+  );
+
+  if (isDuplicate) {
+    // Skip adding duplicate entry
+    return;
+  }
+
   logs.entries.push({
     ...entry,
     id: generateUniqueId(),
@@ -87,6 +145,32 @@ export function clearFlowLogs(): void {
   if (typeof window !== "undefined") {
     sessionStorage.removeItem(STORAGE_KEY);
   }
+}
+
+export function setFlowSummary(summary: FlowSummary): void {
+  if (typeof window === "undefined") return;
+
+  const stored = sessionStorage.getItem(STORAGE_KEY);
+  if (!stored) return;
+
+  const logs: FlowLogs = JSON.parse(stored);
+  logs.summary = summary;
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+}
+
+export function updateFlowSummary(updates: Partial<FlowSummary>): void {
+  if (typeof window === "undefined") return;
+
+  const stored = sessionStorage.getItem(STORAGE_KEY);
+  if (!stored) return;
+
+  const logs: FlowLogs = JSON.parse(stored);
+  if (logs.summary) {
+    logs.summary = { ...logs.summary, ...updates };
+  } else {
+    logs.summary = updates as FlowSummary;
+  }
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
 }
 
 // Helper to log an API call (request + response)

@@ -331,6 +331,22 @@ afterpay-demo-v2/
 **Value:** Inclusive design demonstration
 **Effort:** Medium
 
+#### E16: Retry Logic & Idempotency Demo
+**Status:** OPEN
+**Value:** Demonstrates safe retry patterns using requestId idempotency
+**Effort:** Medium
+**Files:**
+- Create: `lib/retry.ts` (retry utility with exponential backoff)
+- Create: `components/TimeoutSimulator.tsx` (toggle in Admin Panel)
+- Modify: `app/admin/page.tsx` (add timeout simulation UI)
+- Modify: All API routes (integrate retry logic)
+
+**Features:**
+- Configurable retry attempts with exponential backoff
+- Timeout simulation toggle in Admin Panel
+- Visual demonstration of idempotent responses
+- Auth reversal edge case scenarios
+
 ---
 
 ## Security Remediation Plan (Prioritized)

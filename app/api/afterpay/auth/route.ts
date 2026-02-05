@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { authorizePayment, getCheckout, toMoney } from "@/lib/afterpay";
 import { sanitizeError } from "@/lib/errors";
 import { authRequestSchema, validateRequest } from "@/lib/validation";
@@ -7,6 +8,8 @@ const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afte
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
+  const requestId = randomUUID();
+
   try {
     const body = await request.json();
 
@@ -29,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Build request body for logging
-    const requestBody: Record<string, unknown> = { token, amount: authAmount };
+    const requestBody: Record<string, unknown> = { requestId, token, amount: authAmount };
     if (isCheckoutAdjusted) {
       requestBody.isCheckoutAdjusted = isCheckoutAdjusted;
       if (paymentScheduleChecksum) {
@@ -38,7 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Authorize with the determined amount and optional adjustment fields
-    const response = await authorizePayment(token, authAmount, {
+    const response = await authorizePayment(token, requestId, authAmount, {
       isCheckoutAdjusted,
       paymentScheduleChecksum,
     });
@@ -48,6 +51,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ...response,
       _meta: {
+        requestId,
         fullUrl: `${API_URL}/v2/payments/auth`,
         method: "POST",
         duration,

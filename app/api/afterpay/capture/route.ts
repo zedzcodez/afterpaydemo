@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { capturePayment, toMoney } from "@/lib/afterpay";
 import { sanitizeError } from "@/lib/errors";
 import { captureRequestSchema, validateRequest } from "@/lib/validation";
@@ -7,6 +8,8 @@ const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afte
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
+  const requestId = randomUUID();
+
   try {
     const body = await request.json();
 
@@ -18,7 +21,7 @@ export async function POST(request: NextRequest) {
     const { orderId, amount, currency, isCheckoutAdjusted, paymentScheduleChecksum } = validation.data;
 
     const captureAmount = toMoney(amount, currency);
-    const requestBody: Record<string, unknown> = { amount: captureAmount };
+    const requestBody: Record<string, unknown> = { requestId, amount: captureAmount };
     if (isCheckoutAdjusted) {
       requestBody.isCheckoutAdjusted = isCheckoutAdjusted;
       if (paymentScheduleChecksum) {
@@ -26,7 +29,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const response = await capturePayment(orderId, {
+    const response = await capturePayment(orderId, requestId, {
       amount: captureAmount,
       isCheckoutAdjusted,
       paymentScheduleChecksum,
@@ -37,6 +40,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ...response,
       _meta: {
+        requestId,
         fullUrl: `${API_URL}/v2/payments/${orderId}/capture`,
         method: "POST",
         duration,

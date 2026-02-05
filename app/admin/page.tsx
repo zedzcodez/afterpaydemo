@@ -511,16 +511,21 @@ function AdminContent() {
   const getRefundedAmount = () => {
     let total = 0;
 
-    // Check events for REFUND type - handle different naming conventions
+    // Check events array for explicit REFUND events
     if (payment?.events) {
       total += payment.events
         .filter((e) => e.type === "REFUND" || e.type === "REFUNDED" || e.type === "REFUND_APPROVED")
         .reduce((sum, e) => sum + parseFloat(e.amount.amount), 0);
     }
 
-    // Also check the refunds array (some API responses use this instead)
+    // Also check refunds array, but EXCLUDE entries that match event IDs
+    // Afterpay API populates refunds array with VOID events (same ID as VOIDED events)
+    // Real refunds only appear in refunds array, not in events array
     if (payment?.refunds && Array.isArray(payment.refunds)) {
-      total += payment.refunds.reduce((sum, r) => sum + parseFloat(r.amount.amount), 0);
+      const eventIds = new Set(payment.events?.map((e) => e.id) || []);
+      total += payment.refunds
+        .filter((r) => !eventIds.has(r.refundId)) // Exclude voids (matching event IDs)
+        .reduce((sum, r) => sum + parseFloat(r.amount.amount), 0);
     }
 
     return total;
@@ -937,13 +942,6 @@ function AdminContent() {
           </div>
         )}
 
-        {/* Success Message */}
-        {successMessage && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
-            {successMessage}
-          </div>
-        )}
-
         {/* Payment Details */}
         {payment && (
           <div className="space-y-6">
@@ -1083,6 +1081,16 @@ function AdminContent() {
               </div>
             </div>
 
+            {/* Transaction Status */}
+            {successMessage && (
+              <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded-lg flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span className="font-medium">{successMessage}</span>
+              </div>
+            )}
+
             {/* Actions */}
             <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 overflow-hidden">
               <div className="px-6 py-4 bg-gradient-to-r from-afterpay-gray-50 to-afterpay-mint/10 dark:from-afterpay-gray-700 dark:to-afterpay-mint/20 border-b border-afterpay-gray-200 dark:border-afterpay-gray-700">
@@ -1128,6 +1136,8 @@ function AdminContent() {
                 </div>
                 <div className="divide-y divide-afterpay-gray-200 dark:divide-afterpay-gray-700">
                   {/* Combine events and refunds into a unified timeline */}
+                  {/* NOTE: Filter refunds array to exclude entries that match event IDs,
+                      as Afterpay API populates refunds array with VOID events too */}
                   {[
                     ...(payment.events || []).map((event) => ({
                       id: `event-${event.id}`,
@@ -1135,12 +1145,14 @@ function AdminContent() {
                       created: event.created,
                       amount: event.amount,
                     })),
-                    ...(payment.refunds || []).map((refund) => ({
-                      id: `refund-${refund.refundId}`,
-                      type: "REFUND",
-                      created: refund.refundedAt,
-                      amount: refund.amount,
-                    })),
+                    ...(payment.refunds || [])
+                      .filter((refund) => !payment.events?.some((e) => e.id === refund.refundId))
+                      .map((refund) => ({
+                        id: `refund-${refund.refundId}`,
+                        type: "REFUND",
+                        created: refund.refundedAt,
+                        amount: refund.amount,
+                      })),
                   ]
                     .sort((a, b) => new Date(a.created).getTime() - new Date(b.created).getTime())
                     .map((item) => (

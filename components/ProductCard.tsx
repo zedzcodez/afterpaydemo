@@ -41,15 +41,17 @@ export function ProductCard({ product }: ProductCardProps) {
           {formatPrice(product.price, product.currency)}
         </p>
 
-        {/* Afterpay OSM Badge */}
+        {/* Afterpay OSM Badge (light background for widget visibility) */}
         <div className="mt-3 pt-3 border-t border-afterpay-gray-100 dark:border-afterpay-gray-700">
-          <OSMPlacement
-            pageType="product"
-            amount={product.price}
-            currency={product.currency}
-            itemSkus={product.sku}
-            itemCategories={product.category}
-          />
+          <div className="p-2 bg-afterpay-gray-50 rounded-lg dark:bg-white">
+            <OSMPlacement
+              pageType="product"
+              amount={product.price}
+              currency={product.currency}
+              itemSkus={product.sku}
+              itemCategories={product.category}
+            />
+          </div>
         </div>
       </div>
     </Link>

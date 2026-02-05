@@ -75,15 +75,17 @@ export interface AuthOptions {
 
 export async function authorizePayment(
   token: string,
+  requestId: string,
   amount?: Money,
   options?: AuthOptions
 ): Promise<AuthResponse> {
   const body: {
     token: string;
+    requestId: string;
     amount?: Money;
     isCheckoutAdjusted?: boolean;
     paymentScheduleChecksum?: string;
-  } = { token };
+  } = { token, requestId };
 
   if (amount) {
     body.amount = amount;
@@ -111,13 +113,15 @@ export interface CaptureOptions {
 
 export async function capturePayment(
   orderId: string,
+  requestId: string,
   options: CaptureOptions
 ): Promise<CaptureResponse> {
   const body: {
+    requestId: string;
     amount: Money;
     isCheckoutAdjusted?: boolean;
     paymentScheduleChecksum?: string;
-  } = { amount: options.amount };
+  } = { requestId, amount: options.amount };
 
   // Include adjustment fields for deferred shipping flow
   if (options.isCheckoutAdjusted) {
@@ -135,11 +139,12 @@ export async function capturePayment(
 
 export async function voidPayment(
   orderId: string,
+  requestId: string,
   amount: Money
 ): Promise<CaptureResponse> {
   return afterpayFetch<CaptureResponse>(`/v2/payments/${orderId}/void`, {
     method: "POST",
-    body: JSON.stringify({ amount }),
+    body: JSON.stringify({ requestId, amount }),
   });
 }
 
@@ -152,10 +157,11 @@ export interface RefundResponse {
 
 export async function refundPayment(
   orderId: string,
+  requestId: string,
   amount: Money,
   merchantReference?: string
 ): Promise<RefundResponse> {
-  const body: { amount: Money; merchantReference?: string } = { amount };
+  const body: { requestId: string; amount: Money; merchantReference?: string } = { requestId, amount };
   if (merchantReference) {
     body.merchantReference = merchantReference;
   }
@@ -203,9 +209,10 @@ export async function getCheckout(token: string): Promise<CheckoutResponse> {
 // Used for Immediate Capture mode
 export async function captureFullPayment(
   token: string,
+  requestId: string,
   merchantReference?: string
 ): Promise<CaptureResponse> {
-  const body: { token: string; merchantReference?: string } = { token };
+  const body: { token: string; requestId: string; merchantReference?: string } = { token, requestId };
   if (merchantReference) {
     body.merchantReference = merchantReference;
   }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { captureFullPayment } from "@/lib/afterpay";
 import { sanitizeError } from "@/lib/errors";
 import { captureFullRequestSchema, validateRequest } from "@/lib/validation";
@@ -9,6 +10,8 @@ const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afte
 // Used for Immediate Capture mode
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
+  const requestId = randomUUID();
+
   try {
     const body = await request.json();
 
@@ -19,18 +22,19 @@ export async function POST(request: NextRequest) {
     }
     const { token, merchantReference } = validation.data;
 
-    const requestBody: Record<string, unknown> = { token };
+    const requestBody: Record<string, unknown> = { requestId, token };
     if (merchantReference) {
       requestBody.merchantReference = merchantReference;
     }
 
-    const response = await captureFullPayment(token, merchantReference);
+    const response = await captureFullPayment(token, requestId, merchantReference);
     const duration = Date.now() - startTime;
 
     // Return response with metadata for Developer Panel
     return NextResponse.json({
       ...response,
       _meta: {
+        requestId,
         fullUrl: `${API_URL}/v2/payments/capture`,
         method: "POST",
         duration,

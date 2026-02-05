@@ -49,14 +49,18 @@ This guide walks you through testing all features of the Afterpay Demo Shop, wit
 
 ### Part 5: Developer Tools
 13. [Developer Panel](#developer-panel)
-14. [Code Viewer](#code-viewer)
+14. [Integration Flow Summary](#integration-flow-summary)
+15. [Code Viewer](#code-viewer)
 
 ### Part 6: App Customization
-15. [Settings & Preferences](#settings--preferences)
-16. [Navigation](#navigation)
-17. [Design System](#design-system)
-18. [UI Components](#ui-components)
-19. [In-App Documentation](#in-app-documentation)
+16. [Settings & Preferences](#settings--preferences)
+17. [Navigation](#navigation)
+18. [Design System](#design-system)
+19. [UI Components](#ui-components)
+20. [In-App Documentation](#in-app-documentation)
+
+### Part 7: Reference
+21. [Changelog](#changelog)
 
 ---
 
@@ -64,22 +68,12 @@ This guide walks you through testing all features of the Afterpay Demo Shop, wit
 
 ## Quick Start
 
-### Option 1: Live Demo (Recommended)
-
-**Try the demo instantly at: [afterpay-demo-v2.vercel.app](https://afterpay-demo-v2.vercel.app)**
+**Try the demo at: [afterpay-demo-v2.vercel.app](https://afterpay-demo-v2.vercel.app)**
 
 1. Visit the live demo
 2. Add products to cart
 3. Go to Checkout and test different flows
 4. Use sandbox credentials to complete checkout
-
-### Option 2: Run Locally
-
-1. Clone the repository: `git clone https://github.com/zedzcodez/afterpaydemo.git`
-2. Install dependencies: `npm install`
-3. Set up environment variables (see README)
-4. Start the development server: `npm run dev`
-5. Open http://localhost:3000
 
 ### Sandbox Test Account
 
@@ -133,6 +127,48 @@ Displays "Pay in 4 interest-free payments of $X.XX" badges (or "Pay Monthly" mes
 - `data-page-type`: Either `product` (PDP) or `cart` (Cart/Checkout)
 - Different placement IDs for PDP vs Cart
 - Amount updates automatically when cart changes
+
+#### Integration Code
+
+**1. Include the script (once per page):**
+```html
+<script src="https://js.squarecdn.com/square-marketplace.js"></script>
+```
+
+**2. Add the placement element:**
+```html
+<square-placement
+  data-mpid="YOUR_MPID"
+  data-placement-id="YOUR_PLACEMENT_ID"
+  data-page-type="product"
+  data-amount="99.00"
+  data-currency="USD"
+  data-item-skus="SKU-123"
+  data-item-categories="Electronics"
+  data-is-eligible="true"
+></square-placement>
+```
+
+**Required Environment Variables:**
+```bash
+NEXT_PUBLIC_AFTERPAY_MPID=your-merchant-mpid
+NEXT_PUBLIC_OSM_PDP_PLACEMENT_ID=your-pdp-placement-id
+NEXT_PUBLIC_OSM_CART_PLACEMENT_ID=your-cart-placement-id
+```
+
+> **Note:** Use different `placement-id` values for product pages (PDP) vs cart/checkout pages. This enables contextual messaging and conversion tracking.
+
+#### Dark Mode Support
+
+The official OSM widget renders with a light background. In dark mode, the widget container maintains a light background to ensure the widget displays correctly with its info icon and accurate payment calculations.
+
+**Implementation:**
+```tsx
+{/* Light background container ensures widget visibility in dark mode */}
+<div className="p-4 bg-afterpay-gray-50 rounded-lg">
+  <OSMPlacement pageType="product" amount={product.price} />
+</div>
+```
 
 **Afterpay Documentation:** [On-Site Messaging Guide](https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging)
 
@@ -258,21 +294,49 @@ onShippingAddressChange: (addressData, actions) => {
 
 **Payment Schedule Widget** (displayed on `/checkout/shipping` page):
 
-This widget shows customers their payment schedule and must be displayed during deferred shipping flow before capture.
+This widget shows customers their 4-payment installment schedule and must be displayed during deferred shipping flow.
 
+**1. Include the script:**
+```html
+<script src="https://portal.afterpay.com/afterpay.js"></script>
+```
+
+**2. Add the widget container:**
+```html
+<div id="afterpay-widget"></div>
+```
+
+**3. Initialize the widget:**
 ```typescript
-new window.AfterPay.Widgets.PaymentSchedule({
-  token: orderToken,
-  amount: { amount: '105.99', currency: 'USD' },
-  target: '#afterpay-widget',
+const widget = new AfterPay.Widgets.PaymentSchedule({
+  token: checkoutToken,  // From /v2/checkouts response
+  amount: { amount: "99.00", currency: "USD" },
+  target: "#afterpay-widget",
+  locale: "en-US",
+  theme: "light",  // "light" or "dark"
+
+  onReady: (event) => {
+    console.log("Widget ready:", event.data);
+  },
+
   onChange: (event) => {
-    // Get checksum for capture
+    // Required for deferred shipping - store for auth request
     const checksum = event.data.paymentScheduleChecksum;
+    const isValid = event.data.isValid;
+  },
+
+  onError: (event) => {
+    console.error("Widget error:", event.data.error);
   }
+});
+
+// Update when total changes (e.g., shipping selection)
+widget.update({
+  amount: { amount: newTotal.toFixed(2), currency: "USD" }
 });
 ```
 
-**Important:** When the order amount changes (e.g., different shipping option selected), call `widget.update({ amount })` to refresh the payment schedule display.
+> **Checksum Required:** When using deferred shipping with an adjusted order amount, you **must** include `paymentScheduleChecksum` in your `/v2/payments/auth` request. Without it, authorization will fail.
 
 **Afterpay Documentation:** [Express Checkout Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout)
 
@@ -736,6 +800,48 @@ interface Order {
 
 ---
 
+## Idempotency with requestId
+
+All payment operations (auth, capture, refund, void) include a `requestId` parameter for idempotent requests. This enables safe retries on timeout or network failures.
+
+**How it works:**
+1. Each request generates a unique UUID (`crypto.randomUUID()`)
+2. The `requestId` is included in the request body to Afterpay
+3. If a request times out, retry with the **same** `requestId`
+4. Afterpay recognizes the duplicate and returns the original response
+
+**Example - Safe Retry Pattern:**
+
+```typescript
+const requestId = crypto.randomUUID();
+
+async function captureWithRetry(orderId: string, amount: number, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch('/api/afterpay/capture', {
+        method: 'POST',
+        body: JSON.stringify({ orderId, amount, currency: 'USD' })
+      });
+      return await response.json();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      await new Promise(r => setTimeout(r, 1000 * attempt)); // Exponential backoff
+    }
+  }
+}
+```
+
+**Developer Panel:**
+The Request ID is displayed in the Developer Panel when you expand an event, making it easy to debug and verify idempotency.
+
+**Reference Documentation:**
+- [Auth requestId](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/auth#request.body.requestid)
+- [Capture requestId](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-payment#request.body.requestId)
+- [Refund requestId](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/create-refund#request.body.requestId)
+- [Void requestId](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/void-payment)
+
+---
+
 ## API Flow Diagrams
 
 ### Express Checkout Flow
@@ -968,6 +1074,72 @@ A comprehensive API inspection tool that displays real-time API requests and res
 - [ ] Copy as cURL generates valid command
 - [ ] Export as JSON downloads properly formatted file
 - [ ] Export as HAR downloads valid HAR file
+
+</details>
+
+---
+
+## Integration Flow Summary
+
+### What It Does
+Displays a summary panel on the confirmation page showing the key configuration and response data from your completed checkout flow.
+
+### Where to Find
+- Confirmation page (`/confirmation`) - appears in the Integration Flow section, above the timeline
+
+### Information Displayed
+
+| Panel | Contents |
+|-------|----------|
+| Summary | Flow description, steps executed, link to Afterpay docs |
+| Request Configuration | Key parameters sent to Afterpay (mode, URLs, checksums) |
+| Checkout Adjustment | Original → adjusted amounts (deferred shipping only) |
+| Response Data | Token, order ID, status, amounts from API responses |
+
+### How to Use
+
+1. Complete any checkout flow
+2. On the confirmation page, scroll to "Integration Flow"
+3. View the summary panels above the timeline
+4. Click parameter names to view Afterpay documentation
+5. Use "Copy All" to export flow data as JSON
+
+### Copy Button Output
+
+The copy button generates JSON with a disclaimer:
+
+```json
+{
+  "_disclaimer": "This is a summary of core integration flow data, not an actual Afterpay API response. For raw API requests and responses, expand the timeline entries below.",
+  "flow": "express-deferred",
+  "description": "...",
+  "steps": ["Create Checkout", "Afterpay Popup", "Select Shipping", "Authorize"],
+  "requestConfig": { ... },
+  "adjustment": { ... },
+  "responseData": { ... }
+}
+```
+
+### Flow-Specific Information
+
+| Flow | Request Config Shown | Special Panels |
+|------|---------------------|----------------|
+| Express Integrated | mode, popupOriginUrl | - |
+| Express Deferred | mode, popupOriginUrl, isCheckoutAdjusted, checksum | Checkout Adjustment |
+| Standard Redirect | redirectConfirmUrl, redirectCancelUrl | - |
+| Standard Popup | popupOriginUrl, redirectConfirmUrl | - |
+
+<details>
+<summary>✓ Verify Integration Flow Summary</summary>
+
+- [ ] Summary panel displays on confirmation page
+- [ ] Flow description matches checkout type used
+- [ ] Steps show correct sequence
+- [ ] Request config shows relevant parameters
+- [ ] Checkout adjustment appears for deferred shipping only
+- [ ] Response data shows token, ID, status
+- [ ] Doc links open correct Afterpay pages
+- [ ] Copy button copies JSON with disclaimer
 
 </details>
 
@@ -1482,3 +1654,45 @@ function extractHeadings(markdown: string): TocItem[] {
 | Void Payment | https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/void-payment |
 | Get Payment | https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/get-payment-by-order-id |
 | Get Configuration | https://developers.cash.app/cash-app-afterpay/api-reference/reference/configuration/get-configuration |
+
+---
+
+## Changelog
+
+### February 2026
+
+#### v2.5.0 - Dark Mode & OSM Improvements
+- **OSM Dark Mode Support**: Added light background containers for OSM widget in dark mode to ensure proper widget visibility and accurate payment calculations
+- **Flow Log Deduplication**: Implemented duplicate detection in `addFlowLog()` to prevent repeated entries within 2-second window
+- **Checkout Review Messaging**: Changed "Payment Confirmed" to "Ready to Complete" with capture-mode-aware messaging
+- **Official Afterpay Logos**: Replaced custom text badges with official Cash App Afterpay color logos throughout
+
+#### v2.4.0 - Documentation & Navigation
+- **User Guide**: Comprehensive documentation restructure with table of contents
+- **Navigation Redesign**: Centered nav with grouped sections (Demo | Tools), text labels for Dark Mode and Cart
+- **Header Cleanup**: Renamed "Docs" to "User Guide", fixed label wrapping
+
+#### v2.3.0 - Developer Tools
+- **Integration Flow Summary**: Added summary panel on confirmation page showing request config and response data
+- **Developer Panel Enhancements**:
+  - Resizable panel with persistent height
+  - Copy as cURL functionality
+  - Export as JSON/HAR
+  - Filter chips and search
+  - Reverse-chronological display order
+
+#### v2.2.0 - Payment Operations
+- **Webhook Handler Demo**: Interactive webhook testing in Admin Panel
+- **Order History**: Persistent order tracking with individual deletion
+- **Admin Panel**: Full payment management with capture, refund, void operations
+
+#### v2.1.0 - Checkout Features
+- **Express Checkout**: Integrated and deferred shipping flows
+- **Standard Checkout**: Redirect and popup methods
+- **Capture Modes**: Toggle between deferred and immediate capture
+
+#### v2.0.0 - Initial Release
+- Core shopping experience with product catalog and cart
+- On-Site Messaging (OSM) integration
+- Dark mode with system preference detection
+- Mobile-responsive design
