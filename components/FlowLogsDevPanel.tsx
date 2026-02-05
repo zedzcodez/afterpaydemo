@@ -14,7 +14,7 @@ const MIN_PANEL_HEIGHT = 200;
 const MAX_PANEL_HEIGHT_RATIO = 0.8; // 80% of viewport height
 
 export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<string | null>(null);
   const [flowLogs, setFlowLogs] = useState<FlowLogs | null>(null);
   const [filter, setFilter] = useState<FilterType>("all");

@@ -85,44 +85,44 @@ export default function HomePage() {
       </section>
 
       {/* Integration Info */}
-      <section className="bg-afterpay-gray-50">
+      <section className="bg-afterpay-gray-50 dark:bg-afterpay-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-display font-bold mb-4">
+            <h2 className="text-2xl md:text-3xl font-display font-bold mb-4 dark:text-white">
               About This Demo
             </h2>
-            <p className="text-afterpay-gray-600 max-w-2xl mx-auto">
+            <p className="text-afterpay-gray-600 dark:text-afterpay-gray-400 max-w-2xl mx-auto">
               This demo showcases Afterpay&apos;s merchant integration capabilities
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl p-6 shadow-soft hover-lift">
+            <div className="bg-white dark:bg-afterpay-gray-800 rounded-xl p-6 shadow-soft hover-lift border border-transparent dark:border-afterpay-gray-700">
               <div className="w-12 h-12 bg-afterpay-mint rounded-xl flex items-center justify-center mb-4">
-                <span className="text-xl font-display font-bold">1</span>
+                <span className="text-xl font-display font-bold text-afterpay-black">1</span>
               </div>
-              <h3 className="font-display font-semibold text-lg mb-2">On-Site Messaging</h3>
-              <p className="text-afterpay-gray-600 text-sm">
+              <h3 className="font-display font-semibold text-lg mb-2 dark:text-white">On-Site Messaging</h3>
+              <p className="text-afterpay-gray-600 dark:text-afterpay-gray-400 text-sm">
                 Payment breakdown badges on product and cart pages showing installment amounts
               </p>
             </div>
 
-            <div className="bg-white rounded-xl p-6 shadow-soft hover-lift">
+            <div className="bg-white dark:bg-afterpay-gray-800 rounded-xl p-6 shadow-soft hover-lift border border-transparent dark:border-afterpay-gray-700">
               <div className="w-12 h-12 bg-afterpay-mint rounded-xl flex items-center justify-center mb-4">
-                <span className="text-xl font-display font-bold">2</span>
+                <span className="text-xl font-display font-bold text-afterpay-black">2</span>
               </div>
-              <h3 className="font-display font-semibold text-lg mb-2">Express Checkout</h3>
-              <p className="text-afterpay-gray-600 text-sm">
+              <h3 className="font-display font-semibold text-lg mb-2 dark:text-white">Express Checkout</h3>
+              <p className="text-afterpay-gray-600 dark:text-afterpay-gray-400 text-sm">
                 Afterpay.js popup with integrated and deferred shipping options
               </p>
             </div>
 
-            <div className="bg-white rounded-xl p-6 shadow-soft hover-lift">
+            <div className="bg-white dark:bg-afterpay-gray-800 rounded-xl p-6 shadow-soft hover-lift border border-transparent dark:border-afterpay-gray-700">
               <div className="w-12 h-12 bg-afterpay-mint rounded-xl flex items-center justify-center mb-4">
-                <span className="text-xl font-display font-bold">3</span>
+                <span className="text-xl font-display font-bold text-afterpay-black">3</span>
               </div>
-              <h3 className="font-display font-semibold text-lg mb-2">Standard Checkout</h3>
-              <p className="text-afterpay-gray-600 text-sm">
+              <h3 className="font-display font-semibold text-lg mb-2 dark:text-white">Standard Checkout</h3>
+              <p className="text-afterpay-gray-600 dark:text-afterpay-gray-400 text-sm">
                 Server-side API with Auth + Capture flow for full control
               </p>
             </div>

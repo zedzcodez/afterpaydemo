@@ -69,7 +69,7 @@ const getDocUrl = (endpoint: string): string | null => {
 };
 
 export function DevPanel({ logs, onClear }: DevPanelProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<string | null>(null);
 
   // Resize state
