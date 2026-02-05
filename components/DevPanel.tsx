@@ -58,14 +58,14 @@ const getErrorMessage = (data: object | undefined): string | null => {
 
 // Map endpoint to documentation URL
 const getDocUrl = (endpoint: string): string | null => {
-  const docsBase = "https://developers.cash.app/cash-app-afterpay";
-  if (endpoint.includes("/checkout")) return `${docsBase}/reference/create-checkout`;
-  if (endpoint.includes("/auth")) return `${docsBase}/reference/authorise-payment`;
-  if (endpoint.includes("/capture")) return `${docsBase}/reference/capture-payment`;
-  if (endpoint.includes("/refund")) return `${docsBase}/reference/create-refund`;
-  if (endpoint.includes("/void")) return `${docsBase}/reference/void-payment`;
-  if (endpoint.includes("/payment")) return `${docsBase}/reference/get-payment`;
-  return `${docsBase}/reference`;
+  const docsBase = "https://developers.cash.app/cash-app-afterpay/api-reference/reference";
+  if (endpoint.includes("/checkout")) return `${docsBase}/checkouts/create-checkout-1`;
+  if (endpoint.includes("/auth")) return `${docsBase}/payments/auth`;
+  if (endpoint.includes("/capture")) return `${docsBase}/payments/capture-payment`;
+  if (endpoint.includes("/refund")) return `${docsBase}/payments/create-refund`;
+  if (endpoint.includes("/void")) return `${docsBase}/payments/void-payment`;
+  if (endpoint.includes("/payment")) return `${docsBase}/payments/get-payment-by-order-id`;
+  return "https://developers.cash.app/cash-app-afterpay/api-reference";
 };
 
 export function DevPanel({ logs, onClear }: DevPanelProps) {

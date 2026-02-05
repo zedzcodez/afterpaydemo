@@ -23,11 +23,22 @@ This guide walks you through testing all features of the Afterpay Demo Shop, wit
 
 ## Quick Start
 
-1. Start the development server: `npm run dev`
-2. Open http://localhost:3000
-3. Add products to cart
-4. Go to Checkout and test different flows
-5. Use sandbox credentials to complete checkout
+### Option 1: Live Demo (Recommended)
+
+**Try the demo instantly at: [afterpay-demo-v2.vercel.app](https://afterpay-demo-v2.vercel.app)**
+
+1. Visit the live demo
+2. Add products to cart
+3. Go to Checkout and test different flows
+4. Use sandbox credentials to complete checkout
+
+### Option 2: Run Locally
+
+1. Clone the repository: `git clone https://github.com/zedzcodez/afterpaydemo.git`
+2. Install dependencies: `npm install`
+3. Set up environment variables (see README)
+4. Start the development server: `npm run dev`
+5. Open http://localhost:3000
 
 **Sandbox Test Account:**
 - Email: Use any email
@@ -1163,19 +1174,19 @@ Use this checklist to verify all features work correctly:
 | Express Checkout | https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout |
 | On-Site Messaging | https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging |
 | Test Environments | https://developers.cash.app/cash-app-afterpay/guides/api-development/test-environments |
-| API Reference | https://developers.cash.app/cash-app-afterpay/reference |
+| API Reference | https://developers.cash.app/cash-app-afterpay/api-reference |
 
 ### API Endpoint Reference
 
 | Endpoint | Documentation |
 |----------|---------------|
-| Create Checkout | https://developers.cash.app/cash-app-afterpay/reference/create-checkout |
-| Authorise Payment | https://developers.cash.app/cash-app-afterpay/reference/authorise-payment |
-| Capture Payment | https://developers.cash.app/cash-app-afterpay/reference/capture-payment |
-| Create Refund | https://developers.cash.app/cash-app-afterpay/reference/create-refund |
-| Void Payment | https://developers.cash.app/cash-app-afterpay/reference/void-payment |
-| Get Payment | https://developers.cash.app/cash-app-afterpay/reference/get-payment |
-| Get Configuration | https://developers.cash.app/cash-app-afterpay/reference/get-configuration |
+| Create Checkout | https://developers.cash.app/cash-app-afterpay/api-reference/reference/checkouts/create-checkout-1 |
+| Authorise Payment | https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/auth |
+| Capture Payment | https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-payment |
+| Create Refund | https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/create-refund |
+| Void Payment | https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/void-payment |
+| Get Payment | https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/get-payment-by-order-id |
+| Get Configuration | https://developers.cash.app/cash-app-afterpay/api-reference/reference/configuration/get-configuration |
 
 ### Test Credit Cards
 

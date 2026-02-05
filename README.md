@@ -2,6 +2,10 @@
 
 A comprehensive merchant checkout integration demo showcasing Afterpay's payment solutions. This demo serves merchants evaluating Afterpay, developers learning integration patterns, and stakeholders understanding payment flows.
 
+**Live Demo:** [afterpay-demo-v2.vercel.app](https://afterpay-demo-v2.vercel.app)
+
+**GitHub Repository:** [github.com/zedzcodez/afterpaydemo](https://github.com/zedzcodez/afterpaydemo)
+
 ## Features
 
 ### On-Site Messaging (OSM)
@@ -101,8 +105,8 @@ Access documentation directly within the app at `/docs`:
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
-   cd afterpay-demo-v2
+   git clone https://github.com/zedzcodez/afterpaydemo.git
+   cd afterpaydemo
    ```
 
 2. Install dependencies:
@@ -220,15 +224,15 @@ This demo wraps Afterpay's v2 API endpoints. Each local endpoint maps to an Afte
 
 | Local Endpoint | Afterpay API | Description | Docs |
 |----------------|--------------|-------------|------|
-| `POST /api/afterpay/checkout` | `POST /v2/checkouts` | Create checkout session | [Create Checkout](https://developers.cash.app/cash-app-afterpay/reference/create-checkout) |
-| `POST /api/afterpay/auth` | `POST /v2/payments/auth` | Authorize payment | [Authorise Payment](https://developers.cash.app/cash-app-afterpay/reference/authorise-payment) |
-| `POST /api/afterpay/capture` | `POST /v2/payments/{id}/capture` | Capture payment (partial) | [Capture Payment](https://developers.cash.app/cash-app-afterpay/reference/capture-payment) |
-| `POST /api/afterpay/capture-full` | `POST /v2/payments/capture` | Capture full payment | [Capture Payment](https://developers.cash.app/cash-app-afterpay/reference/capture-payment) |
-| `POST /api/afterpay/refund` | `POST /v2/payments/{id}/refund` | Process refund | [Create Refund](https://developers.cash.app/cash-app-afterpay/reference/create-refund) |
-| `POST /api/afterpay/void` | `POST /v2/payments/{id}/void` | Void authorization | [Void Payment](https://developers.cash.app/cash-app-afterpay/reference/void-payment) |
-| `GET /api/afterpay/payment/[id]` | `GET /v2/payments/{id}` | Get payment details | [Get Payment](https://developers.cash.app/cash-app-afterpay/reference/get-payment) |
-| `POST /api/afterpay/configuration` | `GET /v2/configuration` | Get merchant config | [Get Configuration](https://developers.cash.app/cash-app-afterpay/reference/get-configuration) |
-| `POST /api/webhooks/afterpay` | - | Receive webhook events (demo) | [Webhook Events](https://developers.afterpay.com/afterpay-online/reference/webhook-events) |
+| `POST /api/afterpay/checkout` | `POST /v2/checkouts` | Create checkout session | [Create Checkout](https://developers.cash.app/cash-app-afterpay/api-reference/reference/checkouts/create-checkout-1) |
+| `POST /api/afterpay/auth` | `POST /v2/payments/auth` | Authorize payment | [Authorise Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/auth) |
+| `POST /api/afterpay/capture` | `POST /v2/payments/{id}/capture` | Capture payment (partial) | [Capture Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-payment) |
+| `POST /api/afterpay/capture-full` | `POST /v2/payments/capture` | Capture full payment | [Capture Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-payment) |
+| `POST /api/afterpay/refund` | `POST /v2/payments/{id}/refund` | Process refund | [Create Refund](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/create-refund) |
+| `POST /api/afterpay/void` | `POST /v2/payments/{id}/void` | Void authorization | [Void Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/void-payment) |
+| `GET /api/afterpay/payment/[id]` | `GET /v2/payments/{id}` | Get payment details | [Get Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/get-payment-by-order-id) |
+| `POST /api/afterpay/configuration` | `GET /v2/configuration` | Get merchant config | [Get Configuration](https://developers.cash.app/cash-app-afterpay/api-reference/reference/configuration/get-configuration) |
+| `POST /api/webhooks/afterpay` | - | Receive webhook events (demo) | [Webhook Events](https://developers.cash.app/cash-app-afterpay/guides/api-development/webhook-signature-generation) |
 | `GET /api/webhooks/afterpay` | - | Webhook health check | - |
 
 **API Base URL (Sandbox)**: `https://global-api-sandbox.afterpay.com`
@@ -291,7 +295,7 @@ Or deploy directly:
 - [On-Site Messaging Guide](https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging)
 - [Express Checkout Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout)
 - [Deferred Capture Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart/deferred-capture)
-- [Popup Method Reference](https://developers.afterpay.com/afterpay-online/reference/popup-method)
+- [Popup Method Reference](https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging/launch-afterpay-info-modal-anywhere)
 
 ## Tech Stack
 
