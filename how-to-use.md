@@ -41,8 +41,14 @@ This guide walks you through testing all features of the Afterpay Demo Shop, wit
 5. Open http://localhost:3000
 
 **Sandbox Test Account:**
-- Email: Use any email
-- Login: Use the OTP shown in the sandbox popup
+
+You can create test customer accounts in the sandbox environment within your test checkout flow. Each customer account requires a unique email address and phone number.
+
+- **Email**: Use any unique email address
+- **Phone**: Use any phone number
+- **Verification Code**: Use `111111` (no SMS messages are sent in sandbox)
+
+See [Test Customer Accounts](https://developers.cash.app/cash-app-afterpay/guides/api-development/test-environments#test-customer-accounts) and [Sandbox Business Hub](https://developers.cash.app/cash-app-afterpay/guides/api-development/test-environments#sandbox-business-hub) for more details.
 
 ---
 
