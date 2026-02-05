@@ -47,6 +47,7 @@ body {
   .btn-outline {
     @apply border-2 border-afterpay-black text-afterpay-black font-semibold px-6 py-3 rounded-lg;
     @apply hover:bg-afterpay-black hover:text-white;
+    @apply dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-afterpay-black;
     @apply active:scale-[0.98] transition-all duration-200;
   }
 
@@ -114,6 +115,19 @@ body {
     background-repeat: no-repeat;
     background-size: 1.25rem;
   }
+}
+
+/* Afterpay widget dark mode overrides */
+.dark square-placement,
+.dark .afterpay-osm,
+.dark [data-afterpay-placement] {
+  background: transparent !important;
+  color-scheme: dark;
+}
+
+.dark square-placement *,
+.dark .afterpay-osm * {
+  color: inherit;
 }
 
 /* Custom scrollbar */

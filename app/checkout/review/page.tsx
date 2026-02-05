@@ -13,7 +13,7 @@ import { CheckoutProgress } from "@/components/CheckoutProgress";
 function ReviewContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { items, total, clearCart } = useCart();
+  const { items, total } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderToken, setOrderToken] = useState<string | null>(null);
@@ -141,7 +141,7 @@ function ReviewContent() {
         orderId = data.id;
       }
 
-      // Store cart data in sessionStorage before clearing (for confirmation page)
+      // Store cart data in sessionStorage for confirmation page
       sessionStorage.setItem('afterpay_pending_order', JSON.stringify({
         items: items.map(item => ({
           productId: item.product.id,
@@ -152,9 +152,7 @@ function ReviewContent() {
         total: total,
       }));
 
-      // Clear cart and redirect to confirmation
-      clearCart();
-
+      // Cart will be cleared on confirmation page after order is saved
       const flowSuffix = isImmediateCapture ? "immediate" : "deferred";
       addFlowLog({
         type: "redirect",

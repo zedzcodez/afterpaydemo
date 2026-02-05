@@ -541,7 +541,7 @@ Afterpay.initializeForPopup({
       </div>
 
       {/* OSM Placement */}
-      <div className="p-4 bg-afterpay-gray-50 rounded-lg">
+      <div className="p-4 bg-afterpay-gray-50 dark:bg-afterpay-gray-700 rounded-lg [&_.afterpay-osm]:dark:bg-transparent">
         <OSMPlacement
           pageType="cart"
           amount={total}

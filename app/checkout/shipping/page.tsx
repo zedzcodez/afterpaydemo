@@ -26,6 +26,7 @@ interface PaymentScheduleConfig {
   amount: { amount: string; currency: string };
   target: string;
   locale?: string;
+  theme?: "light" | "dark";
   onReady?: (event: { data: object }) => void;
   onChange?: (event: { data: { paymentScheduleChecksum: string; isValid: boolean } }) => void;
   onError?: (event: { data: { error: string } }) => void;
@@ -60,7 +61,7 @@ const SHIPPING_OPTIONS = [
 function ShippingContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { items, total, clearCart } = useCart();
+  const { items, total } = useCart();
   const [selectedShipping, setSelectedShipping] = useState(SHIPPING_OPTIONS[0]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +69,7 @@ function ShippingContent() {
   const [widgetReady, setWidgetReady] = useState(false);
   const [checksum, setChecksum] = useState<string | null>(null);
   const [storedCartTotal, setStoredCartTotal] = useState<number | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const widgetRef = useRef<PaymentScheduleWidget | null>(null);
   const widgetInitialized = useRef(false);
@@ -75,6 +77,24 @@ function ShippingContent() {
   // Use stored cart total from sessionStorage, fallback to cart context
   const cartTotal = storedCartTotal ?? total;
   const finalTotal = cartTotal + selectedShipping.price;
+
+  // Detect dark mode
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDarkMode(document.documentElement.classList.contains("dark"));
+    };
+
+    checkDarkMode();
+
+    // Watch for dark mode changes
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Load stored cart data on mount
   useEffect(() => {
@@ -107,11 +127,15 @@ function ShippingContent() {
     });
 
     try {
+      // Check current dark mode state
+      const currentDarkMode = document.documentElement.classList.contains("dark");
+
       widgetRef.current = new window.AfterPay.Widgets.PaymentSchedule({
         token,
         amount: initialAmount,
         target: "#afterpay-widget",
         locale: "en-US",
+        theme: currentDarkMode ? "dark" : "light",
         onReady: (event) => {
           console.log("Widget ready:", event);
           setWidgetReady(true);
@@ -343,9 +367,7 @@ function ShippingContent() {
       // Clean up the checkout cart data
       sessionStorage.removeItem('afterpay_checkout_cart');
 
-      // Clear cart and redirect to confirmation
-      clearCart();
-
+      // Cart will be cleared on confirmation page after order is saved
       const flowSuffix = isImmediateCapture ? "immediate" : "deferred";
       addFlowLog({
         type: "redirect",
@@ -400,22 +422,22 @@ function ShippingContent() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold mb-2">Select Shipping Method</h1>
-        <p className="text-afterpay-gray-600">
+        <p className="text-afterpay-gray-600 dark:text-afterpay-gray-400">
           Choose your preferred shipping option to complete your order.
         </p>
       </div>
 
       {/* Order Summary */}
-      <div className="bg-white border border-afterpay-gray-200 rounded-lg overflow-hidden mb-6">
-        <div className="px-6 py-4 bg-afterpay-gray-50 border-b border-afterpay-gray-200">
-          <h2 className="font-semibold">Order Summary</h2>
+      <div className="bg-white dark:bg-afterpay-gray-800 border border-afterpay-gray-200 dark:border-afterpay-gray-700 rounded-lg overflow-hidden mb-6">
+        <div className="px-6 py-4 bg-afterpay-gray-50 dark:bg-afterpay-gray-700 border-b border-afterpay-gray-200 dark:border-afterpay-gray-600">
+          <h2 className="font-semibold dark:text-white">Order Summary</h2>
         </div>
         <div className="p-6">
           {items.length > 0 ? (
             <div className="space-y-4">
               {items.map((item) => (
                 <div key={item.product.id} className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-afterpay-gray-100 rounded-lg overflow-hidden relative flex-shrink-0">
+                  <div className="w-12 h-12 bg-afterpay-gray-100 dark:bg-afterpay-gray-700 rounded-lg overflow-hidden relative flex-shrink-0">
                     <Image
                       src={item.product.image}
                       alt={item.product.name}
@@ -425,25 +447,25 @@ function ShippingContent() {
                     />
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-sm">{item.product.name}</p>
-                    <p className="text-xs text-afterpay-gray-600">Qty: {item.quantity}</p>
+                    <p className="font-medium text-sm dark:text-white">{item.product.name}</p>
+                    <p className="text-xs text-afterpay-gray-600 dark:text-afterpay-gray-400">Qty: {item.quantity}</p>
                   </div>
-                  <p className="font-medium text-sm">
+                  <p className="font-medium text-sm dark:text-white">
                     {formatPrice(item.product.price * item.quantity)}
                   </p>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-afterpay-gray-600 text-sm">Cart items will be processed from your session.</p>
+            <p className="text-afterpay-gray-600 dark:text-afterpay-gray-400 text-sm">Cart items will be processed from your session.</p>
           )}
         </div>
       </div>
 
       {/* Shipping Options */}
-      <div className="bg-white border border-afterpay-gray-200 rounded-lg overflow-hidden mb-6">
-        <div className="px-6 py-4 bg-afterpay-gray-50 border-b border-afterpay-gray-200">
-          <h2 className="font-semibold">Shipping Method</h2>
+      <div className="bg-white dark:bg-afterpay-gray-800 border border-afterpay-gray-200 dark:border-afterpay-gray-700 rounded-lg overflow-hidden mb-6">
+        <div className="px-6 py-4 bg-afterpay-gray-50 dark:bg-afterpay-gray-700 border-b border-afterpay-gray-200 dark:border-afterpay-gray-600">
+          <h2 className="font-semibold dark:text-white">Shipping Method</h2>
         </div>
         <div className="p-6 space-y-3">
           {SHIPPING_OPTIONS.map((option) => (
@@ -451,8 +473,8 @@ function ShippingContent() {
               key={option.id}
               className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
                 selectedShipping.id === option.id
-                  ? "border-afterpay-mint bg-afterpay-mint/10"
-                  : "border-afterpay-gray-200 hover:border-afterpay-gray-300"
+                  ? "border-afterpay-mint bg-afterpay-mint/10 dark:bg-afterpay-mint/20"
+                  : "border-afterpay-gray-200 dark:border-afterpay-gray-600 hover:border-afterpay-gray-300 dark:hover:border-afterpay-gray-500"
               }`}
             >
               <div className="flex items-center">
@@ -465,24 +487,30 @@ function ShippingContent() {
                   className="mr-3"
                 />
                 <div>
-                  <span className="font-medium">{option.name}</span>
-                  <p className="text-sm text-afterpay-gray-600">{option.description}</p>
+                  <span className="font-medium dark:text-white">{option.name}</span>
+                  <p className="text-sm text-afterpay-gray-600 dark:text-afterpay-gray-400">{option.description}</p>
                 </div>
               </div>
-              <span className="font-medium">{formatPrice(option.price)}</span>
+              <span className="font-medium dark:text-white">{formatPrice(option.price)}</span>
             </label>
           ))}
         </div>
       </div>
 
       {/* Afterpay Payment Schedule Widget */}
-      <div className="bg-white border border-afterpay-gray-200 rounded-lg overflow-hidden mb-6">
-        <div className="px-6 py-4 bg-afterpay-mint/20 border-b border-afterpay-mint">
+      <div className="bg-white dark:bg-afterpay-gray-700 border border-afterpay-gray-200 dark:border-afterpay-gray-600 rounded-lg overflow-hidden mb-6">
+        <div className="px-6 py-4 bg-afterpay-mint/20 dark:bg-afterpay-gray-600 border-b border-afterpay-mint dark:border-afterpay-gray-500">
           <div className="flex items-center gap-3">
-            <span className="bg-afterpay-mint text-afterpay-black px-2 py-1 rounded text-sm font-bold">
-              Afterpay
-            </span>
-            <span className="font-medium">Payment Schedule</span>
+            <img
+              alt="Cash App Afterpay"
+              src={isDarkMode
+                ? "https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-mono-white-32.svg"
+                : "https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-mono-black-32.svg"
+              }
+              height="24"
+              className="h-6"
+            />
+            <span className="font-medium dark:text-white">Payment Schedule</span>
           </div>
         </div>
         <div className="p-6">
@@ -491,7 +519,7 @@ function ShippingContent() {
             {!widgetReady && (
               <div className="flex items-center justify-center py-4">
                 <div className="animate-spin w-6 h-6 border-2 border-afterpay-mint border-t-transparent rounded-full mr-3" />
-                <span className="text-afterpay-gray-600">Loading payment schedule...</span>
+                <span className="text-afterpay-gray-600 dark:text-afterpay-gray-400">Loading payment schedule...</span>
               </div>
             )}
           </div>
@@ -499,17 +527,17 @@ function ShippingContent() {
       </div>
 
       {/* Order Total */}
-      <div className="bg-afterpay-gray-50 rounded-lg p-6 mb-6">
+      <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-lg p-6 mb-6">
         <div className="space-y-2">
-          <div className="flex justify-between">
+          <div className="flex justify-between text-afterpay-gray-700 dark:text-afterpay-gray-300">
             <span>Subtotal</span>
             <span>{formatPrice(total)}</span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between text-afterpay-gray-700 dark:text-afterpay-gray-300">
             <span>Shipping</span>
             <span>{formatPrice(selectedShipping.price)}</span>
           </div>
-          <div className="flex justify-between font-semibold text-lg border-t border-afterpay-gray-200 pt-2 mt-2">
+          <div className="flex justify-between font-semibold text-lg border-t border-afterpay-gray-200 dark:border-afterpay-gray-700 pt-2 mt-2 dark:text-white">
             <span>Total</span>
             <span>{formatPrice(finalTotal)}</span>
           </div>
@@ -557,14 +585,14 @@ function ShippingContent() {
         </button>
         <Link
           href="/checkout"
-          className="flex-1 py-4 px-6 bg-white text-afterpay-black text-center font-medium rounded-lg border-2 border-afterpay-gray-300 hover:border-afterpay-gray-400 transition-colors"
+          className="flex-1 py-4 px-6 bg-white dark:bg-afterpay-gray-800 text-afterpay-black dark:text-white text-center font-medium rounded-lg border-2 border-afterpay-gray-300 dark:border-afterpay-gray-600 hover:border-afterpay-gray-400 dark:hover:border-afterpay-gray-500 transition-colors"
         >
           Cancel
         </Link>
       </div>
 
       {/* Note */}
-      <p className="text-xs text-afterpay-gray-500 text-center mt-6">
+      <p className="text-xs text-afterpay-gray-500 dark:text-afterpay-gray-400 text-center mt-6">
         By clicking &quot;Place Order&quot;, your payment will be authorized and captured through Afterpay.
       </p>
       </div>
@@ -581,7 +609,7 @@ export default function ShippingPage() {
       fallback={
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
           <div className="animate-spin w-12 h-12 border-4 border-afterpay-mint border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-afterpay-gray-600">Loading shipping options...</p>
+          <p className="text-afterpay-gray-600 dark:text-afterpay-gray-400">Loading shipping options...</p>
         </div>
       }
     >

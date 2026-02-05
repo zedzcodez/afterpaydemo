@@ -80,7 +80,7 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Afterpay OSM - Below Price */}
-          <div className="mb-8 p-4 bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-lg">
+          <div className="mb-8 p-4 bg-afterpay-gray-50 dark:bg-afterpay-gray-700 rounded-lg">
             <OSMPlacement
               pageType="product"
               amount={product.price}

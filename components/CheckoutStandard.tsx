@@ -56,7 +56,7 @@ const SHIPPING_OPTIONS = [
 
 export function CheckoutStandard({ onLog, onLogUpdate }: CheckoutStandardProps) {
   const router = useRouter();
-  const { items, total, clearCart } = useCart();
+  const { items, total } = useCart();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedShipping, setSelectedShipping] = useState(SHIPPING_OPTIONS[0]);
@@ -205,9 +205,7 @@ export function CheckoutStandard({ onLog, onLogUpdate }: CheckoutStandardProps) 
             orderId = data.id;
           }
 
-          // Clear cart and redirect to confirmation
-          clearCart();
-
+          // Cart will be cleared on confirmation page after order is saved
           const flowSuffix = isImmediateCapture ? "immediate" : "deferred";
           addFlowLog({
             type: "redirect",
@@ -230,7 +228,7 @@ export function CheckoutStandard({ onLog, onLogUpdate }: CheckoutStandardProps) 
         setIsLoading(false);
       }
     };
-  }, [clearCart, router]);
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
