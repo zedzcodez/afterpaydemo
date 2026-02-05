@@ -5,6 +5,11 @@ All notable changes to this project are documented here.
 ## [2.6.0] - 2026-02-05
 
 ### Added
+- Demo App Summary tab in User Guide (`/docs`)
+  - Overview of app features and capabilities
+  - Target audiences with specific benefits
+  - Technical highlights and API coverage
+  - Tab navigation with content caching
 - Idempotency support via `requestId` for payment operations
   - Auth, Capture, Capture Full, Refund, and Void requests
   - Enables safe retries on timeout/network failures

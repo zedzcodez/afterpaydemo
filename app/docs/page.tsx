@@ -12,6 +12,15 @@ interface TocItem {
   level: number;
 }
 
+type DocTab = "how-to-use" | "summary";
+
+interface TabConfig {
+  id: DocTab;
+  label: string;
+  icon: React.ReactNode;
+  apiPath: string;
+}
+
 // Extract headings from markdown for table of contents
 function extractHeadings(markdown: string): TocItem[] {
   const headingRegex = /^(#{1,3})\s+(.+)$/gm;
@@ -182,20 +191,57 @@ const MarkdownComponents = {
   ),
 };
 
+const TABS: TabConfig[] = [
+  {
+    id: "how-to-use",
+    label: "How to Use This Demo",
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+      </svg>
+    ),
+    apiPath: "/api/docs/how-to-use",
+  },
+  {
+    id: "summary",
+    label: "Demo App Summary",
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+    apiPath: "/api/docs/summary",
+  },
+];
+
 export default function DocsPage() {
+  const [activeTab, setActiveTab] = useState<DocTab>("how-to-use");
   const [content, setContent] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<string>("");
   const [tocItems, setTocItems] = useState<TocItem[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const contentCache = useRef<Record<DocTab, string>>({} as Record<DocTab, string>);
 
   useEffect(() => {
     async function loadDocs() {
+      // Check cache first
+      if (contentCache.current[activeTab]) {
+        setContent(contentCache.current[activeTab]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
       try {
-        const res = await fetch("/api/docs/how-to-use");
+        const tabConfig = TABS.find((t) => t.id === activeTab);
+        if (!tabConfig) return;
+
+        const res = await fetch(tabConfig.apiPath);
         if (res.ok) {
           const data = await res.json();
+          contentCache.current[activeTab] = data.content;
           setContent(data.content);
         }
       } catch (error) {
@@ -206,7 +252,7 @@ export default function DocsPage() {
     }
 
     loadDocs();
-  }, []);
+  }, [activeTab]);
 
   // Extract TOC when content changes
   useEffect(() => {
@@ -280,15 +326,28 @@ export default function DocsPage() {
         </div>
       </div>
 
-      {/* Sticky Navigation Bar */}
+      {/* Sticky Navigation Bar with Tabs */}
       <div className="sticky top-16 z-40 bg-white/95 dark:bg-afterpay-gray-900/95 backdrop-blur-md border-b border-afterpay-gray-200 dark:border-afterpay-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-2">
-            <div className="flex items-center gap-2 text-sm text-afterpay-gray-600 dark:text-afterpay-gray-400">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
-              <span className="font-medium text-afterpay-black dark:text-white">How to Use This Demo</span>
+            {/* Tab Navigation */}
+            <div className="flex items-center gap-1">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
+                    flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200
+                    ${activeTab === tab.id
+                      ? "bg-afterpay-mint/20 text-afterpay-black dark:text-afterpay-mint"
+                      : "text-afterpay-gray-600 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-800"
+                    }
+                  `}
+                >
+                  {tab.icon}
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </button>
+              ))}
             </div>
 
             {/* Mobile TOC Toggle */}
