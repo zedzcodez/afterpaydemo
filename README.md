@@ -290,12 +290,12 @@ Or deploy directly:
 ## Documentation
 
 - **[In-App Documentation](/docs)** - View README and How-to-Use Guide within the app with TOC navigation
-- **[How to Use This Demo](./how-to-use.md)** - Detailed guide for testing all features
+- **[How to Use This Demo](https://github.com/zedzcodez/afterpaydemo/blob/main/how-to-use.md)** - Detailed guide for testing all features
 - [Afterpay Developer Documentation](https://developers.cash.app/cash-app-afterpay)
 - [On-Site Messaging Guide](https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging)
 - [Express Checkout Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout)
 - [Deferred Capture Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart/deferred-capture)
-- [Popup Method Reference](https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging/launch-afterpay-info-modal-anywhere)
+- [Popup Method Reference](https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart/create-a-checkout#implement-the-popup-method)
 
 ## Tech Stack
 
