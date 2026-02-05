@@ -5,6 +5,7 @@ import "./globals.css";
 import { CartProvider } from "@/components/CartProvider";
 import { Header } from "@/components/Header";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ScrollToTop } from "@/components/ScrollToTop";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -47,6 +48,7 @@ export default function RootLayout({
           <CartProvider>
             <Header />
             <main>{children}</main>
+            <ScrollToTop />
           </CartProvider>
         </ThemeProvider>
       </body>
