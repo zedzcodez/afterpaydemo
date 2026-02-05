@@ -331,21 +331,25 @@ afterpay-demo-v2/
 **Value:** Inclusive design demonstration
 **Effort:** Medium
 
-#### E16: Retry Logic & Idempotency Demo
-**Status:** OPEN
+#### E16: Retry Logic & Idempotency Demo - PARTIAL
+**Status:** PARTIAL - Idempotency implemented in v2.6.0, retry UI pending
 **Value:** Demonstrates safe retry patterns using requestId idempotency
-**Effort:** Medium
-**Files:**
+**Effort:** Medium (remaining: Small)
+
+**Completed (v2.6.0):**
+- ✅ `requestId` parameter added to all payment operations (auth, capture, refund, void)
+- ✅ Request ID visible in Developer Panel event details
+- ✅ Enables safe retries on timeout/network failures
+
+**Remaining:**
 - Create: `lib/retry.ts` (retry utility with exponential backoff)
 - Create: `components/TimeoutSimulator.tsx` (toggle in Admin Panel)
 - Modify: `app/admin/page.tsx` (add timeout simulation UI)
-- Modify: All API routes (integrate retry logic)
 
-**Features:**
+**Remaining Features:**
 - Configurable retry attempts with exponential backoff
 - Timeout simulation toggle in Admin Panel
 - Visual demonstration of idempotent responses
-- Auth reversal edge case scenarios
 
 ---
 
@@ -518,6 +522,21 @@ export const config = {
 - ✅ Developer Panel resize on all pages (commits `9c3ba49`, `633c246`)
 - ✅ Dark mode support on all pages (commit `a95eade`)
 
+### Phase 5: v2.6.0 Release (2026-02-05) ✅ COMPLETED
+**Idempotency & Checkout UX**
+- ✅ Idempotency support via `requestId` for all payment operations
+- ✅ Dynamic shipping updates in Order Summary with highlight animation
+- ✅ Free shipping option for orders over $100
+- ✅ Order Summary sidebar widened (60/40 grid split)
+- ✅ Scroll-to-top button on all pages (accessible, Afterpay mint hover)
+- ✅ Improved checkout flow labels for clarity (e.g., "Express Checkout with Integrated Shipping (Deferred Capture)")
+- ✅ Admin Panel transaction status moved above Actions section
+- ✅ Developer Panel header redesign and resize handle fix
+- ✅ Orders page demo notice moved to top
+- ✅ Amount Breakdown calculation fix (excludes voids from refund total)
+- ✅ Changelog parity across CHANGELOG.md and how-to-use.md
+- ✅ Author information added (@zedzcodez)
+
 ---
 
 ## Verification Checklist
@@ -541,5 +560,6 @@ export const config = {
 ---
 
 *Document generated: 2026-02-04*
-*Last updated: 2026-02-04*
-*Status: Phase 1, 3, 4 COMPLETED - Phase 2 PENDING*
+*Last updated: 2026-02-05*
+*Status: Phase 1, 3, 4, 5 COMPLETED - Phase 2 (Core Security) PENDING*
+*Current Version: 2.6.0*
