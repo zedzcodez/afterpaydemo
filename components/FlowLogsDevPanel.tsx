@@ -456,7 +456,7 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
       >
         {/* Resize tooltip - shown on header hover when panel is open */}
         {isOpen && showResizeHint && (
-          <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-afterpay-black text-white text-xs px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap animate-fade-in-up z-10">
+          <div className="absolute -top-10 left-1/2 bg-afterpay-black text-white text-xs px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap animate-fade-in-up-centered z-10">
             Drag to resize panel
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-afterpay-black" />
           </div>

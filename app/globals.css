@@ -135,8 +135,24 @@ body {
   --tw-text-opacity: 1 !important;
 }
 
-/* Fade in up animation for tooltips */
+/* Fade in up animation for general use */
 @keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out forwards;
+}
+
+/* Fade in up animation for centered tooltips (with horizontal centering) */
+@keyframes fade-in-up-centered {
   from {
     opacity: 0;
     transform: translate(-50%, 4px);
@@ -147,8 +163,8 @@ body {
   }
 }
 
-.animate-fade-in-up {
-  animation: fade-in-up 0.3s ease-out forwards;
+.animate-fade-in-up-centered {
+  animation: fade-in-up-centered 0.3s ease-out forwards;
 }
 
 /* Highlight update animation for shipping/total changes */
