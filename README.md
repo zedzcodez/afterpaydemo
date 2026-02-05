@@ -157,6 +157,7 @@ If `popupOriginUrl` doesn't match `window.location.origin`, the browser won't di
 
 ```
 /app
+  layout.tsx                    # Root layout with providers
   page.tsx                      # Homepage with product grid
   error.tsx                     # Global error boundary
   /products/[id]/page.tsx       # Product detail page
@@ -185,7 +186,7 @@ If `popupOriginUrl` doesn't match `window.location.origin`, the browser won't di
     /route.ts                   # Webhook endpoint for payment notifications
 
 /components
-  Header.tsx                    # Navigation with cart icon and dark mode toggle
+  Header.tsx                    # Navigation with cart and dark mode text labels
   ProductCard.tsx               # Product display card with dark mode support
   ProductGrid.tsx               # Homepage product grid with skeleton loading
   CartProvider.tsx              # Cart state (Context + localStorage + animation trigger)
@@ -290,7 +291,7 @@ Or deploy directly:
 
 ## Documentation
 
-- **[In-App Documentation](/docs)** - View README and How-to-Use Guide within the app with TOC navigation
+- **[In-App Documentation](https://afterpay-demo-v2.vercel.app/docs)** - View README and How-to-Use Guide within the app with TOC navigation
 - **[How to Use This Demo](https://github.com/zedzcodez/afterpaydemo/blob/main/how-to-use.md)** - Detailed guide for testing all features
 - [Afterpay Developer Documentation](https://developers.cash.app/cash-app-afterpay)
 - [On-Site Messaging Guide](https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging)
@@ -337,7 +338,7 @@ The demo features a polished, distinctive UI built on Afterpay's brand colors wi
 - Progress bar: Animated segments in admin amount breakdown
 
 ### Dark Mode
-- Toggle in header (sun/moon icon)
+- Toggle in header navigation ("Dark Mode" / "Light Mode" text labels)
 - System preference detection
 - Persisted to localStorage
 - Mint accent colors preserved in dark theme

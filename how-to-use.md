@@ -12,12 +12,11 @@ This guide walks you through testing all features of the Afterpay Demo Shop, wit
 6. [Express Checkout](#express-checkout)
 7. [Standard Checkout](#standard-checkout)
 8. [Capture Modes](#capture-modes)
-9. [Custom API Credentials](#custom-api-credentials)
-10. [Payment Admin Panel](#payment-admin-panel)
-11. [Order History](#order-history)
-12. [Developer Tools](#developer-tools)
-13. [In-App Documentation](#in-app-documentation)
-14. [UI Components](#ui-components)
+9. [Payment Admin Panel](#payment-admin-panel)
+10. [Order History](#order-history)
+11. [Developer Tools](#developer-tools)
+12. [In-App Documentation](#in-app-documentation)
+13. [UI Components](#ui-components)
 
 ---
 
@@ -138,7 +137,7 @@ The demo includes full dark mode support with system preference detection.
 
 ### How to Toggle
 
-1. Click the sun/moon icon in the header (right side, next to cart)
+1. Click "Dark Mode" or "Light Mode" in the header navigation
 2. Theme switches immediately
 3. Preference is saved to localStorage
 
@@ -147,7 +146,7 @@ The demo includes full dark mode support with system preference detection.
 | Feature | Description |
 |---------|-------------|
 | System Detection | Automatically matches OS preference on first visit |
-| Manual Toggle | Click sun (dark mode) or moon (light mode) icon |
+| Manual Toggle | Click "Dark Mode" to switch to dark theme, "Light Mode" to switch to light theme |
 | Persistence | Preference saved to localStorage |
 | Mint Accent | Brand colors preserved in dark theme |
 
@@ -277,7 +276,7 @@ Displays "Pay in 4 interest-free payments of $X.XX" badges to inform customers a
 **Component:** `components/OSMPlacement.tsx`
 
 **Implementation:**
-```jsx
+```tsx
 <square-placement
   data-mpid={process.env.NEXT_PUBLIC_AFTERPAY_MPID}
   data-placement-id={placementId}
@@ -319,7 +318,7 @@ Express Checkout uses Afterpay.js to provide a streamlined popup-based checkout 
 **File:** `components/CheckoutExpress.tsx`
 
 **Key Callback:**
-```javascript
+```typescript
 onShippingAddressChange: (addressData, actions) => {
   // Calculate shipping options based on address
   const options = getShippingOptions();
@@ -328,7 +327,7 @@ onShippingAddressChange: (addressData, actions) => {
 ```
 
 **Shipping Option Structure:**
-```javascript
+```typescript
 {
   id: 'standard',
   name: 'Standard Shipping',
@@ -359,8 +358,11 @@ onShippingAddressChange: (addressData, actions) => {
 - `components/CheckoutExpress.tsx` - Initial popup
 - `app/checkout/shipping/page.tsx` - Shipping selection page
 
-**Payment Schedule Widget:**
-```javascript
+**Payment Schedule Widget** (displayed on `/checkout/shipping` page):
+
+This widget shows customers their payment schedule and must be displayed during deferred shipping flow before capture.
+
+```typescript
 new window.AfterPay.Widgets.PaymentSchedule({
   token: orderToken,
   amount: { amount: '105.99', currency: 'USD' },
@@ -372,7 +374,7 @@ new window.AfterPay.Widgets.PaymentSchedule({
 });
 ```
 
-**Important:** When amount changes (shipping selection), call `widget.update({ amount })` to refresh the payment schedule.
+**Important:** When the order amount changes (e.g., different shipping option selected), call `widget.update({ amount })` to refresh the payment schedule display.
 
 ---
 
@@ -427,7 +429,7 @@ Standard Checkout uses server-side API calls with customer information collected
 **File:** `components/CheckoutStandard.tsx`
 
 **Critical Implementation:**
-```javascript
+```typescript
 // MUST open popup synchronously in click handler to avoid blockers
 window.Afterpay.initialize({ countryCode: 'US' });
 window.Afterpay.open();  // Open immediately
@@ -492,89 +494,10 @@ Toggle between authorization-only and immediate capture strategies.
 **Values:** `'deferred'` or `'immediate'`
 
 **Capture Full API:**
-```javascript
+```typescript
 // POST /v2/payments/capture
 { token: 'checkout-token' }
 ```
-
----
-
-## Custom API Credentials
-
-Test the demo with your own Afterpay sandbox credentials to see your actual merchant configuration.
-
-### Where to Find
-
-Admin Panel (`/admin`) → "API Credentials" section
-
-### How to Use
-
-#### Using Default Credentials
-1. Go to `/admin`
-2. "API Credentials" section shows "Default" selected
-3. Configuration displays using the demo's environment credentials
-
-#### Using Custom Credentials
-1. Go to `/admin`
-2. Click "Custom" button in "API Credentials" section
-3. Enter your Merchant ID
-4. Enter your Secret Key
-5. Click "Validate Credentials"
-6. Configuration displays your merchant's min/max thresholds
-
-### What You'll See
-
-After validation, the **Merchant Configuration** panel displays:
-
-| Field | Description |
-|-------|-------------|
-| Minimum Order | Lowest order amount eligible for Afterpay |
-| Maximum Order | Highest order amount eligible for Afterpay |
-| Currency | The currency for these thresholds (USD, AUD, NZD, CAD, GBP) |
-
-### Technical Details
-
-**File:** `app/api/afterpay/configuration/route.ts`
-
-**API Endpoint:** `GET /v2/configuration`
-
-**Request (with custom credentials):**
-```javascript
-// POST /api/afterpay/configuration
-{
-  merchantId: "your_merchant_id",
-  secretKey: "your_secret_key"
-}
-```
-
-**Request (with default credentials):**
-```javascript
-// POST /api/afterpay/configuration
-{}
-// Uses AFTERPAY_MERCHANT_ID and AFTERPAY_SECRET_KEY from environment
-```
-
-**Response:**
-```javascript
-{
-  minimumAmount: { amount: "1.00", currency: "USD" },
-  maximumAmount: { amount: "2000.00", currency: "USD" },
-  usingCustomCredentials: true
-}
-```
-
-### Security Notes
-
-- Custom credentials are stored in React state only (not localStorage)
-- Credentials are cleared when switching back to "Default" mode
-- Secret key input is masked (password field)
-- Credentials are sent to the server-side API route for validation
-
-### Use Cases
-
-- **Verify your account setup**: Confirm your merchant configuration is correct
-- **Test with different accounts**: Compare configuration across sandbox accounts
-- **Validate before production**: Ensure settings match expectations
 
 ---
 
@@ -586,10 +509,8 @@ Full payment management interface for post-checkout operations.
 
 ### Features
 
-#### API Credentials & Configuration
-- Toggle between default (environment) and custom credentials
-- View merchant configuration (min/max order thresholds)
-- See [Custom API Credentials](#custom-api-credentials) for detailed usage
+#### Merchant Configuration
+- View merchant configuration (min/max order thresholds, currency)
 
 #### Payment Lookup
 1. Enter Order ID (e.g., `100204123295`)
@@ -622,6 +543,38 @@ Unified timeline showing:
 - `REFUND` - Refund events
 - `VOID` - Void events
 
+#### Webhook Handler Demo
+
+Test the webhook endpoint with simulated payment events to understand how merchants receive async notifications from Afterpay.
+
+**How to Use:**
+1. Click to expand the "Webhook Handler Demo" section
+2. Click any event button to simulate receiving that webhook:
+   - **PAYMENT_CAPTURED** - Payment was captured
+   - **PAYMENT_AUTH_APPROVED** - Authorization approved
+   - **REFUND_SUCCESS** - Refund completed
+   - **PAYMENT_DECLINED** - Payment was declined
+3. View the test event in "Recent Test Events" list
+4. Check the Developer Panel for full request/response details
+
+**Webhook Endpoint:** `/api/webhooks/afterpay`
+
+**Supported Events:**
+| Event Type | Description |
+|------------|-------------|
+| `PAYMENT_CAPTURED` | Payment successfully captured |
+| `PAYMENT_AUTH_APPROVED` | Authorization approved |
+| `PAYMENT_DECLINED` | Payment declined |
+| `PAYMENT_VOIDED` | Authorization voided |
+| `REFUND_SUCCESS` | Refund processed successfully |
+| `REFUND_FAILED` | Refund processing failed |
+
+**Production Notes:**
+- Configure this URL in your Afterpay merchant dashboard
+- Verify signatures using HMAC-SHA256
+- Respond with 200 status within 30 seconds
+- See [Webhook Events](https://developers.cash.app/cash-app-afterpay/guides/api-development/webhook-signature-generation) for implementation details
+
 ### Technical Details
 
 **Files:**
@@ -632,7 +585,7 @@ Unified timeline showing:
 - `app/api/afterpay/void/route.ts` - Void
 
 **Payment State Calculation:**
-```javascript
+```typescript
 const getEffectiveStatus = () => {
   if (refunded >= captured) return 'FULLY REFUNDED';
   if (refunded > 0) return 'PARTIALLY REFUNDED';
@@ -691,22 +644,29 @@ Track all completed orders with persistent storage and easy management.
 - `lib/orders.ts` - Order persistence utilities
 
 **Storage:**
-```javascript
+```typescript
 // Orders stored in localStorage
-const STORAGE_KEY = 'afterpay_orders';
+const ORDERS_STORAGE_KEY = 'afterpay-demo-orders';
 const MAX_ORDERS = 20;
+
+// Order item structure
+interface OrderItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  price: number;
+}
 
 // Order structure
 interface Order {
   id: string;
-  orderId: string;
-  items: CartItem[];
-  subtotal: number;
-  shipping: number;
+  orderId: string;           // Afterpay order ID
+  status: 'pending' | 'authorized' | 'captured' | 'refunded' | 'voided';
   total: number;
-  status: 'authorized' | 'captured';
-  flow: string;  // e.g., "express-integrated", "standard-popup"
+  items: OrderItem[];
   createdAt: string;
+  flow: string;              // e.g., 'express-integrated', 'standard-redirect'
+  captureMode: 'deferred' | 'immediate';
 }
 ```
 
@@ -864,7 +824,7 @@ On mobile devices:
 - `app/api/docs/how-to-use/route.ts` - Serves how-to-use.md content
 
 **Table of Contents Extraction:**
-```javascript
+```typescript
 function extractHeadings(markdown: string): TocItem[] {
   const headingRegex = /^(#{1,3})\s+(.+)$/gm;
   // Extracts h1, h2, h3 headings
@@ -1063,15 +1023,6 @@ Use this checklist to verify all features work correctly:
 - [ ] Void works
 - [ ] Event history displays correctly
 - [ ] Optimistic updates work
-
-### Custom API Credentials
-- [ ] Default credentials selected by default
-- [ ] Configuration loads automatically with default credentials
-- [ ] Custom credentials form appears when toggled
-- [ ] Validate button triggers API call
-- [ ] Configuration displays min/max thresholds
-- [ ] Invalid credentials show error message
-- [ ] Switching back to Default clears custom credentials
 
 ### Developer Tools
 - [ ] Flow logs capture all API calls

@@ -131,9 +131,9 @@ export function Header() {
     <>
       <header className="sticky top-0 z-50 glass dark:bg-afterpay-gray-900/90 border-b border-afterpay-gray-200/50 dark:border-afterpay-gray-700/50 shadow-soft">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="relative flex items-center justify-between h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center shrink-0">
+            <Link href="/" className="flex items-center shrink-0 z-10">
               <img
                 alt="Cash App Afterpay"
                 src={resolvedTheme === "dark"
@@ -145,8 +145,8 @@ export function Header() {
               />
             </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center">
+            {/* Desktop Navigation - Centered on page */}
+            <nav className="hidden md:flex items-center absolute left-1/2 -translate-x-1/2">
               {/* Demo Section */}
               <div className="flex items-center space-x-1 px-2">
                 {demoNav.map((item) => (
@@ -163,46 +163,29 @@ export function Header() {
                   <NavLink key={item.href} href={item.href} label={item.label} />
                 ))}
               </div>
-            </nav>
 
-            {/* Right Side - Utilities */}
-            <div className="flex items-center space-x-1">
-              {/* Theme Toggle */}
+              {/* Divider */}
+              <div className="h-5 w-px bg-afterpay-gray-300 dark:bg-afterpay-gray-700 mx-2" />
+
+              {/* Theme Toggle - Text Label */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-lg text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-800 transition-all duration-200"
+                className="px-3 py-1.5 text-sm font-medium text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white transition-all duration-200"
                 aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               >
-                {resolvedTheme === "dark" ? (
-                  <SunIcon className="w-5 h-5" />
-                ) : (
-                  <MoonIcon className="w-5 h-5" />
-                )}
+                {resolvedTheme === "dark" ? "Light Mode" : "Dark Mode"}
               </button>
 
-              {/* Cart */}
+              {/* Cart - Text Label */}
               <Link
                 href="/cart"
-                className="relative p-2 rounded-lg text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-800 transition-all duration-200"
+                className="relative px-3 py-1.5 text-sm font-medium text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white transition-all duration-200"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                  />
-                </svg>
+                Cart
                 {itemCount > 0 && (
                   <span
                     key={cartAnimationTrigger}
-                    className={`absolute -top-0.5 -right-0.5 bg-afterpay-mint text-afterpay-black text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-sm ${
+                    className={`ml-1 bg-afterpay-mint text-afterpay-black text-[10px] font-bold rounded-full px-1.5 py-0.5 ${
                       isAnimating ? "animate-bounce-sm" : ""
                     }`}
                   >
@@ -210,11 +193,14 @@ export function Header() {
                   </span>
                 )}
               </Link>
+            </nav>
 
+            {/* Right Side - Mobile Only */}
+            <div className="flex items-center space-x-1 md:hidden">
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="md:hidden p-2 rounded-lg text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-800 transition-all duration-200"
+                className="p-2 rounded-lg text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-800 transition-all duration-200"
                 aria-label="Open menu"
               >
                 <MenuIcon className="w-5 h-5" />
