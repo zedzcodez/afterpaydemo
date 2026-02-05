@@ -44,13 +44,16 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 bg-afterpay-mint rounded-xl flex items-center justify-center shadow-mint-glow group-hover:shadow-mint-glow-lg transition-shadow duration-300">
-              <span className="text-afterpay-black font-display font-bold text-lg">A</span>
-            </div>
-            <span className="font-display font-semibold text-lg hidden sm:block">
-              Afterpay Demo Shop
-            </span>
+          <Link href="/" className="flex items-center group">
+            <img
+              alt="Cash App Afterpay"
+              src={resolvedTheme === "dark"
+                ? "https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-mono-white-32.svg"
+                : "https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-mono-black-32.svg"
+              }
+              height="32"
+              className="h-8"
+            />
           </Link>
 
           {/* Navigation */}
