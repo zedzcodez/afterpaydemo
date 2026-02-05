@@ -13,7 +13,7 @@ This guide walks you through testing all features of the Afterpay Demo Shop, wit
 | Standard Checkout | Redirect or popup to Afterpay | `/checkout` | [API Quickstart](https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart) |
 | Deferred Capture | Authorize now, capture later | `/admin` | [Deferred Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart/deferred-capture) |
 | Payment Admin | Capture, refund, void payments | `/admin` | [Payments API](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments) |
-| Webhooks | Async payment notifications | `/admin` | [Webhooks](https://developers.cash.app/cash-app-afterpay/guides/api-development/webhook-signature-generation) |
+| Webhooks | Dispute notifications (coming soon) | `/admin` | [Webhooks](https://developers.cash.app/cash-app-afterpay/guides/api-development/webhook-signature-generation) |
 | Order History | Track completed orders | `/orders` | - |
 
 > **Common Patterns Across All Flows**
@@ -639,48 +639,43 @@ const getEffectiveStatus = () => {
 
 ## Webhook Handler
 
-Test the webhook endpoint with simulated payment events to understand how merchants receive async notifications from Afterpay.
+> **Status:** This feature is temporarily unavailable and will be enabled in a future release.
+
+Webhooks are used by Afterpay to notify merchants about **dispute notifications**. When a customer initiates a dispute, Afterpay sends a POST request to your configured webhook endpoint.
 
 ### Endpoint Info
 
 **Local Endpoint:** `/api/webhooks/afterpay`
 
-**Purpose:** Receive async payment notifications from Afterpay
+**Purpose:** Receive dispute notifications from Afterpay
 
-### How to Test
+### Webhook Payload
 
-1. Go to `/admin`
-2. Click to expand the "Webhook Handler Demo" section
-3. Click any event button to simulate receiving that webhook:
-   - **PAYMENT_CAPTURED** - Payment was captured
-   - **PAYMENT_AUTH_APPROVED** - Authorization approved
-   - **REFUND_SUCCESS** - Refund completed
-   - **PAYMENT_DECLINED** - Payment was declined
-4. View the test event in "Recent Test Events" list
-5. Check the Developer Panel for full request/response details
+Webhooks include:
+- `webhook_event_id` - Unique event identifier
+- `webhook_event_type` - Event type (e.g., "created")
+- `dispute_id` - Associated dispute reference
+- `merchant_reference` - Your internal order reference
 
-### Supported Events
+### Security
 
-| Event Type | Description |
-|------------|-------------|
-| `PAYMENT_CAPTURED` | Payment successfully captured |
-| `PAYMENT_AUTH_APPROVED` | Authorization approved |
-| `PAYMENT_DECLINED` | Payment declined |
-| `PAYMENT_VOIDED` | Authorization voided |
-| `REFUND_SUCCESS` | Refund processed successfully |
-| `REFUND_FAILED` | Refund processing failed |
+Webhooks use HMAC-SHA256 signature verification:
+1. Extract signature from `X-Afterpay-Request-Signature` header
+2. Construct canonical message (URL + timestamp + payload)
+3. Generate HMAC-SHA256 hash using shared secret
+4. Compare signatures using constant-time comparison
 
-### Production Notes
+### Production Setup
 
-- Configure this URL in your Afterpay merchant dashboard
-- Verify signatures using HMAC-SHA256
-- Respond with 200 status within 30 seconds
+- Provide your webhook URL to Afterpay support
+- Receive an HMAC shared secret key for verification
+- Configure endpoint to accept `application/json` POST requests
 
 ### Technical Details
 
 **File:** `app/api/webhooks/afterpay/route.ts`
 
-**Afterpay Documentation:** [Webhook Events](https://developers.cash.app/cash-app-afterpay/guides/api-development/webhook-signature-generation)
+**Afterpay Documentation:** [Webhook Signature Generation](https://developers.cash.app/cash-app-afterpay/guides/api-development/webhook-signature-generation)
 
 ---
 

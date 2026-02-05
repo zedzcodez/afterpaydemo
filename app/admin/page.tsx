@@ -7,7 +7,8 @@ import { formatPrice } from "@/lib/products";
 import { FlowLogsDevPanel } from "@/components/FlowLogsDevPanel";
 import { initFlowLogs, addFlowLog } from "@/lib/flowLogs";
 import { PaymentDetails } from "@/lib/afterpay";
-import { StoredWebhookEvent, WebhookEventType, getEventBadgeColor } from "@/lib/webhooks";
+// Webhook feature temporarily disabled
+// import { StoredWebhookEvent, WebhookEventType, getEventBadgeColor } from "@/lib/webhooks";
 
 type ActionType = "capture" | "refund" | "void";
 
@@ -120,10 +121,10 @@ function AdminContent() {
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
   const [configError, setConfigError] = useState<string | null>(null);
 
-  // Webhook demo state
-  const [webhookEvents, setWebhookEvents] = useState<StoredWebhookEvent[]>([]);
-  const [testingWebhook, setTestingWebhook] = useState(false);
-  const [webhookExpanded, setWebhookExpanded] = useState(false);
+  // Webhook demo state - temporarily disabled
+  // const [webhookEvents, setWebhookEvents] = useState<StoredWebhookEvent[]>([]);
+  // const [testingWebhook, setTestingWebhook] = useState(false);
+  // const [webhookExpanded, setWebhookExpanded] = useState(false);
 
   // Initialize flow logs and load capture mode setting on mount
   useEffect(() => {
@@ -592,7 +593,8 @@ function AdminContent() {
     };
   };
 
-  // Test webhook handler
+  // Webhook handler functions - temporarily disabled
+  /*
   const handleTestWebhook = async (eventType: WebhookEventType = 'PAYMENT_CAPTURED') => {
     setTestingWebhook(true);
     try {
@@ -652,10 +654,10 @@ function AdminContent() {
     }
   };
 
-  // Clear webhook events
   const handleClearWebhooks = () => {
     setWebhookEvents([]);
   };
+  */
 
   return (
     <div className="min-h-screen bg-afterpay-gray-50 dark:bg-afterpay-gray-900 pb-72">
@@ -763,12 +765,9 @@ function AdminContent() {
           )}
         </div>
 
-        {/* Webhook Demo Section */}
-        <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 mb-6 overflow-hidden">
-          <button
-            onClick={() => setWebhookExpanded(!webhookExpanded)}
-            className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-afterpay-gray-50 to-purple-50 dark:from-afterpay-gray-700 dark:to-purple-900/30 hover:from-afterpay-gray-100 hover:to-purple-100 dark:hover:from-afterpay-gray-600 dark:hover:to-purple-900/40 transition-colors"
-          >
+        {/* Webhook Demo Section - Temporarily Unavailable */}
+        <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 mb-6 overflow-hidden opacity-60">
+          <div className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-afterpay-gray-50 to-purple-50 dark:from-afterpay-gray-700 dark:to-purple-900/30">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -782,135 +781,10 @@ function AdminContent() {
                 </p>
               </div>
             </div>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className={`h-5 w-5 text-afterpay-gray-500 transition-transform ${webhookExpanded ? 'rotate-180' : ''}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          {webhookExpanded && (
-            <div className="p-6 border-t border-afterpay-gray-200 dark:border-afterpay-gray-700">
-              {/* Endpoint Info */}
-              <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-900 rounded-lg p-4 mb-4">
-                <h3 className="text-sm font-medium mb-2 dark:text-white">Webhook Endpoint</h3>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 bg-white dark:bg-afterpay-gray-900 px-3 py-2 rounded border border-afterpay-gray-200 dark:border-afterpay-gray-700 text-sm font-mono">
-                    /api/webhooks/afterpay
-                  </code>
-                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
-                    Healthy
-                  </span>
-                </div>
-                <p className="text-xs text-afterpay-gray-500 dark:text-afterpay-gray-400 mt-2">
-                  In production, configure this URL in your Afterpay merchant dashboard to receive real webhook events.
-                </p>
-              </div>
-
-              {/* Test Webhook Buttons */}
-              <div className="mb-4">
-                <h3 className="text-sm font-medium mb-2 dark:text-white">Send Test Webhook</h3>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => handleTestWebhook('PAYMENT_CAPTURED')}
-                    disabled={testingWebhook}
-                    className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-                  >
-                    {testingWebhook ? 'Sending...' : 'PAYMENT_CAPTURED'}
-                  </button>
-                  <button
-                    onClick={() => handleTestWebhook('PAYMENT_AUTH_APPROVED')}
-                    disabled={testingWebhook}
-                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                  >
-                    PAYMENT_AUTH_APPROVED
-                  </button>
-                  <button
-                    onClick={() => handleTestWebhook('REFUND_SUCCESS')}
-                    disabled={testingWebhook}
-                    className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
-                  >
-                    REFUND_SUCCESS
-                  </button>
-                  <button
-                    onClick={() => handleTestWebhook('PAYMENT_DECLINED')}
-                    disabled={testingWebhook}
-                    className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                  >
-                    PAYMENT_DECLINED
-                  </button>
-                </div>
-                <p className="text-xs text-afterpay-gray-500 dark:text-afterpay-gray-400 mt-2">
-                  Click a button to simulate receiving that webhook event. Check the Developer Panel for request/response details.
-                </p>
-              </div>
-
-              {/* Webhook Events Log */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium dark:text-white">Recent Test Events</h3>
-                  {webhookEvents.length > 0 && (
-                    <button
-                      onClick={handleClearWebhooks}
-                      className="text-xs text-afterpay-gray-500 hover:text-afterpay-gray-700 dark:text-afterpay-gray-400 dark:hover:text-afterpay-gray-300"
-                    >
-                      Clear all
-                    </button>
-                  )}
-                </div>
-                {webhookEvents.length === 0 ? (
-                  <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-900 rounded-lg p-4 text-center text-sm text-afterpay-gray-500 dark:text-afterpay-gray-400">
-                    No test webhooks sent yet. Click a button above to simulate a webhook event.
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {webhookEvents.map((event) => (
-                      <div
-                        key={event.id}
-                        className="bg-afterpay-gray-50 dark:bg-afterpay-gray-900 rounded-lg p-3 flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${getEventBadgeColor(event.type)}`}>
-                            {event.type}
-                          </span>
-                          <div>
-                            <p className="text-sm font-mono dark:text-white">{event.data.orderId}</p>
-                            <p className="text-xs text-afterpay-gray-500 dark:text-afterpay-gray-400">
-                              {new Date(event.receivedAt).toLocaleTimeString()}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {event.data.amount && (
-                            <span className="text-sm font-medium dark:text-white">
-                              {formatPrice(parseFloat(event.data.amount.amount))}
-                            </span>
-                          )}
-                          {event.verified && (
-                            <span className="text-xs text-green-600 dark:text-green-400">Verified</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Educational Note */}
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <h4 className="text-sm font-medium text-blue-800 mb-1">About Webhooks</h4>
-                <p className="text-xs text-blue-700">
-                  Webhooks enable real-time notifications when payment events occur. In production, Afterpay sends
-                  POST requests to your configured endpoint for events like captures, refunds, and voids. Your server
-                  should verify the signature using HMAC-SHA256 and respond with a 200 status within 30 seconds.
-                </p>
-              </div>
-            </div>
-          )}
+            <span className="px-3 py-1 bg-afterpay-gray-200 dark:bg-afterpay-gray-600 text-afterpay-gray-600 dark:text-afterpay-gray-300 text-xs font-medium rounded-full">
+              Coming Soon
+            </span>
+          </div>
         </div>
 
         {/* Lookup Section */}

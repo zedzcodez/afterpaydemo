@@ -24,7 +24,7 @@ This application demonstrates how merchants integrate Afterpay into their e-comm
 | **Checkout Flows** | Express Checkout (popup with integrated/deferred shipping), Standard Checkout (redirect/popup modes) |
 | **Payment Operations** | Deferred & Immediate capture, partial/full refunds, void authorization |
 | **On-Site Messaging** | "Pay in 4" and "Pay Monthly" badges on PDP, cart, and checkout |
-| **Admin Panel** | Payment lookup, capture, refund, void, event history, webhook demo |
+| **Admin Panel** | Payment lookup, capture, refund, void, event history |
 | **Developer Tools** | API request/response logging, cURL/HAR export, code snippets, flow summaries |
 | **Order Management** | Persistent order history, individual deletion, status tracking |
 

@@ -40,7 +40,7 @@ Full payment management interface at `/admin`:
 - Process refunds (full or partial)
 - Void uncaptured authorizations
 - Real-time API request/response logging
-- **Webhook Demo**: Test webhook endpoint with simulated payment events
+- **Webhook Handler**: Dispute notifications endpoint (coming soon)
 
 ### Order History
 Persistent order tracking at `/orders`:
@@ -241,7 +241,7 @@ This demo wraps Afterpay's v2 API endpoints. Each local endpoint maps to an Afte
 | `POST /api/afterpay/void` | `POST /v2/payments/{id}/void` | Void authorization | [Void Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/void-payment) |
 | `GET /api/afterpay/payment/[id]` | `GET /v2/payments/{id}` | Get payment details | [Get Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/get-payment-by-order-id) |
 | `POST /api/afterpay/configuration` | `GET /v2/configuration` | Get merchant config | [Get Configuration](https://developers.cash.app/cash-app-afterpay/api-reference/reference/configuration/get-configuration) |
-| `POST /api/webhooks/afterpay` | - | Receive webhook events (demo) | [Webhook Events](https://developers.cash.app/cash-app-afterpay/guides/api-development/webhook-signature-generation) |
+| `POST /api/webhooks/afterpay` | - | Receive dispute notifications (coming soon) | [Webhook Signature](https://developers.cash.app/cash-app-afterpay/guides/api-development/webhook-signature-generation) |
 | `GET /api/webhooks/afterpay` | - | Webhook health check | - |
 
 **API Base URL (Sandbox)**: `https://global-api-sandbox.afterpay.com`
@@ -361,7 +361,7 @@ The demo features a polished, distinctive UI built on Afterpay's brand colors wi
 - [x] Payment Admin Panel with capture/refund/void
 - [x] Developer Panel with cURL/HAR export (collapsed by default)
 - [x] Order History with localStorage persistence and individual deletion
-- [x] Webhook Handler Demo
+- [ ] Webhook Handler Demo (dispute notifications - coming soon)
 - [x] Error Boundaries for graceful error handling
 - [x] Jest Test Suite (55 tests, 99.63% coverage)
 - [x] Security: Input validation with Zod
