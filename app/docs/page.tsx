@@ -90,7 +90,7 @@ const MarkdownComponents = {
   a: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
     <a
       href={href}
-      className="text-afterpay-mint hover:text-afterpay-mint-dark underline underline-offset-2 decoration-afterpay-mint/50 hover:decoration-afterpay-mint transition-colors"
+      className="text-teal-600 dark:text-afterpay-mint hover:text-teal-700 dark:hover:text-afterpay-mint-dark underline underline-offset-2 decoration-teal-400/50 dark:decoration-afterpay-mint/50 hover:decoration-teal-600 dark:hover:decoration-afterpay-mint transition-colors"
       target={href?.startsWith("http") ? "_blank" : undefined}
       rel={href?.startsWith("http") ? "noopener noreferrer" : undefined}
       {...props}
@@ -393,9 +393,9 @@ export default function DocsPage() {
                 </h4>
               </div>
               <nav className="space-y-1">
-                {tocItems.map((item) => (
+                {tocItems.map((item, index) => (
                   <button
-                    key={item.id}
+                    key={`${item.id}-${index}`}
                     onClick={() => scrollToSection(item.id)}
                     className={`
                       block w-full text-left text-sm py-1.5 transition-all duration-200 rounded
@@ -403,7 +403,7 @@ export default function DocsPage() {
                       ${item.level === 2 ? "pl-0" : ""}
                       ${item.level === 3 ? "pl-4" : ""}
                       ${activeSection === item.id
-                        ? "text-afterpay-mint font-medium"
+                        ? "text-teal-600 dark:text-afterpay-mint font-medium"
                         : "text-afterpay-gray-600 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white"
                       }
                     `}
