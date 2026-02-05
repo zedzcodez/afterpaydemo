@@ -783,10 +783,10 @@ interface Order {
 |----------------|--------|--------------|---------|------|
 | `/api/afterpay/checkout` | POST | `POST /v2/checkouts` | Create checkout session | [Create Checkout](https://developers.cash.app/cash-app-afterpay/api-reference/reference/checkouts/create-checkout-1) |
 | `/api/afterpay/auth` | POST | `POST /v2/payments/auth` | Authorize payment | [Authorise Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/auth) |
-| `/api/afterpay/capture` | POST | `POST /v2/payments/{id}/capture` | Capture (partial) | [Capture Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-payment) |
-| `/api/afterpay/capture-full` | POST | `POST /v2/payments/capture` | Capture (full) | [Capture Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-payment) |
-| `/api/afterpay/refund` | POST | `POST /v2/payments/{id}/refund` | Process refund | [Create Refund](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/create-refund) |
-| `/api/afterpay/void` | POST | `POST /v2/payments/{id}/void` | Void authorization | [Void Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/void-payment) |
+| `/api/afterpay/capture` | POST | `POST /v2/payments/{id}/capture` | Deferred capture (full/partial) | [Capture Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-payment) |
+| `/api/afterpay/capture-full` | POST | `POST /v2/payments/capture` | Auth + Capture | [Capture Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-payment) |
+| `/api/afterpay/refund` | POST | `POST /v2/payments/{id}/refund` | Refund (full/partial) | [Create Refund](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/create-refund) |
+| `/api/afterpay/void` | POST | `POST /v2/payments/{id}/void` | Void (full/partial) | [Void Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/void-payment) |
 | `/api/afterpay/payment/[id]` | GET | `GET /v2/payments/{id}` | Get payment details | [Get Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/get-payment-by-order-id) |
 | `/api/afterpay/configuration` | POST | `GET /v2/configuration` | Get merchant config | [Get Configuration](https://developers.cash.app/cash-app-afterpay/api-reference/reference/configuration/get-configuration) |
 | `/api/webhooks/afterpay` | POST | - | Receive webhook events | [Webhooks](https://developers.cash.app/cash-app-afterpay/guides/api-development/webhook-signature-generation) |

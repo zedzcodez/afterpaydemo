@@ -99,10 +99,10 @@ Wraps all Afterpay v2 endpoints:
 |----------------|--------------|---------|
 | POST /api/afterpay/checkout | POST /v2/checkouts | Create checkout session |
 | POST /api/afterpay/auth | POST /v2/payments/auth | Authorize payment |
-| POST /api/afterpay/capture | POST /v2/payments/{id}/capture | Partial capture |
+| POST /api/afterpay/capture | POST /v2/payments/{id}/capture | Deferred capture (full/partial) |
 | POST /api/afterpay/capture-full | POST /v2/payments/capture | Auth + Capture |
-| POST /api/afterpay/refund | POST /v2/payments/{id}/refund | Refund payment |
-| POST /api/afterpay/void | POST /v2/payments/{id}/void | Void authorization |
+| POST /api/afterpay/refund | POST /v2/payments/{id}/refund | Refund (full/partial) |
+| POST /api/afterpay/void | POST /v2/payments/{id}/void | Void (full/partial) |
 
 ### Security
 
