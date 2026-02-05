@@ -35,6 +35,23 @@ class HeadingIdGenerator {
   }
 }
 
+// Recursively extract plain text from React children
+function getPlainText(children: React.ReactNode): string {
+  if (typeof children === 'string') return children;
+  if (typeof children === 'number') return String(children);
+  if (!children) return '';
+  if (Array.isArray(children)) {
+    return children.map(getPlainText).join('');
+  }
+  if (React.isValidElement(children)) {
+    const element = children as React.ReactElement<{ children?: React.ReactNode }>;
+    if (element.props?.children) {
+      return getPlainText(element.props.children);
+    }
+  }
+  return '';
+}
+
 // Extract headings from markdown for table of contents
 function extractHeadings(markdown: string, idGenerator: HeadingIdGenerator): TocItem[] {
   idGenerator.reset();
@@ -59,7 +76,7 @@ function createMarkdownComponents(idGenerator: HeadingIdGenerator) {
 
   return {
     h1: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
-      const id = idGenerator.generateId(String(children));
+      const id = idGenerator.generateId(getPlainText(children));
       return (
         <h1 id={id} className="scroll-mt-24 text-3xl sm:text-4xl font-display font-bold text-afterpay-black dark:text-white mt-12 mb-6 first:mt-0" {...props}>
           {children}
@@ -67,7 +84,7 @@ function createMarkdownComponents(idGenerator: HeadingIdGenerator) {
       );
     },
     h2: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
-      const id = idGenerator.generateId(String(children));
+      const id = idGenerator.generateId(getPlainText(children));
       return (
         <h2 id={id} className="scroll-mt-24 text-2xl font-display font-bold text-afterpay-black dark:text-white mt-12 mb-4 pb-3 border-b border-afterpay-gray-200 dark:border-afterpay-gray-700" {...props}>
           {children}
@@ -75,7 +92,7 @@ function createMarkdownComponents(idGenerator: HeadingIdGenerator) {
       );
     },
     h3: ({ children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
-      const id = idGenerator.generateId(String(children));
+      const id = idGenerator.generateId(getPlainText(children));
       return (
         <h3 id={id} className="scroll-mt-24 text-xl font-display font-semibold text-afterpay-black dark:text-white mt-8 mb-3" {...props}>
           {children}
