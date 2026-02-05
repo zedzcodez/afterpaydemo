@@ -107,8 +107,9 @@ const MarkdownComponents = {
         </code>
       );
     }
+    // Block code - ensure light text for dark pre background
     return (
-      <code className={className} {...props}>
+      <code className="text-slate-200 font-mono" {...props}>
         {children}
       </code>
     );
@@ -136,7 +137,7 @@ const MarkdownComponents = {
             Copy
           </button>
         </div>
-        <div className="p-4 overflow-x-auto text-sm">
+        <div className="p-4 overflow-x-auto text-sm text-slate-200">
           {children}
         </div>
       </pre>
