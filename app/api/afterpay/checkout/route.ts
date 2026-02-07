@@ -34,9 +34,11 @@ export async function POST(request: NextRequest) {
     const merchantReference = generateMerchantReference();
 
     // Standard checkout redirects to review page, Express uses popup callbacks
-    const redirectConfirmUrl = mode === "standard"
-      ? `${appUrl}/checkout/review`
-      : `${appUrl}/confirmation`;
+    const redirectConfirmUrl = isCashAppPay
+      ? `${appUrl}/confirmation?cashAppPay=true`
+      : mode === "standard"
+        ? `${appUrl}/checkout/review`
+        : `${appUrl}/confirmation`;
 
     const checkoutRequest = {
       amount: toMoney(total),
