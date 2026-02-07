@@ -8,6 +8,7 @@ import { initFlowLogs, addFlowLog, setFlowSummary, updateFlowSummary, FlowSummar
 import { saveOrder, Order } from "@/lib/orders";
 import { toggleDevPanel, useDevPanelState } from "./FlowLogsDevPanel";
 import { CashAppPayCompleteEvent } from "@/lib/types";
+import { CashAppInfoSection } from "./CashAppInfoSection";
 
 interface ShippingOption {
   id: string;
@@ -769,6 +770,9 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
           )}
         </>
       )}
+
+      {/* Cash App Pay Developer Info Section */}
+      <CashAppInfoSection />
     </div>
   );
 }
