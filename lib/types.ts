@@ -233,23 +233,24 @@ export interface AfterpayMessage {
 export interface CashAppPayConfig {
   countryCode: string;
   token: string;
-  options?: {
-    button?: boolean;
+  cashAppPayOptions: {
+    button?: {
+      size?: 'small' | 'medium';
+      width?: 'full' | 'static';
+      theme?: 'dark' | 'light';
+      shape?: 'round' | 'semiround';
+    } | false;
+    onComplete: (event: CashAppPayCompleteEvent) => void;
+    eventListeners?: {
+      CUSTOMER_INTERACTION?: (event: { isMobile: boolean }) => void;
+      CUSTOMER_REQUEST_APPROVED?: () => void;
+      CUSTOMER_REQUEST_DECLINED?: () => void;
+      CUSTOMER_REQUEST_FAILED?: () => void;
+      CUSTOMER_DISMISSED?: () => void;
+    };
     manage?: boolean;
-    size?: 'small' | 'medium';
-    width?: 'full' | 'static';
-    theme?: 'dark' | 'light';
-    shape?: 'round' | 'semiround';
+    onBegin?: (args: { begin: () => void }) => void;
   };
-  events?: {
-    onComplete?: (event: CashAppPayCompleteEvent) => void;
-    CUSTOMER_INTERACTION?: (event: { data: { isMobile: boolean } }) => void;
-    CUSTOMER_REQUEST_APPROVED?: () => void;
-    CUSTOMER_REQUEST_DECLINED?: () => void;
-    CUSTOMER_REQUEST_FAILED?: () => void;
-    CUSTOMER_DISMISSED?: () => void;
-  };
-  onBegin?: (args: { begin: () => void }) => void;
 }
 
 export interface CashAppPayCompleteEvent {

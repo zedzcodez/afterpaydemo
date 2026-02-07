@@ -111,31 +111,34 @@ const response = await fetch('/v2/checkouts', {
   const sdkInitCode = `AfterPay.initializeForCashAppPay({
   countryCode: "US",
   token: checkoutToken,
-  options: {
-    size: "medium",
-    width: "full",
-    theme: "dark",
-    shape: "semiround"
-  },
-  events: {
+  cashAppPayOptions: {
+    button: {
+      size: "medium",
+      width: "full",
+      theme: "dark",
+      shape: "semiround"
+    },
     onComplete: (event) => {
       console.log("Status:", event.data.status);
       console.log("Cashtag:", event.data.cashtag);
       console.log("Token:", event.data.orderToken);
     },
-    CUSTOMER_REQUEST_DECLINED: () => {
-      console.log("Payment declined");
+    eventListeners: {
+      CUSTOMER_REQUEST_DECLINED: () => {
+        console.log("Payment declined");
+      }
     }
   }
 });`;
 
   const buttonOptionsCode = `// Available button customization options
-options: {
-  button: true,       // Show default button (set false for custom)
-  size: "medium",     // "small" | "medium"
-  width: "full",      // "full" | "static"
-  theme: "dark",      // "dark" | "light"
-  shape: "semiround"  // "round" | "semiround"
+cashAppPayOptions: {
+  button: {             // Set to false for custom button
+    size: "medium",     // "small" | "medium"
+    width: "full",      // "full" | "static"
+    theme: "dark",      // "dark" | "light"
+    shape: "semiround"  // "round" | "semiround"
+  }
 }`;
 
   return (

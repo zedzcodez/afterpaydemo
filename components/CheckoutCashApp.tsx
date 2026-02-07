@@ -416,47 +416,48 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
       window.Afterpay.initializeForCashAppPay({
         countryCode: "US",
         token: data.token,
-        options: {
-          button: true,
-          size: "medium",
-          width: "full",
-          theme: "dark",
-          shape: "semiround",
-        },
-        events: {
+        cashAppPayOptions: {
+          button: {
+            size: "medium",
+            width: "full",
+            theme: "dark",
+            shape: "semiround",
+          },
           onComplete: handleComplete,
-          CUSTOMER_INTERACTION: (event: { data: { isMobile: boolean } }) => {
-            addFlowLog({
-              type: "callback",
-              label: "Customer Interaction",
-              data: event.data,
-            });
-          },
-          CUSTOMER_REQUEST_APPROVED: () => {
-            addFlowLog({
-              type: "callback",
-              label: "Customer Request Approved",
-            });
-          },
-          CUSTOMER_REQUEST_DECLINED: () => {
-            addFlowLog({
-              type: "callback",
-              label: "Customer Request Declined",
-            });
-            setError("Payment was declined");
-          },
-          CUSTOMER_REQUEST_FAILED: () => {
-            addFlowLog({
-              type: "callback",
-              label: "Customer Request Failed",
-            });
-            setError("Payment failed");
-          },
-          CUSTOMER_DISMISSED: () => {
-            addFlowLog({
-              type: "callback",
-              label: "Customer Dismissed",
-            });
+          eventListeners: {
+            CUSTOMER_INTERACTION: (event: { isMobile: boolean }) => {
+              addFlowLog({
+                type: "callback",
+                label: "Customer Interaction",
+                data: event,
+              });
+            },
+            CUSTOMER_REQUEST_APPROVED: () => {
+              addFlowLog({
+                type: "callback",
+                label: "Customer Request Approved",
+              });
+            },
+            CUSTOMER_REQUEST_DECLINED: () => {
+              addFlowLog({
+                type: "callback",
+                label: "Customer Request Declined",
+              });
+              setError("Payment was declined");
+            },
+            CUSTOMER_REQUEST_FAILED: () => {
+              addFlowLog({
+                type: "callback",
+                label: "Customer Request Failed",
+              });
+              setError("Payment failed");
+            },
+            CUSTOMER_DISMISSED: () => {
+              addFlowLog({
+                type: "callback",
+                label: "Customer Dismissed",
+              });
+            },
           },
         },
       });
