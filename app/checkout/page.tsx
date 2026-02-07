@@ -8,12 +8,13 @@ import { useCart } from "@/components/CartProvider";
 import { formatPrice } from "@/lib/products";
 import { CheckoutExpress } from "@/components/CheckoutExpress";
 import { CheckoutStandard } from "@/components/CheckoutStandard";
+import { CheckoutCashApp } from "@/components/CheckoutCashApp";
 import { CheckoutProgress } from "@/components/CheckoutProgress";
 import { FlowLogsDevPanel } from "@/components/FlowLogsDevPanel";
 import { OSMInfoSection } from "@/components/OSMInfoSection";
 import { getCartSkus, getCartCategories } from "@/lib/cart";
 
-type CheckoutMethod = "express" | "standard";
+type CheckoutMethod = "express" | "standard" | "cashapp";
 type ShippingFlow = "integrated" | "deferred";
 
 export interface ShippingOption {
@@ -44,9 +45,9 @@ export default function CheckoutPage() {
     setShippingAnimationKey((prev) => prev + 1);
   }, []);
 
-  // Reset shipping when switching to Express (shipping happens in popup or /shipping page)
+  // Reset shipping when switching away from Standard (shipping happens in popup or /shipping page)
   useEffect(() => {
-    if (method === "express") {
+    if (method !== "standard") {
       setSelectedShipping(null);
     }
   }, [method]);
@@ -104,8 +105,8 @@ export default function CheckoutPage() {
                 <div
                   className="absolute bottom-0 h-0.5 bg-afterpay-mint transition-all duration-300 ease-out"
                   style={{
-                    width: "50%",
-                    transform: method === "express" ? "translateX(0)" : "translateX(100%)",
+                    width: "33.333%",
+                    transform: `translateX(${method === "express" ? "0" : method === "standard" ? "100%" : "200%"})`,
                   }}
                 />
                 <button
@@ -134,12 +135,25 @@ export default function CheckoutPage() {
                     API Integration
                   </span>
                 </button>
+                <button
+                  onClick={() => setMethod("cashapp")}
+                  className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
+                    method === "cashapp"
+                      ? "text-afterpay-black dark:text-white"
+                      : "text-afterpay-gray-500 hover:text-afterpay-gray-700 dark:hover:text-afterpay-gray-300"
+                  }`}
+                >
+                  Cash App Pay
+                  <span className="block text-xs font-normal mt-1">
+                    Pay Now
+                  </span>
+                </button>
               </div>
             </div>
 
             {/* Method Description */}
             <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-lg p-4 mb-6">
-              {method === "express" ? (
+              {method === "express" && (
                 <div>
                   <h3 className="font-medium mb-2">Express Checkout Flow</h3>
                   <p className="text-sm text-afterpay-gray-600">
@@ -149,7 +163,8 @@ export default function CheckoutPage() {
                     on your site).
                   </p>
                 </div>
-              ) : (
+              )}
+              {method === "standard" && (
                 <div>
                   <h3 className="font-medium mb-2">Standard Checkout Flow</h3>
                   <p className="text-sm text-afterpay-gray-600">
@@ -160,6 +175,16 @@ export default function CheckoutPage() {
                   </p>
                 </div>
               )}
+              {method === "cashapp" && (
+                <div>
+                  <h3 className="font-medium mb-2">Cash App Pay Flow</h3>
+                  <p className="text-sm text-afterpay-gray-600">
+                    Pay now with Cash App. Customers scan a QR code on
+                    desktop or are redirected to the Cash App on mobile.
+                    Uses the same Afterpay API with isCashAppPay flag.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Checkout Form */}
@@ -167,8 +192,12 @@ export default function CheckoutPage() {
               <CheckoutExpress
                 initialShippingFlow={initialShippingFlow}
               />
-            ) : (
+            ) : method === "standard" ? (
               <CheckoutStandard
+                onShippingChange={handleShippingChange}
+              />
+            ) : (
+              <CheckoutCashApp
                 onShippingChange={handleShippingChange}
               />
             )}
