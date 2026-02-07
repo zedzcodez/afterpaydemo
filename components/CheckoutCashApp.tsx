@@ -71,6 +71,7 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
   const [isReady, setIsReady] = useState(false);
   const [showPaymentButton, setShowPaymentButton] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [pendingToken, setPendingToken] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
     email: "",
     firstName: "",
@@ -133,6 +134,86 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
     };
     checkAfterpay();
   }, []);
+
+  // Initialize Cash App Pay SDK after the button container is in the DOM
+  useEffect(() => {
+    if (!pendingToken || !showPaymentButton) return;
+
+    // Wait for next frame to ensure the DOM has rendered the #cash-app-pay div
+    const frameId = requestAnimationFrame(() => {
+      if (!window.Afterpay || typeof window.Afterpay.initializeForCashAppPay !== 'function') {
+        setError("Afterpay.js Cash App Pay SDK not loaded");
+        setIsLoading(false);
+        return;
+      }
+
+      addFlowLog({
+        type: "callback",
+        label: "Initialize Cash App Pay",
+        data: { countryCode: "US", token: pendingToken.substring(0, 20) + "..." },
+      });
+
+      try {
+        window.Afterpay.initializeForCashAppPay({
+          countryCode: "US",
+          token: pendingToken,
+          cashAppPayOptions: {
+            button: {
+              size: "medium",
+              width: "full",
+              theme: "dark",
+              shape: "semiround",
+            },
+            onComplete: handleComplete,
+            eventListeners: {
+              CUSTOMER_INTERACTION: (event: { isMobile: boolean }) => {
+                addFlowLog({
+                  type: "callback",
+                  label: "Customer Interaction",
+                  data: event,
+                });
+              },
+              CUSTOMER_REQUEST_APPROVED: () => {
+                addFlowLog({
+                  type: "callback",
+                  label: "Customer Request Approved",
+                });
+              },
+              CUSTOMER_REQUEST_DECLINED: () => {
+                addFlowLog({
+                  type: "callback",
+                  label: "Customer Request Declined",
+                });
+                setError("Payment was declined");
+              },
+              CUSTOMER_REQUEST_FAILED: () => {
+                addFlowLog({
+                  type: "callback",
+                  label: "Customer Request Failed",
+                });
+                setError("Payment failed");
+              },
+              CUSTOMER_DISMISSED: () => {
+                addFlowLog({
+                  type: "callback",
+                  label: "Customer Dismissed",
+                });
+              },
+            },
+          },
+        });
+        setIsLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "SDK initialization failed");
+        setIsLoading(false);
+      }
+
+      setPendingToken(null);
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingToken, showPaymentButton]);
 
   // onComplete handler for Cash App Pay
   const handleComplete = async (event: CashAppPayCompleteEvent) => {
@@ -402,70 +483,12 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
         });
       }
 
-      // Step 2: Initialize Cash App Pay
-      if (!window.Afterpay || typeof window.Afterpay.initializeForCashAppPay !== 'function') {
-        throw new Error("Afterpay.js Cash App Pay SDK not loaded");
-      }
-
-      addFlowLog({
-        type: "callback",
-        label: "Initialize Cash App Pay",
-        data: { countryCode: "US", token: data.token.substring(0, 20) + "..." },
-      });
-
-      window.Afterpay.initializeForCashAppPay({
-        countryCode: "US",
-        token: data.token,
-        cashAppPayOptions: {
-          button: {
-            size: "medium",
-            width: "full",
-            theme: "dark",
-            shape: "semiround",
-          },
-          onComplete: handleComplete,
-          eventListeners: {
-            CUSTOMER_INTERACTION: (event: { isMobile: boolean }) => {
-              addFlowLog({
-                type: "callback",
-                label: "Customer Interaction",
-                data: event,
-              });
-            },
-            CUSTOMER_REQUEST_APPROVED: () => {
-              addFlowLog({
-                type: "callback",
-                label: "Customer Request Approved",
-              });
-            },
-            CUSTOMER_REQUEST_DECLINED: () => {
-              addFlowLog({
-                type: "callback",
-                label: "Customer Request Declined",
-              });
-              setError("Payment was declined");
-            },
-            CUSTOMER_REQUEST_FAILED: () => {
-              addFlowLog({
-                type: "callback",
-                label: "Customer Request Failed",
-              });
-              setError("Payment failed");
-            },
-            CUSTOMER_DISMISSED: () => {
-              addFlowLog({
-                type: "callback",
-                label: "Customer Dismissed",
-              });
-            },
-          },
-        },
-      });
-
-      // Show Cash App Pay button container
+      // Step 2: Show the button container first so the SDK has a DOM target
       setShowPaymentButton(true);
       setFormSubmitted(true);
-      setIsLoading(false);
+
+      // Store token for the useEffect to pick up
+      setPendingToken(data.token);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Checkout failed");
       setIsLoading(false);
