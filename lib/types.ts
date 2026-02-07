@@ -132,6 +132,11 @@ declare global {
       Widgets: {
         PaymentSchedule: new (config: AfterpayPaymentScheduleConfig) => AfterpayPaymentScheduleWidget;
       };
+      // Cash App Pay methods
+      initializeForCashAppPay: (config: CashAppPayConfig) => void;
+      initializeCashAppPayListeners: (config: { onComplete: (event: CashAppPayCompleteEvent) => void }) => void;
+      restartCashAppPay: () => void;
+      renderCashAppPayButton: () => void;
     };
   }
 }
@@ -223,4 +228,34 @@ export interface AfterpayShippingOptionData {
 export interface AfterpayMessage {
   severity: "log" | "warning" | "error";
   message: string;
+}
+
+export interface CashAppPayConfig {
+  countryCode: string;
+  token: string;
+  options?: {
+    button?: boolean;
+    manage?: boolean;
+    size?: 'small' | 'medium';
+    width?: 'full' | 'static';
+    theme?: 'dark' | 'light';
+    shape?: 'round' | 'semiround';
+  };
+  events?: {
+    onComplete?: (event: CashAppPayCompleteEvent) => void;
+    CUSTOMER_INTERACTION?: (event: { data: { isMobile: boolean } }) => void;
+    CUSTOMER_REQUEST_APPROVED?: () => void;
+    CUSTOMER_REQUEST_DECLINED?: () => void;
+    CUSTOMER_REQUEST_FAILED?: () => void;
+    CUSTOMER_DISMISSED?: () => void;
+  };
+  onBegin?: (args: { begin: () => void }) => void;
+}
+
+export interface CashAppPayCompleteEvent {
+  data: {
+    status: 'SUCCESS' | 'CANCELLED';
+    cashtag?: string;
+    orderToken: string;
+  };
 }
