@@ -46,6 +46,7 @@ export const checkoutRequestSchema = z.object({
   mode: z.enum(['standard', 'express']).optional().default('standard'),
   consumer: consumerSchema.optional(),
   shipping: shippingSchema.optional(),
+  isCashAppPay: z.boolean().optional().default(false),
 });
 
 // Auth request schema
