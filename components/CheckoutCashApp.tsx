@@ -118,6 +118,37 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
     }
   }, [total, onShippingChange]);
 
+  // Restart Cash App Pay SDK: clears previous authorization and removes UI elements
+  const restartCashAppPay = () => {
+    if (window.Afterpay?.restartCashAppPay) {
+      window.Afterpay.restartCashAppPay();
+      addFlowLog({
+        type: "callback",
+        label: "Cash App Pay Restarted",
+        data: { reason: "User returned to form or retrying" },
+      });
+    }
+  };
+
+  // Handle going back to edit form
+  const handleEditClick = () => {
+    restartCashAppPay();
+    setFormSubmitted(false);
+    setShowPaymentButton(false);
+    setError(null);
+    setPendingToken(null);
+  };
+
+  // Handle retry after error/decline
+  const handleRetry = () => {
+    restartCashAppPay();
+    setFormSubmitted(false);
+    setShowPaymentButton(false);
+    setError(null);
+    setPendingToken(null);
+    setIsLoading(false);
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -133,6 +164,15 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
       }
     };
     checkAfterpay();
+  }, []);
+
+  // Cleanup: restart Cash App Pay when component unmounts (SPA navigation)
+  useEffect(() => {
+    return () => {
+      if (window.Afterpay?.restartCashAppPay) {
+        window.Afterpay.restartCashAppPay();
+      }
+    };
   }, []);
 
   // Initialize Cash App Pay SDK after the button container is in the DOM
@@ -183,15 +223,17 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
                 addFlowLog({
                   type: "callback",
                   label: "Customer Request Declined",
+                  data: { hint: "User can click Try Again to restart" },
                 });
-                setError("Payment was declined");
+                setError("Payment was declined. Please try again.");
               },
               CUSTOMER_REQUEST_FAILED: () => {
                 addFlowLog({
                   type: "callback",
                   label: "Customer Request Failed",
+                  data: { hint: "User can click Try Again to restart" },
                 });
-                setError("Payment failed");
+                setError("Payment failed. Please try again.");
               },
               CUSTOMER_DISMISSED: () => {
                 addFlowLog({
@@ -724,7 +766,7 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
               <h3 className="font-medium">Shipping Details</h3>
               <button
                 type="button"
-                onClick={() => { setFormSubmitted(false); setShowPaymentButton(false); }}
+                onClick={handleEditClick}
                 className="text-sm text-afterpay-mint hover:underline"
               >
                 Edit
@@ -770,10 +812,19 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
             </div>
           </div>
 
-          {/* Error Display */}
+          {/* Error Display with Retry */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
+              <div className="flex items-center justify-between">
+                <span>{error}</span>
+                <button
+                  type="button"
+                  onClick={handleRetry}
+                  className="ml-4 px-3 py-1 text-sm font-medium bg-red-100 hover:bg-red-200 text-red-800 rounded transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
             </div>
           )}
 
