@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useCart } from "./CartProvider";
 import { formatPrice } from "@/lib/products";
 import { initFlowLogs, addFlowLog, setFlowSummary, updateFlowSummary, FlowSummary } from "@/lib/flowLogs";
-import { saveOrder, Order } from "@/lib/orders";
 import { toggleDevPanel, useDevPanelState } from "./FlowLogsDevPanel";
 import { CashAppPayCompleteEvent } from "@/lib/types";
 import { CashAppInfoSection } from "./CashAppInfoSection";
@@ -412,26 +411,8 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
         });
       }
 
-      // Save order to localStorage
+      // Store pending order in sessionStorage (confirmation page handles saveOrder)
       const currentItems = itemsRef.current;
-      const order: Order = {
-        id: crypto.randomUUID(),
-        orderId: orderId,
-        status: isImmediateCapture ? 'captured' : 'authorized',
-        total: totalRef.current,
-        items: currentItems.map(item => ({
-          productId: item.product.id,
-          productName: item.product.name,
-          quantity: item.quantity,
-          price: item.product.price,
-        })),
-        createdAt: new Date().toISOString(),
-        flow: `cashapp-${captureMode}`,
-        captureMode: isImmediateCapture ? 'immediate' : 'deferred',
-      };
-      saveOrder(order);
-
-      // Store pending order in sessionStorage
       sessionStorage.setItem('afterpay_pending_order', JSON.stringify({
         items: currentItems.map(item => ({
           productId: item.product.id,

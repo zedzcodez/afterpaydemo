@@ -64,6 +64,7 @@ export interface CheckoutRequest {
     popupOriginUrl?: string;
   };
   mode?: "standard" | "express";
+  isCashAppPay?: boolean;
 }
 
 export interface CheckoutItem {
@@ -136,7 +137,15 @@ declare global {
       initializeForCashAppPay: (config: CashAppPayConfig) => void;
       initializeCashAppPayListeners: (config: { onComplete: (event: CashAppPayCompleteEvent) => void }) => void;
       restartCashAppPay: () => void;
-      renderCashAppPayButton: () => void;
+      renderCashAppPayButton: (config?: {
+        countryCode?: string;
+        cashAppPayButtonOptions?: {
+          size?: 'small' | 'medium';
+          width?: 'full' | 'static';
+          theme?: 'dark' | 'light';
+          shape?: 'round' | 'semiround';
+        };
+      }) => void;
     };
   }
 }

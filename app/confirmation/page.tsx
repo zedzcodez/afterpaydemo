@@ -29,7 +29,7 @@ function ConfirmationContent() {
     // Handle Cash App Pay mobile redirect return
     const isCashAppPayReturn = searchParams.get("cashAppPay") === "true";
 
-    if (isCashAppPayReturn && !hasProcessed.current) {
+    if (isCashAppPayReturn) {
       hasProcessed.current = true;
 
       const initListeners = () => {
