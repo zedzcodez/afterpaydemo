@@ -69,6 +69,25 @@ const CASH_APP_BUTTON_OPTIONS = {
   shape: "semiround" as const,
 };
 
+// The SDK renders its button inside an open shadow DOM and may not respect
+// the width/shape options. This injects a style override into the shadow DOM.
+function applyCashAppButtonStyles() {
+  const host = document.querySelector('#cash-app-pay > div');
+  if (!host?.shadowRoot) return;
+  const shadow = host.shadowRoot;
+  // Avoid duplicate injection
+  if (shadow.querySelector('#cap-style-override')) return;
+  const style = document.createElement('style');
+  style.id = 'cap-style-override';
+  style.textContent = `
+    button[data-testid="cap-btn"] {
+      width: 100% !important;
+      border-radius: 12px !important;
+    }
+  `;
+  shadow.appendChild(style);
+}
+
 export function CheckoutCashApp({ isActive, onShippingChange }: CheckoutCashAppProps) {
   const router = useRouter();
   const { items, total } = useCart();
@@ -291,6 +310,8 @@ export function CheckoutCashApp({ isActive, onShippingChange }: CheckoutCashAppP
         });
         setIsLoading(false);
         hasInitializedRef.current = true;
+        // SDK may ignore button options — force full-width semiround via shadow DOM
+        requestAnimationFrame(() => applyCashAppButtonStyles());
       } catch (err) {
         const msg = err instanceof Error ? err.message : "SDK initialization failed";
         // If re-init with saved token failed, the token may be expired — reset to form
