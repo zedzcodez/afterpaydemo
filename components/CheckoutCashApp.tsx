@@ -38,7 +38,7 @@ const FLOW_SUMMARY: Omit<FlowSummary, 'requestConfig' | 'responseData'> = {
   flow: 'cashapp',
   description: 'Cash App Pay checkout where customer scans a QR code or taps the Cash App Pay button to authorize payment via Cash App.',
   steps: ['Create Checkout', 'Initialize Cash App Pay', 'Customer Authorizes via Cash App', 'Authorize Payment'],
-  docsUrl: 'https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/cash-app-pay',
+  docsUrl: 'https://developers.cash.app/cash-app-afterpay/guides/api-development/add-cash-app-pay-to-your-site/overview',
 };
 
 const FREE_SHIPPING_THRESHOLD = 100;
