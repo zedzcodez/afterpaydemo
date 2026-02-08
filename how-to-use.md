@@ -11,6 +11,7 @@ This guide walks you through testing all features of the Afterpay Demo Shop, wit
 | On-Site Messaging | "Pay in 4" or "Pay Monthly" badges | `/products/1` | [OSM Guide](https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging) |
 | Express Checkout | Popup checkout with shipping options | `/checkout` | [Express Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout) |
 | Standard Checkout | Redirect or popup to Afterpay | `/checkout` | [API Quickstart](https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart) |
+| Cash App Pay | QR code (desktop) or Cash App redirect (mobile) | `/checkout` | [Cash App Pay Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/add-cash-app-pay-to-your-site/overview) |
 | Deferred Capture | Authorize now, capture later | `/admin` | [Deferred Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart/deferred-capture) |
 | Payment Admin | Capture, refund, void payments | `/admin` | [Payments API](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments) |
 | Webhooks | Dispute notifications (coming soon) | `/admin` | [Webhooks](https://developers.cash.app/cash-app-afterpay/guides/api-development/webhook-signature-generation) |
@@ -34,33 +35,34 @@ This guide walks you through testing all features of the Afterpay Demo Shop, wit
 2. [On-Site Messaging (OSM)](#on-site-messaging-osm)
 3. [Express Checkout](#express-checkout)
 4. [Standard Checkout](#standard-checkout)
-5. [Capture Modes](#capture-modes)
+5. [Cash App Pay](#cash-app-pay)
+6. [Capture Modes](#capture-modes)
 
 ### Part 3: Payment Operations
-6. [Payment Admin Panel](#payment-admin-panel)
-7. [Webhook Handler](#webhook-handler)
-8. [Order History](#order-history)
+7. [Payment Admin Panel](#payment-admin-panel)
+8. [Webhook Handler](#webhook-handler)
+9. [Order History](#order-history)
 
 ### Part 4: API Reference
-9. [Local to Afterpay API Mapping](#local-to-afterpay-api-mapping)
-10. [API Flow Diagrams](#api-flow-diagrams)
-11. [Test Credentials](#test-credentials)
-12. [Troubleshooting](#troubleshooting)
+10. [Local to Afterpay API Mapping](#local-to-afterpay-api-mapping)
+11. [API Flow Diagrams](#api-flow-diagrams)
+12. [Test Credentials](#test-credentials)
+13. [Troubleshooting](#troubleshooting)
 
 ### Part 5: Developer Tools
-13. [Developer Panel](#developer-panel)
-14. [Integration Flow Summary](#integration-flow-summary)
-15. [Code Viewer](#code-viewer)
+14. [Developer Panel](#developer-panel)
+15. [Integration Flow Summary](#integration-flow-summary)
+16. [Code Viewer](#code-viewer)
 
 ### Part 6: App Customization
-16. [Settings & Preferences](#settings--preferences)
-17. [Navigation](#navigation)
-18. [Design System](#design-system)
-19. [UI Components](#ui-components)
-20. [In-App Documentation](#in-app-documentation)
+17. [Settings & Preferences](#settings--preferences)
+18. [Navigation](#navigation)
+19. [Design System](#design-system)
+20. [UI Components](#ui-components)
+21. [In-App Documentation](#in-app-documentation)
 
 ### Part 7: Reference
-21. [Changelog](#changelog)
+22. [Changelog](#changelog)
 
 ---
 
@@ -469,6 +471,153 @@ window.Afterpay.transfer({ token: data.token });
 - [ ] Customer can complete in popup
 - [ ] onComplete callback fires
 - [ ] Redirects to confirmation
+
+</details>
+
+---
+
+## Cash App Pay
+
+Cash App Pay lets customers pay now using their Cash App account. On desktop, a QR code is displayed for scanning. On mobile, customers are redirected to the Cash App.
+
+### API Flow Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ CASH APP PAY FLOW                                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1. Collect Customer Details                                                │
+│     Merchant site form (email, name, address, shipping)                     │
+│                                                                             │
+│  2. Create Checkout                                                         │
+│     LOCAL:    POST /api/afterpay/checkout  { isCashAppPay: true }           │
+│     AFTERPAY: POST /v2/checkouts                                            │
+│                                                                             │
+│  3. Initialize Cash App Pay SDK                                             │
+│     renderCashAppPayButton() → initializeForCashAppPay()                    │
+│                                                                             │
+│  4. Customer Pays                                                           │
+│     Desktop: Scan QR code with Cash App                                     │
+│     Mobile:  Redirect to Cash App → return via redirect URL                 │
+│                                                                             │
+│  5. onComplete Callback                                                     │
+│     → Returns orderToken, status, cashtag                                   │
+│                                                                             │
+│  6. Authorize Payment                                                       │
+│     LOCAL:    POST /api/afterpay/auth                                       │
+│     AFTERPAY: POST /v2/payments/auth                                        │
+│                                                                             │
+│  7. Capture (if immediate mode)                                             │
+│     LOCAL:    POST /api/afterpay/capture-full                               │
+│     AFTERPAY: POST /v2/payments/capture                                     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### How to Test
+
+1. Go to `/checkout`
+2. Select **Cash App Pay** tab
+3. Fill in customer details (email, name, address, phone)
+4. Select shipping method
+5. Click **"Continue to Payment"**
+6. Cash App Pay button appears:
+   - **Desktop**: Tap the button, then scan the QR code with Cash App
+   - **Mobile**: Tap the button to open Cash App
+7. Complete payment in Cash App
+8. View confirmation page
+
+### Key Differences from Express/Standard
+
+| Feature | Express | Standard | Cash App Pay |
+|---------|---------|----------|--------------|
+| Checkout creation | Same API | Same API | Same API + `isCashAppPay: true` |
+| Customer interaction | Afterpay popup | Redirect or popup | QR code or Cash App redirect |
+| SDK method | `initializeForPopup()` | `open()` or redirect | `initializeForCashAppPay()` |
+| Shipping | In popup or deferred | Merchant site form | Merchant site form |
+| Payment type | Pay in 4 (BNPL) | Pay in 4 (BNPL) | Pay now (full amount) |
+
+### Mobile vs Desktop
+
+The component displays different messaging based on viewport:
+
+- **Desktop** (768px+): "Tap the button below, and scan the QR code to pay with Cash App Pay."
+- **Mobile** (< 768px): "Tap the button below to pay with Cash App Pay."
+
+This uses CSS responsive classes (`hidden md:inline` / `md:hidden`) to avoid React hydration mismatches.
+
+### Edit / Retry Flow
+
+After submitting the form, you can:
+
+1. **Edit**: Click "Edit" to return to the form, modify details, and resubmit
+2. **Try Again**: If payment is declined, click "Try Again" to restart
+
+Both flows use the SDK's 3-step restart pattern:
+```
+restartCashAppPay()        → Clears SDK auth state and removes button UI
+renderCashAppPayButton()   → Re-creates the button element
+initializeForCashAppPay()  → Initializes with new checkout token
+```
+
+### Tab Switching
+
+Cash App Pay preserves form state when switching between checkout tabs. All components stay mounted in the DOM (hidden via CSS), so form data is never lost. When you switch back to the Cash App Pay tab, the SDK re-initializes automatically with the previously saved token.
+
+### Technical Details
+
+**Component:** `components/CheckoutCashApp.tsx`
+
+**SDK Initialization:**
+```typescript
+// 1. Render button into #cash-app-pay container
+window.Afterpay.renderCashAppPayButton({
+  countryCode: "US",
+  cashAppPayButtonOptions: {
+    size: "medium",
+    width: "full",
+    theme: "dark",
+    shape: "semiround",
+  },
+});
+
+// 2. Initialize with checkout token
+window.Afterpay.initializeForCashAppPay({
+  countryCode: "US",
+  token: checkoutToken,
+  cashAppPayOptions: {
+    button: { size: "medium", width: "full", theme: "dark", shape: "semiround" },
+    onComplete: (event) => {
+      // event.data: { status, orderToken, cashtag }
+    },
+    eventListeners: {
+      CUSTOMER_REQUEST_DECLINED: () => { /* handle decline */ },
+      CUSTOMER_REQUEST_FAILED: () => { /* handle failure */ },
+    },
+  },
+});
+```
+
+**Critical: DOM Timing**
+
+The `#cash-app-pay` div must exist in the DOM before calling `initializeForCashAppPay()`. The component uses a `pendingToken` state + `useEffect` + `requestAnimationFrame` pattern to ensure React has committed the DOM before SDK initialization.
+
+**Afterpay Documentation:** [Cash App Pay Integration Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/add-cash-app-pay-to-your-site/overview)
+
+<details>
+<summary>✓ Verify Cash App Pay</summary>
+
+- [ ] Cash App Pay tab visible on checkout page
+- [ ] Form fields validate correctly
+- [ ] Button renders after "Continue to Payment"
+- [ ] Desktop shows QR code messaging
+- [ ] Mobile shows redirect messaging
+- [ ] Edit → resubmit renders button correctly
+- [ ] Tab switch preserves form state
+- [ ] Tab switch back re-renders button
+- [ ] Try Again works after decline
+- [ ] Confirmation page displays after completion
 
 </details>
 
@@ -982,6 +1131,16 @@ See [Test Environments](https://developers.cash.app/cash-app-afterpay/guides/api
 
 **Fix:** Check "Available to Refund" amount in Admin Panel
 
+### Cash App Pay Button Not Rendering
+**Cause:** `#cash-app-pay` div not in DOM when SDK initializes
+
+**Fix:** Ensure the `#cash-app-pay` container element exists in the DOM before calling `initializeForCashAppPay()`. The component uses `pendingToken` state + `useEffect` + `requestAnimationFrame` to guarantee DOM readiness. If using custom implementations, check that the container isn't conditionally rendered.
+
+### Cash App Pay Button Wrong Size/Style
+**Cause:** SDK renders button in shadow DOM with its own styles
+
+**Fix:** The component injects a style override into the shadow DOM after initialization. If customizing, note that external CSS cannot pierce the shadow boundary — you must inject styles directly into the shadow root.
+
 ---
 
 # Part 5: Developer Tools
@@ -1123,6 +1282,7 @@ The copy button generates JSON with a disclaimer:
 | Express Deferred | mode, popupOriginUrl, isCheckoutAdjusted, checksum | Checkout Adjustment |
 | Standard Redirect | redirectConfirmUrl, redirectCancelUrl | - |
 | Standard Popup | popupOriginUrl, redirectConfirmUrl | - |
+| Cash App Pay | isCashAppPay, countryCode, redirectConfirmUrl | - |
 
 <details>
 <summary>✓ Verify Integration Flow Summary</summary>
@@ -1655,6 +1815,14 @@ function extractHeadings(markdown: string): TocItem[] {
 ## Changelog
 
 ### February 2026
+
+#### v2.7.0 - Cash App Pay
+- **Cash App Pay**: Added as third checkout method — QR code on desktop, Cash App redirect on mobile
+- **SDK Integration**: `isCashAppPay` flag, `initializeForCashAppPay()`, button rendering with full-width dark theme
+- **Tab State Preservation**: All checkout components always-mounted with CSS `display:none` — form state preserved across tab switches
+- **SDK Lifecycle**: `isActive` prop manages SDK restart/re-init on tab switch, preventing conflicts between Express and Cash App Pay
+- **Button Style Fix**: Shadow DOM style override ensures consistent full-width semiround button
+- **Developer Docs**: Cash App Pay integration code snippets section with copy buttons
 
 #### v2.6.0 - Idempotency & Checkout UX
 - **Idempotency Support**: Added `requestId` to all payment operations (auth, capture, refund, void) for safe retries on timeout/network failures

@@ -22,7 +22,7 @@ Technical guide for developers maintaining or extending this demo.
   page.tsx                # Homepage (product grid)
   /products/[id]          # Product detail page
   /cart                   # Shopping cart
-  /checkout               # Checkout page (Express/Standard tabs)
+  /checkout               # Checkout page (Express/Standard/Cash App Pay tabs)
   /checkout/shipping      # Deferred shipping selection
   /checkout/review        # Standard checkout review
   /confirmation           # Order confirmation + flow logs
@@ -39,6 +39,8 @@ Technical guide for developers maintaining or extending this demo.
   Header.tsx              # Navigation
   CheckoutExpress.tsx     # Express checkout component
   CheckoutStandard.tsx    # Standard checkout component
+  CheckoutCashApp.tsx     # Cash App Pay checkout component
+  CashAppInfoSection.tsx  # Cash App Pay developer docs/code snippets
   FlowLogsDevPanel.tsx    # Developer panel
   OSMPlacement.tsx        # On-site messaging wrapper
 
@@ -69,11 +71,14 @@ Checkout Page (/checkout)
     │     │
     │     └─► Deferred: Popup → Shipping Page → Auth → [Capture] → Confirmation
     │
-    └─► Standard Tab
-          │
-          ├─► Redirect: Create → Redirect → Return → Review → Auth → [Capture] → Confirmation
-          │
-          └─► Popup: Create → Popup → Auth → [Capture] → Confirmation
+    ├─► Standard Tab
+    │     │
+    │     ├─► Redirect: Create → Redirect → Return → Review → Auth → [Capture] → Confirmation
+    │     │
+    │     └─► Popup: Create → Popup → Auth → [Capture] → Confirmation
+    │
+    └─► Cash App Pay Tab
+          └─► Form → Create (isCashAppPay) → SDK Init → QR/Redirect → Auth → [Capture] → Confirmation
 ```
 
 ### State Persistence
@@ -87,6 +92,7 @@ Checkout Page (/checkout)
 | Flow summary | sessionStorage | Current session | Confirmation display |
 | Theme preference | localStorage | Permanent | Dark/light mode |
 | Dev panel height | localStorage | Permanent | UI preference |
+| Cash App token | In-memory ref | Component lifetime | Token reuse across tab switches |
 
 ---
 
@@ -159,6 +165,34 @@ const mode = localStorage.getItem('afterpay_capture_mode') || 'deferred';
 // Immediate: Auth + capture in single flow
 ```
 
+### SDK Lifecycle Management (Always-Mounted Pattern)
+
+All checkout components stay mounted in the DOM using CSS `display:none` instead of conditional rendering. An `isActive` prop controls SDK lifecycle per tab.
+
+**Why:** The Afterpay SDK (`window.Afterpay`) is a global singleton. Conditional rendering unmounts components (destroying React state), but the SDK's state persists. This mismatch causes form data loss, stale DOM references, and button rendering failures on tab switch.
+
+**Pattern:**
+```typescript
+// Parent: Always-mounted with CSS visibility
+<div style={{ display: method === "cashapp" ? undefined : "none" }}>
+  <CheckoutCashApp isActive={method === "cashapp"} />
+</div>
+
+// Child: isActive controls SDK lifecycle
+useEffect(() => {
+  if (!isActive) {
+    restartCashAppPay();  // Clean up SDK state
+    return;
+  }
+  // Re-initialize with saved token on activation
+  if (savedTokenRef.current) {
+    setPendingToken(savedTokenRef.current);
+  }
+}, [isActive]);
+```
+
+**Key rule:** After `restartCashAppPay()`, always call `renderCashAppPayButton()` before `initializeForCashAppPay()`. The restart removes all UI; the button must be explicitly re-rendered.
+
 ---
 
 ## Environment Variables
@@ -183,8 +217,10 @@ const mode = localStorage.getItem('afterpay_capture_mode') || 'deferred';
 
 1. Add flow type to `lib/flowLogs.ts` types
 2. Create component or modify existing in `/components`
-3. Add flow summary definition with description, steps, docs URL
-4. Update confirmation page if new display needed
+3. Add tab and always-mounted wrapper in `app/checkout/page.tsx` with `isActive` prop
+4. Add flow summary definition with description, steps, docs URL
+5. Update confirmation page if new display needed
+6. If the flow uses an SDK that modifies global state, implement `isActive` lifecycle (see SDK Lifecycle Management above)
 
 ### Adding a New Admin Operation
 

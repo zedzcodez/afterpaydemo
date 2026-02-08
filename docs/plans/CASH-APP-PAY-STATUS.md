@@ -17,7 +17,7 @@ The feature is implemented with 4 bugs fixed (SDK config, DOM timing, edit/resub
 
 ## Branch State
 
-### Committed (15 commits on branch, not pushed to remote)
+### Committed (17 commits on branch, pushed to remote, PR #1 open)
 
 | # | Commit | Description |
 |---|--------|-------------|
@@ -36,10 +36,12 @@ The feature is implemented with 4 bugs fixed (SDK config, DOM timing, edit/resub
 | 13 | `a3812ed` | docs: add Cash App Pay design, plan, and status documents |
 | 14 | `9ce8e2a` | fix: code review fixes for Cash App Pay integration |
 | 15 | `f45ec5f` | fix: preserve component state on tab switch with always-mounted rendering |
+| 16 | `571824d` | docs: update RCA and status docs with Bug 4 tab-switching fixes |
+| 17 | `2c1c0b0` | fix: force full-width semiround Cash App Pay button via shadow DOM override |
 
 ### Uncommitted Changes
 
-- Documentation updates: `docs/fixes-rca.md`, `docs/plans/CASH-APP-PAY-STATUS.md`
+- Documentation updates for v2.7.0 (this commit)
 
 ---
 
@@ -92,27 +94,30 @@ The feature is implemented with 4 bugs fixed (SDK config, DOM timing, edit/resub
 
 ## TODO — Remaining Tasks
 
-### 1. Browser test the full flow
-Test all scenarios end-to-end:
-- [ ] Fill form → Continue to Payment → button renders
-- [ ] Switch tabs → switch back → form state preserved, button re-renders
-- [ ] Edit → modify data → resubmit → correct full-width dark button
-- [ ] Try Again after error/decline
-- [ ] Both deferred and immediate capture modes
-- [ ] Mobile messaging: "Tap the button below to pay with Cash App Pay."
-- [ ] Desktop messaging: "Tap the button below, and scan the QR code to pay with Cash App Pay."
-- [ ] Express tab still works after switching from Cash App
-- [ ] Standard tab form state preserved across switches
-- [ ] Dev server: `npm run dev` (http://localhost:3000)
+### 1. Browser test the full flow ✅ DONE
+Tested all scenarios end-to-end:
+- [x] Fill form → Continue to Payment → button renders
+- [x] Switch tabs → switch back → form state preserved, button re-renders
+- [x] Edit → modify data → resubmit → correct full-width dark button
+- [x] Button displays full-width dark semiround style in all flows
+- [x] Desktop messaging: "Tap the button below, and scan the QR code to pay with Cash App Pay."
+- [x] Mobile messaging: "Tap the button below to pay with Cash App Pay."
+- [x] Express tab still works after switching from Cash App
+- [x] Standard tab form state preserved across switches
+- [ ] Try Again after error/decline (requires Cash App sandbox account)
+- [ ] Both deferred and immediate capture modes (requires Cash App sandbox account)
 
-### 2. Code review the full branch
-Review all changes against the design doc.
+### 2. Code review the full branch ✅ DONE
+All changes reviewed against design doc. Code review fixes applied in commit `9ce8e2a`.
 
-### 3. Push branch and create PR
-```bash
-git push -u origin feature/cash-app-pay
-gh pr create --title "feat: add Cash App Pay checkout" --body "..."
-```
+### 3. Push branch and create PR ✅ DONE
+- Branch pushed: `git push -u origin feature/cash-app-pay`
+- PR created: https://github.com/zedzcodez/afterpaydemo/pull/1
+
+### 4. Update documentation for v2.7.0 (in progress)
+- [ ] Update all docs to include Cash App Pay
+- [ ] Add CHANGELOG.md entry
+- [ ] Update how-to-use.md with testing guide
 
 ---
 
@@ -126,8 +131,9 @@ gh pr create --title "feat: add Cash App Pay checkout" --body "..."
 - **Button options constant:** `CASH_APP_BUTTON_OPTIONS` ensures consistent `{ size: "medium", width: "full", theme: "dark", shape: "semiround" }` across all paths.
 - **Capture modes** reuse existing toggle (`localStorage` key `afterpay_capture_mode`)
 - **Sandbox credentials** in `.env.local` (Merchant ID: `100204390`, gitignored)
-- **All commits** co-authored by `ZED <zedzcodez@gmail.com>` and `Claude Opus 4.6`
+- **All commits** co-authored by `ZED <zedzcodez@gmail.com>`, `zedzcodez`, and `Claude Opus 4.6`
 - **57 tests** all pass, TypeScript compiles clean
+- **PR:** https://github.com/zedzcodez/afterpaydemo/pull/1
 
 ---
 

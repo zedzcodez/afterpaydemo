@@ -27,6 +27,14 @@ Server-side API integration with two checkout methods:
 - **Redirect Flow**: Full page navigation to Afterpay
 - **Popup Flow**: Modal overlay using Afterpay.js
 
+### Cash App Pay
+Pay-now checkout using Cash App:
+- **Desktop**: Displays a QR code for customers to scan with their Cash App
+- **Mobile**: Redirects customers directly to the Cash App
+- Uses the same Afterpay API with `isCashAppPay: true` flag
+- SDK-rendered button with full-width dark theme
+- Supports both deferred and immediate capture modes
+
 ### Capture Modes
 Toggle between capture strategies from the Admin Panel:
 - **Deferred Capture (default)**: Authorization only at checkout, capture later from Admin Panel (up to 13 days)
@@ -98,7 +106,7 @@ Access the testing guide directly within the app at `/docs`:
 - **Security Headers**: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy
 
 ### Testing
-- **Jest Test Suite**: 55 unit tests with 99.63% coverage on lib utilities
+- **Jest Test Suite**: 57 unit tests with 99.63% coverage on lib utilities
 - **Validation Tests**: Comprehensive tests for all Zod schemas
 - **Error Handling Tests**: Tests for error sanitization patterns
 
@@ -170,7 +178,7 @@ If `popupOriginUrl` doesn't match `window.location.origin`, the browser won't di
   error.tsx                     # Global error boundary
   /products/[id]/page.tsx       # Product detail page
   /cart/page.tsx                # Shopping cart
-  /checkout/page.tsx            # Checkout (Express + Standard tabs)
+  /checkout/page.tsx            # Checkout (Express + Standard + Cash App Pay tabs)
   /checkout/error.tsx           # Checkout-specific error boundary
   /checkout/review/page.tsx     # Standard checkout review page
   /checkout/shipping/page.tsx   # Deferred shipping selection
@@ -205,6 +213,8 @@ If `popupOriginUrl` doesn't match `window.location.origin`, the browser won't di
   OSMPlacement.tsx              # Afterpay OSM wrapper
   CheckoutExpress.tsx           # Express checkout component
   CheckoutStandard.tsx          # Standard checkout component
+  CheckoutCashApp.tsx           # Cash App Pay checkout component
+  CashAppInfoSection.tsx        # Cash App Pay developer docs/code snippets
   CodeViewer.tsx                # Expandable code snippets
   FlowLogsDevPanel.tsx          # Enhanced dev panel with filters, search, cURL export, HAR export
   DevPanel.tsx                  # Legacy developer panel component
@@ -233,7 +243,7 @@ This demo wraps Afterpay's v2 API endpoints. Each local endpoint maps to an Afte
 
 | Local Endpoint | Afterpay API | Description | Docs |
 |----------------|--------------|-------------|------|
-| `POST /api/afterpay/checkout` | `POST /v2/checkouts` | Create checkout session | [Create Checkout](https://developers.cash.app/cash-app-afterpay/api-reference/reference/checkouts/create-checkout-1) |
+| `POST /api/afterpay/checkout` | `POST /v2/checkouts` | Create checkout session (supports `isCashAppPay: true` for Cash App Pay) | [Create Checkout](https://developers.cash.app/cash-app-afterpay/api-reference/reference/checkouts/create-checkout-1) |
 | `POST /api/afterpay/auth` | `POST /v2/payments/auth` | Authorize payment | [Authorise Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/auth) |
 | `POST /api/afterpay/capture` | `POST /v2/payments/{id}/capture` | Capture payment (partial) | [Capture Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-payment) |
 | `POST /api/afterpay/capture-full` | `POST /v2/payments/capture` | Capture full payment | [Capture Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-payment) |
@@ -258,7 +268,7 @@ npm run test:watch    # Watch mode
 npm run test:coverage # Coverage report
 ```
 
-Current coverage: **55 tests, 99.63% statement coverage** on lib utilities.
+Current coverage: **57 tests, 99.63% statement coverage** on lib utilities.
 
 ### Sandbox Testing
 
@@ -308,6 +318,7 @@ Or deploy directly:
 - [Express Checkout Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout)
 - [Deferred Capture Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart/deferred-capture)
 - [Popup Method Reference](https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart/create-a-checkout#implement-the-popup-method)
+- [Cash App Pay Integration Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/add-cash-app-pay-to-your-site/overview)
 
 ## Tech Stack
 
@@ -358,12 +369,13 @@ The demo features a polished, distinctive UI built on Afterpay's brand colors wi
 ### Completed
 - [x] Express Checkout with integrated/deferred shipping
 - [x] Standard Checkout with redirect/popup modes
+- [x] Cash App Pay checkout (QR on desktop, redirect on mobile)
 - [x] Payment Admin Panel with capture/refund/void
 - [x] Developer Panel with cURL/HAR export (collapsed by default)
 - [x] Order History with localStorage persistence and individual deletion
 - [ ] Webhook Handler Demo (dispute notifications - coming soon)
 - [x] Error Boundaries for graceful error handling
-- [x] Jest Test Suite (55 tests, 99.63% coverage)
+- [x] Jest Test Suite (57 tests, 99.63% coverage)
 - [x] Security: Input validation with Zod
 - [x] Security: Error message sanitization
 - [x] Security: HTTP security headers
