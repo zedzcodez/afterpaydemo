@@ -130,6 +130,9 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
     }
   };
 
+  // Track whether SDK has been initialized (restart needs renderCashAppPayButton before re-init)
+  const hasInitializedRef = useRef(false);
+
   // Handle going back to edit form
   const handleEditClick = () => {
     restartCashAppPay();
@@ -185,6 +188,25 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
         setError("Afterpay.js Cash App Pay SDK not loaded");
         setIsLoading(false);
         return;
+      }
+
+      // After restart, the SDK removes all UI. Re-render the button container
+      // before calling initializeForCashAppPay (per SDK docs).
+      if (hasInitializedRef.current && window.Afterpay.renderCashAppPayButton) {
+        window.Afterpay.renderCashAppPayButton({
+          countryCode: "US",
+          cashAppPayButtonOptions: {
+            size: "medium",
+            width: "full",
+            theme: "dark",
+            shape: "semiround",
+          },
+        });
+        addFlowLog({
+          type: "callback",
+          label: "Re-rendered Cash App Pay Button",
+          data: { reason: "Button UI cleared by restart, re-rendering before init" },
+        });
       }
 
       addFlowLog({
@@ -245,6 +267,7 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
           },
         });
         setIsLoading(false);
+        hasInitializedRef.current = true;
       } catch (err) {
         setError(err instanceof Error ? err.message : "SDK initialization failed");
         setIsLoading(false);
@@ -840,11 +863,18 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
                   <span className="text-afterpay-gray-500 font-medium">Processing payment...</span>
                 </div>
               )}
-              <div id="cash-app-pay" />
             </div>
           )}
         </>
       )}
+
+      {/* Cash App Pay SDK target — always mounted so the SDK can manage its
+         own DOM elements across restart/reinitialize cycles. Hidden via CSS
+         when the payment button area is not active. */}
+      <div
+        id="cash-app-pay"
+        style={{ display: showPaymentButton && formSubmitted ? undefined : 'none' }}
+      />
 
       {/* Cash App Pay Developer Info Section */}
       <CashAppInfoSection />
