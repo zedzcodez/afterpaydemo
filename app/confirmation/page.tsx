@@ -26,6 +26,103 @@ function ConfirmationContent() {
     // Prevent running multiple times
     if (hasProcessed.current) return;
 
+    // Handle Cash App Pay mobile redirect return
+    const isCashAppPayReturn = searchParams.get("cashAppPay") === "true";
+
+    if (isCashAppPayReturn) {
+      hasProcessed.current = true;
+
+      const initListeners = () => {
+        if (typeof window !== "undefined" && window.Afterpay?.initializeCashAppPayListeners) {
+          window.Afterpay.initializeCashAppPayListeners({
+            onComplete: async (event) => {
+              if (event.data.status === "SUCCESS") {
+                try {
+                  // Auth the payment
+                  const authResponse = await fetch("/api/afterpay/auth", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ token: event.data.orderToken }),
+                  });
+                  const authData = await authResponse.json();
+
+                  if (!authResponse.ok) {
+                    setError(authData.error || "Authorization failed");
+                    return;
+                  }
+
+                  const orderId = authData.id;
+                  const captureMode = typeof window !== "undefined"
+                    ? localStorage.getItem("afterpay_capture_mode") || "deferred"
+                    : "deferred";
+
+                  // Optional immediate capture
+                  if (captureMode === "immediate") {
+                    const captureResponse = await fetch("/api/afterpay/capture", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        orderId,
+                        amount: parseFloat(authData.originalAmount?.amount || "0"),
+                        currency: authData.originalAmount?.currency || "USD",
+                      }),
+                    });
+                    if (!captureResponse.ok) {
+                      const captureError = await captureResponse.json();
+                      setError(captureError.error || "Capture failed");
+                      return;
+                    }
+                  }
+
+                  const isCaptured = captureMode === "immediate";
+                  const flow = `cashapp-${captureMode}`;
+
+                  // Save order
+                  const pendingOrderData = sessionStorage.getItem('afterpay_pending_order');
+                  let orderItems: OrderItem[] = [];
+                  let orderTotal = 0;
+                  if (pendingOrderData) {
+                    try {
+                      const parsed = JSON.parse(pendingOrderData);
+                      orderItems = parsed.items || [];
+                      orderTotal = parsed.total || 0;
+                      sessionStorage.removeItem('afterpay_pending_order');
+                    } catch { /* fall through */ }
+                  }
+
+                  const order: Order = {
+                    id: `local-${Date.now()}`,
+                    orderId,
+                    status: isCaptured ? "captured" : "authorized",
+                    total: orderTotal,
+                    items: orderItems,
+                    createdAt: new Date().toISOString(),
+                    flow,
+                    captureMode: isCaptured ? "immediate" : "deferred",
+                  };
+                  saveOrder(order);
+
+                  setOrderDetails({ orderId, status: isCaptured ? "CAPTURED" : "AUTHORIZED", flow });
+                  setFlowLogs(getFlowLogs());
+                  clearCart();
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : "An error occurred");
+                }
+              } else {
+                setError("Cash App Pay was cancelled");
+                setFlowLogs(getFlowLogs());
+              }
+            },
+          });
+        } else {
+          setTimeout(initListeners, 100);
+        }
+      };
+
+      initListeners();
+      return;
+    }
+
     const status = searchParams.get("status");
     const orderId = searchParams.get("orderId");
     const flow = searchParams.get("flow") || "standard";

@@ -10,7 +10,7 @@ A comprehensive merchant checkout integration demo showcasing Afterpay's Buy Now
 
 This application demonstrates how merchants integrate Afterpay into their e-commerce checkout experience. It provides a fully functional sandbox environment where you can:
 
-- **Test checkout flows** - Express and Standard checkout with multiple configuration options
+- **Test checkout flows** - Express, Standard, and Cash App Pay checkout with multiple configuration options
 - **Process payments** - Authorize, capture, refund, and void operations
 - **View real-time API logs** - See exactly what's sent to and received from Afterpay
 - **Explore OSM messaging** - Payment breakdown badges on product and cart pages
@@ -21,7 +21,7 @@ This application demonstrates how merchants integrate Afterpay into their e-comm
 
 | Category | Features |
 |----------|----------|
-| **Checkout Flows** | Express Checkout (popup with integrated/deferred shipping), Standard Checkout (redirect/popup modes) |
+| **Checkout Flows** | Express Checkout (popup with integrated/deferred shipping), Standard Checkout (redirect/popup modes), Cash App Pay (QR code on desktop / mobile redirect) |
 | **Payment Operations** | Deferred & Immediate capture, partial/full refunds, void authorization |
 | **On-Site Messaging** | "Pay in 4" and "Pay Monthly" badges on PDP, cart, and checkout |
 | **Admin Panel** | Payment lookup, capture, refund, void, event history |
@@ -112,7 +112,7 @@ Wraps all Afterpay v2 endpoints:
 
 ### Quality
 
-- **Test Coverage** - 55 unit tests with 99.63% coverage on lib utilities
+- **Test Coverage** - 57 unit tests with 99.63% coverage on lib utilities
 - **TypeScript** - Full type safety throughout the codebase
 - **Error Boundaries** - Graceful error handling with user-friendly fallback UI
 
@@ -146,4 +146,4 @@ For detailed testing instructions, see the [How to Use This Demo](/docs) guide.
 
 ---
 
-**Version:** 2.6.0 | **Author:** [@zedzcodez](https://github.com/zedzcodez)
+**Version:** 2.7.0 | **Author:** [@zedzcodez](https://github.com/zedzcodez)

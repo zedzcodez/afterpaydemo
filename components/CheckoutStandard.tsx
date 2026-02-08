@@ -36,6 +36,7 @@ interface ShippingOption {
 }
 
 interface CheckoutStandardProps {
+  isActive?: boolean;
   onLog?: (method: string, endpoint: string, request?: object) => string;
   onLogUpdate?: (
     id: string,
@@ -95,7 +96,7 @@ const getShippingOptions = (cartTotal: number): ShippingOption[] => {
   return options;
 };
 
-export function CheckoutStandard({ onLog, onLogUpdate, onShippingChange }: CheckoutStandardProps) {
+export function CheckoutStandard({ isActive, onLog, onLogUpdate, onShippingChange }: CheckoutStandardProps) {
   const router = useRouter();
   const { items, total } = useCart();
   const isDevPanelOpen = useDevPanelState();

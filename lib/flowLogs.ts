@@ -230,11 +230,15 @@ export function formatFlowName(flow: string): string {
 
   // Determine checkout type
   const isExpress = parts[0] === "express";
-  const checkoutType = isExpress ? "Express Checkout" : "Standard Checkout";
+  const isCashApp = parts[0] === "cashapp";
+  const checkoutType = isCashApp ? "Cash App Pay" : isExpress ? "Express Checkout" : "Standard Checkout";
 
   // Determine shipping/method (second part)
   let shippingOrMethod = "";
-  if (isExpress) {
+  if (isCashApp) {
+    // Cash App Pay flows are simply "cashapp-deferred" or "cashapp-immediate"
+    // No sub-method needed
+  } else if (isExpress) {
     if (parts[1] === "integrated") {
       shippingOrMethod = "with Integrated Shipping";
     } else if (parts[1] === "deferred") {

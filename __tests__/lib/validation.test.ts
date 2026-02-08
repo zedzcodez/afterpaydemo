@@ -114,6 +114,29 @@ describe('validateRequest', () => {
       });
       expect(result.success).toBe(false);
     });
+
+    it('accepts isCashAppPay: true and preserves the value', () => {
+      const result = validateRequest(checkoutRequestSchema, {
+        items: [createValidCartItem()],
+        total: 50,
+        isCashAppPay: true,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.isCashAppPay).toBe(true);
+      }
+    });
+
+    it('defaults isCashAppPay to false when not provided', () => {
+      const result = validateRequest(checkoutRequestSchema, {
+        items: [createValidCartItem()],
+        total: 50,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.isCashAppPay).toBe(false);
+      }
+    });
   });
 
   describe('authRequestSchema', () => {

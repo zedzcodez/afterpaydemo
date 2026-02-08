@@ -12,6 +12,7 @@ import { toggleDevPanel, useDevPanelState } from "./FlowLogsDevPanel";
 type ShippingFlow = "integrated" | "deferred";
 
 interface CheckoutExpressProps {
+  isActive?: boolean;
   onLog?: (method: string, endpoint: string, request?: object) => string;
   onLogUpdate?: (
     id: string,
@@ -57,7 +58,7 @@ const SHIPPING_OPTIONS = [
   },
 ];
 
-export function CheckoutExpress({ onLog, onLogUpdate, initialShippingFlow }: CheckoutExpressProps) {
+export function CheckoutExpress({ isActive, onLog, onLogUpdate, initialShippingFlow }: CheckoutExpressProps) {
   const { items, total } = useCart();
   const isDevPanelOpen = useDevPanelState();
   const [shippingFlow, setShippingFlow] = useState<ShippingFlow>(initialShippingFlow || "integrated");
@@ -179,8 +180,16 @@ export function CheckoutExpress({ onLog, onLogUpdate, initialShippingFlow }: Che
     checkAfterpay();
   }, []);
 
+  // Guard refs to prevent duplicate initializeForPopup calls on tab re-activation
+  const hasInitializedPopupRef = useRef(false);
+  const lastShippingFlowRef = useRef(shippingFlow);
+
   useEffect(() => {
+    if (!isActive) return; // Don't initialize when tab is inactive
     if (!isReady || !window.Afterpay || typeof window.Afterpay.initializeForPopup !== 'function') return;
+
+    // Skip re-init if config hasn't changed (safe re-activation)
+    if (hasInitializedPopupRef.current && lastShippingFlowRef.current === shippingFlow) return;
 
     // Initialize flow logs when starting checkout
     const flowType = shippingFlow === "integrated" ? "express-integrated" : "express-deferred";
@@ -496,7 +505,9 @@ export function CheckoutExpress({ onLog, onLogUpdate, initialShippingFlow }: Che
         };
 
     window.Afterpay.initializeForPopup(config);
-  }, [isReady, shippingFlow, createCheckoutToken, getShippingOptions]);
+    hasInitializedPopupRef.current = true;
+    lastShippingFlowRef.current = shippingFlow;
+  }, [isActive, isReady, shippingFlow, createCheckoutToken, getShippingOptions]);
 
   const integratedCode = `
 // Integrated Shipping - Afterpay.js Configuration

@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     if (!validation.success) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
-    const { items, total, mode, consumer, shipping } = validation.data;
+    const { items, total, mode, consumer, shipping, isCashAppPay } = validation.data;
 
     // CRITICAL: appUrl must exactly match the protocol, host, and port where the app is running.
     // This is used for redirectConfirmUrl, redirectCancelUrl, and popupOriginUrl.
@@ -34,9 +34,11 @@ export async function POST(request: NextRequest) {
     const merchantReference = generateMerchantReference();
 
     // Standard checkout redirects to review page, Express uses popup callbacks
-    const redirectConfirmUrl = mode === "standard"
-      ? `${appUrl}/checkout/review`
-      : `${appUrl}/confirmation`;
+    const redirectConfirmUrl = isCashAppPay
+      ? `${appUrl}/confirmation?cashAppPay=true`
+      : mode === "standard"
+        ? `${appUrl}/checkout/review`
+        : `${appUrl}/confirmation`;
 
     const checkoutRequest = {
       amount: toMoney(total),
@@ -51,6 +53,7 @@ export async function POST(request: NextRequest) {
         popupOriginUrl: appUrl,
       },
       mode,
+      ...(isCashAppPay && { isCashAppPay: true }),
     };
 
     const response = await createCheckout(checkoutRequest);
