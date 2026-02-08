@@ -17,6 +17,7 @@ interface ShippingOption {
 }
 
 interface CheckoutCashAppProps {
+  isActive?: boolean;
   onShippingChange?: (option: ShippingOption) => void;
 }
 
@@ -61,7 +62,14 @@ const getShippingOptions = (cartTotal: number): ShippingOption[] => {
   return options;
 };
 
-export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
+const CASH_APP_BUTTON_OPTIONS = {
+  size: "medium" as const,
+  width: "full" as const,
+  theme: "dark" as const,
+  shape: "semiround" as const,
+};
+
+export function CheckoutCashApp({ isActive, onShippingChange }: CheckoutCashAppProps) {
   const router = useRouter();
   const { items, total } = useCart();
   const isDevPanelOpen = useDevPanelState();
@@ -129,8 +137,19 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
     }
   };
 
-  // Track whether SDK has been initialized (restart needs renderCashAppPayButton before re-init)
+  // Track whether SDK has been initialized (for logging context)
   const hasInitializedRef = useRef(false);
+
+  // Store token for re-initialization when switching back to this tab
+  const savedTokenRef = useRef<string | null>(null);
+
+  // Refs to read current state inside isActive effect (avoids stale closures)
+  const formSubmittedRef = useRef(formSubmitted);
+  formSubmittedRef.current = formSubmitted;
+  const showPaymentButtonRef = useRef(showPaymentButton);
+  showPaymentButtonRef.current = showPaymentButton;
+  const pendingTokenRef = useRef(pendingToken);
+  pendingTokenRef.current = pendingToken;
 
   // Handle going back to edit form
   const handleEditClick = () => {
@@ -168,6 +187,21 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
     checkAfterpay();
   }, []);
 
+  // SDK lifecycle: restart on deactivation, re-init on activation
+  useEffect(() => {
+    if (!isActive) {
+      // Deactivating: restart SDK to clean up Cash App state
+      if (formSubmittedRef.current && showPaymentButtonRef.current) {
+        restartCashAppPay();
+      }
+      return;
+    }
+    // Activating: re-init SDK if we have a previously submitted checkout
+    if (formSubmittedRef.current && showPaymentButtonRef.current && savedTokenRef.current && !pendingTokenRef.current) {
+      setPendingToken(savedTokenRef.current);
+    }
+  }, [isActive]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Cleanup: restart Cash App Pay when component unmounts (SPA navigation)
   useEffect(() => {
     return () => {
@@ -189,22 +223,17 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
         return;
       }
 
-      // After restart, the SDK removes all UI. Re-render the button container
-      // before calling initializeForCashAppPay (per SDK docs).
-      if (hasInitializedRef.current && window.Afterpay.renderCashAppPayButton) {
+      // Always render button before init — SDK may have been restarted,
+      // which removes all UI elements. This is safe to call even on first init.
+      if (window.Afterpay.renderCashAppPayButton) {
         window.Afterpay.renderCashAppPayButton({
           countryCode: "US",
-          cashAppPayButtonOptions: {
-            size: "medium",
-            width: "full",
-            theme: "dark",
-            shape: "semiround",
-          },
+          cashAppPayButtonOptions: CASH_APP_BUTTON_OPTIONS,
         });
         addFlowLog({
           type: "callback",
-          label: "Re-rendered Cash App Pay Button",
-          data: { reason: "Button UI cleared by restart, re-rendering before init" },
+          label: hasInitializedRef.current ? "Re-rendered Cash App Pay Button" : "Rendered Cash App Pay Button",
+          data: { reason: hasInitializedRef.current ? "Button UI cleared by restart, re-rendering before init" : "First render" },
         });
       }
 
@@ -219,12 +248,7 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
           countryCode: "US",
           token: pendingToken,
           cashAppPayOptions: {
-            button: {
-              size: "medium",
-              width: "full",
-              theme: "dark",
-              shape: "semiround",
-            },
+            button: CASH_APP_BUTTON_OPTIONS,
             onComplete: handleComplete,
             eventListeners: {
               CUSTOMER_INTERACTION: (event: { isMobile: boolean }) => {
@@ -268,10 +292,20 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
         setIsLoading(false);
         hasInitializedRef.current = true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "SDK initialization failed");
+        const msg = err instanceof Error ? err.message : "SDK initialization failed";
+        // If re-init with saved token failed, the token may be expired — reset to form
+        if (savedTokenRef.current) {
+          savedTokenRef.current = null;
+          setFormSubmitted(false);
+          setShowPaymentButton(false);
+          setError("Your checkout session expired. Please submit again.");
+        } else {
+          setError(msg);
+        }
         setIsLoading(false);
       }
 
+      savedTokenRef.current = pendingToken;
       setPendingToken(null);
     });
 
@@ -836,7 +870,12 @@ export function CheckoutCashApp({ onShippingChange }: CheckoutCashAppProps) {
           {showPaymentButton && (
             <div className="space-y-4">
               <p className="text-sm text-center text-afterpay-gray-500 dark:text-afterpay-gray-400">
-                Scan the QR code or tap the button below to pay with Cash App
+                <span className="hidden md:inline">
+                  Tap the button below, and scan the QR code to pay with Cash App Pay.
+                </span>
+                <span className="md:hidden">
+                  Tap the button below to pay with Cash App Pay.
+                </span>
               </p>
               {isLoading && (
                 <div className="flex items-center justify-center gap-2 py-4">

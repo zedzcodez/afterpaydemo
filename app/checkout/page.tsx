@@ -45,9 +45,9 @@ export default function CheckoutPage() {
     setShippingAnimationKey((prev) => prev + 1);
   }, []);
 
-  // Reset shipping when switching away from Standard (shipping happens in popup or /shipping page)
+  // Reset shipping when switching away from Standard/Cash App (shipping happens in popup for Express)
   useEffect(() => {
-    if (method !== "standard") {
+    if (method !== "standard" && method !== "cashapp") {
       setSelectedShipping(null);
     }
   }, [method]);
@@ -187,20 +187,25 @@ export default function CheckoutPage() {
               )}
             </div>
 
-            {/* Checkout Form */}
-            {method === "express" ? (
+            {/* Checkout Forms — always mounted to preserve state, hidden via CSS */}
+            <div style={{ display: method === "express" ? undefined : "none" }}>
               <CheckoutExpress
+                isActive={method === "express"}
                 initialShippingFlow={initialShippingFlow}
               />
-            ) : method === "standard" ? (
+            </div>
+            <div style={{ display: method === "standard" ? undefined : "none" }}>
               <CheckoutStandard
-                onShippingChange={handleShippingChange}
+                isActive={method === "standard"}
+                onShippingChange={method === "standard" ? handleShippingChange : undefined}
               />
-            ) : (
+            </div>
+            <div style={{ display: method === "cashapp" ? undefined : "none" }}>
               <CheckoutCashApp
-                onShippingChange={handleShippingChange}
+                isActive={method === "cashapp"}
+                onShippingChange={method === "cashapp" ? handleShippingChange : undefined}
               />
-            )}
+            </div>
           </div>
 
           {/* Order Summary Sidebar */}
