@@ -1,10 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import { useCart } from "./CartProvider";
+import { useConfig } from "./ConfigProvider";
 import { useTheme } from "./ThemeProvider";
+import { BuyNowButton } from "./BuyNowButton";
+import { AfterpayButton } from "./AfterpayButton";
+import { useBuyNowCheckout } from "@/hooks/useBuyNowCheckout";
+import { formatPrice } from "@/lib/products";
+
+// --- SVG Icon Components ---
 
 function SunIcon({ className }: { className?: string }) {
   return (
@@ -38,24 +46,47 @@ function CloseIcon({ className }: { className?: string }) {
   );
 }
 
-// Navigation items configuration
-const demoNav = [
-  { href: "/", label: "Shop" },
-  { href: "/checkout", label: "Checkout" },
-];
+function ShoppingBagIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+    </svg>
+  );
+}
 
-const toolsNav = [
+function TrashIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+    </svg>
+  );
+}
+
+// --- Navigation Items ---
+
+const navItems = [
+  { href: "/", label: "Shop" },
   { href: "/admin", label: "Admin" },
   { href: "/orders", label: "Orders" },
   { href: "/docs", label: "User Guide" },
 ];
 
+// --- Header Component ---
+
 export function Header() {
   const pathname = usePathname();
-  const { itemCount, cartAnimationTrigger } = useCart();
+  const router = useRouter();
+  const { items, total, itemCount, removeFromCart, cartAnimationTrigger } = useCart();
+  const { config } = useConfig();
   const { resolvedTheme, setTheme } = useTheme();
+  const { startBuyNow, isLoading } = useBuyNowCheckout();
+
   const [isAnimating, setIsAnimating] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [miniCartOpen, setMiniCartOpen] = useState(false);
+
+  const miniCartRef = useRef<HTMLDivElement>(null);
+  const cartButtonRef = useRef<HTMLButtonElement>(null);
 
   // Trigger bounce animation when cart updates
   useEffect(() => {
@@ -66,10 +97,44 @@ export function Header() {
     }
   }, [cartAnimationTrigger]);
 
-  // Close mobile menu on route change
+  // Close mobile menu and mini-cart on route change
   useEffect(() => {
     setMobileMenuOpen(false);
+    setMiniCartOpen(false);
   }, [pathname]);
+
+  // Close mini-cart on click outside
+  useEffect(() => {
+    if (!miniCartOpen) return;
+
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        miniCartRef.current &&
+        !miniCartRef.current.contains(event.target as Node) &&
+        cartButtonRef.current &&
+        !cartButtonRef.current.contains(event.target as Node)
+      ) {
+        setMiniCartOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [miniCartOpen]);
+
+  // Close mini-cart on Escape key
+  useEffect(() => {
+    if (!miniCartOpen) return;
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMiniCartOpen(false);
+      }
+    }
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [miniCartOpen]);
 
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
@@ -86,6 +151,10 @@ export function Header() {
   const toggleTheme = () => {
     setTheme(resolvedTheme === "dark" ? "light" : "dark");
   };
+
+  const toggleMiniCart = useCallback(() => {
+    setMiniCartOpen((prev) => !prev);
+  }, []);
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -127,6 +196,111 @@ export function Header() {
     );
   };
 
+  // --- Mini-Cart Item Rendering ---
+  const renderMiniCartItems = (compact = false) => (
+    <>
+      {items.length === 0 ? (
+        <div className="py-8 text-center">
+          <ShoppingBagIcon className="w-10 h-10 mx-auto text-afterpay-gray-300 dark:text-afterpay-gray-600 mb-3" />
+          <p className="text-sm text-afterpay-gray-500 dark:text-afterpay-gray-400 mb-3">
+            Your cart is empty
+          </p>
+          <Link
+            href="/"
+            className="text-sm font-medium text-afterpay-black dark:text-white hover:text-afterpay-mint transition-colors"
+            onClick={() => {
+              setMiniCartOpen(false);
+              setMobileMenuOpen(false);
+            }}
+          >
+            Continue Shopping
+          </Link>
+        </div>
+      ) : (
+        <>
+          {/* Cart Items */}
+          <div className={`divide-y divide-afterpay-gray-100 dark:divide-afterpay-gray-700 ${compact ? "" : "max-h-64 overflow-y-auto"}`}>
+            {items.map((item) => (
+              <div key={item.product.id} className="flex items-center gap-3 py-3 px-1">
+                {/* Product Thumbnail */}
+                <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-afterpay-gray-100 dark:bg-afterpay-gray-800 shrink-0">
+                  <Image
+                    src={item.product.image}
+                    alt={item.product.name}
+                    fill
+                    className="object-cover"
+                    sizes="48px"
+                  />
+                </div>
+
+                {/* Product Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-afterpay-black dark:text-white truncate">
+                    {item.product.name}
+                  </p>
+                  <p className="text-xs text-afterpay-gray-500 dark:text-afterpay-gray-400">
+                    Qty: {item.quantity} &middot; {formatPrice(item.product.price)}
+                  </p>
+                </div>
+
+                {/* Remove Button */}
+                <button
+                  onClick={() => removeFromCart(item.product.id)}
+                  className="p-1 text-afterpay-gray-400 hover:text-red-500 transition-colors shrink-0"
+                  aria-label={`Remove ${item.product.name} from cart`}
+                >
+                  <TrashIcon className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Cart Total */}
+          <div className="border-t border-afterpay-gray-200 dark:border-afterpay-gray-700 pt-3 mt-1">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-afterpay-gray-600 dark:text-afterpay-gray-300">
+                Total
+              </span>
+              <span className="text-base font-bold text-afterpay-black dark:text-white">
+                {formatPrice(total)}
+              </span>
+            </div>
+
+            {/* Checkout Buttons */}
+            <div className="space-y-2">
+              <BuyNowButton
+                onClick={() => startBuyNow({ items, total })}
+                disabled={isLoading}
+                size="compact"
+              />
+              <AfterpayButton
+                variant="continue"
+                onClick={() => {
+                  setMiniCartOpen(false);
+                  setMobileMenuOpen(false);
+                  router.push("/checkout");
+                }}
+                className="!h-10"
+              />
+            </div>
+
+            {/* View Full Cart Link */}
+            <Link
+              href="/cart"
+              className="block mt-3 text-center text-sm font-medium text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white transition-colors"
+              onClick={() => {
+                setMiniCartOpen(false);
+                setMobileMenuOpen(false);
+              }}
+            >
+              View Full Cart
+            </Link>
+          </div>
+        </>
+      )}
+    </>
+  );
+
   return (
     <>
       <header className="sticky top-0 z-50 glass dark:bg-afterpay-gray-900/90 border-b border-afterpay-gray-200/50 dark:border-afterpay-gray-700/50 shadow-soft">
@@ -134,6 +308,7 @@ export function Header() {
           <div className="relative flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center shrink-0 z-10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 alt="Cash App Afterpay"
                 src={resolvedTheme === "dark"
@@ -145,58 +320,102 @@ export function Header() {
               />
             </Link>
 
-            {/* Desktop Navigation - Centered on page */}
+            {/* Desktop Navigation - Centered */}
             <nav className="hidden md:flex items-center absolute left-1/2 -translate-x-1/2">
-              {/* Demo Section */}
-              <div className="flex items-center space-x-1 px-2">
-                {demoNav.map((item) => (
+              <div className="flex items-center space-x-1">
+                {navItems.map((item) => (
                   <NavLink key={item.href} href={item.href} label={item.label} />
                 ))}
               </div>
+            </nav>
 
-              {/* Divider */}
-              <div className="h-5 w-px bg-afterpay-gray-300 dark:bg-afterpay-gray-700 mx-2" />
-
-              {/* Tools Section */}
-              <div className="flex items-center space-x-1 px-2">
-                {toolsNav.map((item) => (
-                  <NavLink key={item.href} href={item.href} label={item.label} />
-                ))}
-              </div>
-
-              {/* Divider */}
-              <div className="h-5 w-px bg-afterpay-gray-300 dark:bg-afterpay-gray-700 mx-2" />
-
-              {/* Theme Toggle - Text Label */}
+            {/* Right Side - Desktop */}
+            <div className="hidden md:flex items-center space-x-1 z-10">
+              {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="px-3 py-1.5 text-sm font-medium whitespace-nowrap text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white transition-all duration-200"
+                className="p-2 rounded-lg text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-800 transition-all duration-200"
                 aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               >
-                {resolvedTheme === "dark" ? "Light Mode" : "Dark Mode"}
+                {resolvedTheme === "dark" ? (
+                  <SunIcon className="w-5 h-5" />
+                ) : (
+                  <MoonIcon className="w-5 h-5" />
+                )}
               </button>
 
-              {/* Cart - Text Label */}
-              <Link
-                href="/cart"
-                className="relative px-3 py-1.5 text-sm font-medium text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white transition-all duration-200"
+              {/* Cart Icon Button with Badge */}
+              <div className="relative">
+                <button
+                  ref={cartButtonRef}
+                  onClick={toggleMiniCart}
+                  className="relative p-2 rounded-lg text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-800 transition-all duration-200"
+                  aria-label={`Shopping cart${itemCount > 0 ? `, ${itemCount} items` : ""}`}
+                  aria-expanded={miniCartOpen}
+                >
+                  <ShoppingBagIcon className="w-5 h-5" />
+                  {itemCount > 0 && (
+                    <span
+                      key={cartAnimationTrigger}
+                      className={`absolute -top-0.5 -right-0.5 flex items-center justify-center w-5 h-5 bg-afterpay-mint text-afterpay-black text-[10px] font-bold rounded-full ${
+                        isAnimating ? "animate-bounce-sm" : ""
+                      }`}
+                    >
+                      {itemCount > 9 ? "9+" : itemCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Mini-Cart Dropdown */}
+                {miniCartOpen && (
+                  <div
+                    ref={miniCartRef}
+                    className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-afterpay-gray-900 rounded-xl border border-afterpay-gray-200 dark:border-afterpay-gray-700 shadow-card-hover z-50"
+                  >
+                    {/* Dropdown Header */}
+                    <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                      <h3 className="text-sm font-display font-semibold text-afterpay-black dark:text-white">
+                        Shopping Cart
+                      </h3>
+                      {itemCount > 0 && (
+                        <span className="text-xs text-afterpay-gray-500 dark:text-afterpay-gray-400">
+                          {itemCount} {itemCount === 1 ? "item" : "items"}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Dropdown Body */}
+                    <div className="px-4 pb-4">
+                      {renderMiniCartItems()}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Side - Mobile */}
+            <div className="flex items-center space-x-1 md:hidden">
+              {/* Mobile Cart Icon */}
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(true);
+                }}
+                className="relative p-2 rounded-lg text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-800 transition-all duration-200"
+                aria-label={`Shopping cart${itemCount > 0 ? `, ${itemCount} items` : ""}`}
               >
-                Cart
+                <ShoppingBagIcon className="w-5 h-5" />
                 {itemCount > 0 && (
                   <span
                     key={cartAnimationTrigger}
-                    className={`ml-1 bg-afterpay-mint text-afterpay-black text-[10px] font-bold rounded-full px-1.5 py-0.5 ${
+                    className={`absolute -top-0.5 -right-0.5 flex items-center justify-center w-5 h-5 bg-afterpay-mint text-afterpay-black text-[10px] font-bold rounded-full ${
                       isAnimating ? "animate-bounce-sm" : ""
                     }`}
                   >
                     {itemCount > 9 ? "9+" : itemCount}
                   </span>
                 )}
-              </Link>
-            </nav>
+              </button>
 
-            {/* Right Side - Mobile Only */}
-            <div className="flex items-center space-x-1 md:hidden">
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(true)}
@@ -209,6 +428,22 @@ export function Header() {
           </div>
         </div>
       </header>
+
+      {/* Developer Mode Indicator Bar */}
+      {config.developerMode && (
+        <Link
+          href="/admin"
+          className="block w-full bg-terminal-bg py-1.5 text-center animate-dev-enter relative overflow-hidden sticky top-16 z-40"
+          style={{
+            backgroundImage: "radial-gradient(circle, rgba(178, 252, 228, 0.05) 1px, transparent 1px)",
+            backgroundSize: "16px 16px",
+          }}
+        >
+          <span className="font-code text-xs text-terminal-text tracking-wider">
+            &#9670; DEVELOPER MODE
+          </span>
+        </Link>
+      )}
 
       {/* Mobile Menu Overlay */}
       <div
@@ -224,12 +459,12 @@ export function Header() {
 
         {/* Menu Panel */}
         <div
-          className={`absolute right-0 top-0 h-full w-72 bg-white dark:bg-afterpay-gray-900 shadow-2xl transform transition-transform duration-300 ease-out ${
+          className={`absolute right-0 top-0 h-full w-80 bg-white dark:bg-afterpay-gray-900 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col ${
             mobileMenuOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
           {/* Menu Header */}
-          <div className="flex items-center justify-between px-4 h-16 border-b border-afterpay-gray-200 dark:border-afterpay-gray-700">
+          <div className="flex items-center justify-between px-4 h-16 border-b border-afterpay-gray-200 dark:border-afterpay-gray-700 shrink-0">
             <span className="font-display font-semibold text-afterpay-black dark:text-white">Menu</span>
             <button
               onClick={() => setMobileMenuOpen(false)}
@@ -240,53 +475,33 @@ export function Header() {
             </button>
           </div>
 
-          {/* Menu Content */}
-          <div className="px-4 py-6 space-y-6">
-            {/* Demo Section */}
+          {/* Menu Content - Scrollable */}
+          <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+            {/* Navigation */}
             <div>
               <p className="px-4 text-xs font-semibold text-afterpay-gray-400 dark:text-afterpay-gray-500 uppercase tracking-wider mb-2">
-                Demo
+                Navigation
               </p>
               <div className="space-y-1">
-                {demoNav.map((item) => (
+                {navItems.map((item) => (
                   <NavLink key={item.href} href={item.href} label={item.label} mobile />
                 ))}
               </div>
             </div>
 
-            {/* Tools Section */}
+            {/* Mini-Cart Section */}
             <div>
               <p className="px-4 text-xs font-semibold text-afterpay-gray-400 dark:text-afterpay-gray-500 uppercase tracking-wider mb-2">
-                Tools
+                Shopping Cart
               </p>
-              <div className="space-y-1">
-                {toolsNav.map((item) => (
-                  <NavLink key={item.href} href={item.href} label={item.label} mobile />
-                ))}
+              <div className="px-1">
+                {renderMiniCartItems(true)}
               </div>
-            </div>
-
-            {/* Cart in Mobile Menu */}
-            <div>
-              <p className="px-4 text-xs font-semibold text-afterpay-gray-400 dark:text-afterpay-gray-500 uppercase tracking-wider mb-2">
-                Shopping
-              </p>
-              <Link
-                href="/cart"
-                className="flex items-center justify-between px-4 py-3 rounded-lg text-base font-medium text-afterpay-gray-600 dark:text-afterpay-gray-400 hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-800 transition-all duration-200"
-              >
-                <span>Cart</span>
-                {itemCount > 0 && (
-                  <span className="bg-afterpay-mint text-afterpay-black text-xs font-bold rounded-full px-2 py-0.5">
-                    {itemCount} {itemCount === 1 ? "item" : "items"}
-                  </span>
-                )}
-              </Link>
             </div>
           </div>
 
-          {/* Menu Footer */}
-          <div className="absolute bottom-0 left-0 right-0 px-4 py-4 border-t border-afterpay-gray-200 dark:border-afterpay-gray-700">
+          {/* Menu Footer - Theme Toggle */}
+          <div className="shrink-0 px-4 py-4 border-t border-afterpay-gray-200 dark:border-afterpay-gray-700">
             <div className="flex items-center justify-between">
               <span className="text-sm text-afterpay-gray-500 dark:text-afterpay-gray-400">Theme</span>
               <button
