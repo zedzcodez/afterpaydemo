@@ -71,13 +71,13 @@ export function ProductCard({ product }: ProductCardProps) {
             })
           }
           disabled={isBuyNowLoading}
-          className="flex-1"
+          className="flex-[3]"
         />
         <button
           onClick={() => {
             addToCart(product);
           }}
-          className="flex-1 h-10 rounded-[12px] border-2 border-afterpay-black dark:border-white text-afterpay-black dark:text-white font-display font-bold text-sm hover:bg-afterpay-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all active:scale-[0.98] cursor-pointer"
+          className="flex-[2] h-10 rounded-[12px] border-2 border-afterpay-black dark:border-white text-afterpay-black dark:text-white font-display font-bold text-sm hover:bg-afterpay-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all active:scale-[0.98] cursor-pointer"
         >
           ADD
         </button>

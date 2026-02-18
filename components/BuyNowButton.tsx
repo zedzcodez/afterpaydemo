@@ -42,7 +42,7 @@ export function BuyNowButton({
       className={[
         "w-full flex items-center justify-center gap-2 rounded-[12px] font-display font-bold",
         "transition-all duration-150 ease-in-out",
-        isCompact ? "h-10 text-sm px-4" : "h-12 text-base px-6",
+        isCompact ? "h-10 text-xs px-3" : "h-12 text-base px-6",
         isDark
           ? "bg-black text-white"
           : "bg-[#B2FCE4] text-black",
@@ -55,7 +55,7 @@ export function BuyNowButton({
         .join(" ")}
       aria-label="Buy now with Afterpay"
     >
-      <span className="whitespace-nowrap">BUY NOW WITH</span>
+      <span className="whitespace-nowrap">{isCompact ? "BUY NOW" : "BUY NOW WITH"}</span>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={logoUrl}
