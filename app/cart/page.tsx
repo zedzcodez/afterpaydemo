@@ -2,13 +2,19 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartProvider";
 import { formatPrice } from "@/lib/products";
 import { OSMPlacement } from "@/components/OSMPlacement";
 import { getCartSkus, getCartCategories } from "@/lib/cart";
+import { BuyNowButton } from "@/components/BuyNowButton";
+import { AfterpayButton } from "@/components/AfterpayButton";
+import { useBuyNowCheckout } from "@/hooks/useBuyNowCheckout";
 
 export default function CartPage() {
   const { items, total, updateQuantity, removeFromCart } = useCart();
+  const router = useRouter();
+  const { startBuyNow, isLoading } = useBuyNowCheckout();
 
   if (items.length === 0) {
     return (
@@ -172,19 +178,27 @@ export default function CartPage() {
               />
             </div>
 
-            <Link
-              href="/checkout"
-              className="block w-full py-3 px-6 bg-afterpay-black text-white text-center font-medium rounded-lg hover:bg-afterpay-gray-800 transition-colors"
-            >
-              Proceed to Checkout
-            </Link>
+            <div className="space-y-3">
+              <BuyNowButton
+                onClick={() => startBuyNow({ items, total })}
+                disabled={isLoading}
+              />
 
-            <Link
-              href="/"
-              className="block w-full mt-3 py-3 px-6 text-afterpay-gray-600 dark:text-afterpay-gray-400 text-center hover:text-afterpay-black dark:hover:text-white transition-colors"
-            >
-              Continue Shopping
-            </Link>
+              <AfterpayButton
+                variant="continue"
+                onClick={() => router.push("/checkout")}
+              />
+
+              <Link
+                href="/"
+                className="block text-center text-sm text-afterpay-gray-600 hover:text-afterpay-black dark:hover:text-white transition-colors"
+              >
+                Continue Shopping
+              </Link>
+            </div>
+
+            {/* Hidden SDK target for Buy Now popup */}
+            <div id="buynow-afterpay-button" className="hidden" />
           </div>
         </div>
       </div>
