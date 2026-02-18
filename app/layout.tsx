@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/components/CartProvider";
+import { ConfigProvider } from "@/components/ConfigProvider";
 import { Header } from "@/components/Header";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ScrollToTop } from "@/components/ScrollToTop";
@@ -45,11 +46,13 @@ export default function RootLayout({
       </head>
       <body className="bg-white dark:bg-afterpay-gray-900 text-afterpay-black dark:text-white min-h-screen font-body transition-colors duration-200">
         <ThemeProvider>
-          <CartProvider>
-            <Header />
-            <main>{children}</main>
-            <ScrollToTop />
-          </CartProvider>
+          <ConfigProvider>
+            <CartProvider>
+              <Header />
+              <main>{children}</main>
+              <ScrollToTop />
+            </CartProvider>
+          </ConfigProvider>
         </ThemeProvider>
       </body>
     </html>
