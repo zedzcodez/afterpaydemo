@@ -10,6 +10,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        terminal: {
+          bg: '#111827',
+          text: '#B2FCE4',
+          green: '#22C55E',
+          border: '#1F2937',
+        },
         afterpay: {
           mint: "#B2FCE4",
           "mint-dark": "#8EEBC8",
@@ -31,8 +37,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ["var(--font-display)", "system-ui", "sans-serif"],
-        body: ["var(--font-body)", "system-ui", "sans-serif"],
+        display: ["'Clash Display'", "system-ui", "sans-serif"],
+        body: ["'General Sans'", "system-ui", "sans-serif"],
+        code: ["var(--font-code)", "'JetBrains Mono'", "monospace"],
       },
       boxShadow: {
         "soft": "0 2px 8px -2px rgba(0, 0, 0, 0.08)",
