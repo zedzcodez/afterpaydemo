@@ -54,9 +54,7 @@ function ConfirmationContent() {
                   }
 
                   const orderId = authData.id;
-                  const captureMode = typeof window !== "undefined"
-                    ? localStorage.getItem("afterpay_capture_mode") || "deferred"
-                    : "deferred";
+                  const captureMode = config.captureMode;
 
                   // Optional immediate capture
                   if (captureMode === "immediate") {

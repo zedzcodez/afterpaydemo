@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useCart } from "./CartProvider";
+import { useConfig } from "@/components/ConfigProvider";
 import { OSMPlacement } from "./OSMPlacement";
 import { CodeViewer } from "./CodeViewer";
 import { getCartSkus, getCartCategories } from "@/lib/cart";
@@ -60,8 +61,10 @@ const SHIPPING_OPTIONS = [
 
 export function CheckoutExpress({ isActive, onLog, onLogUpdate, initialShippingFlow }: CheckoutExpressProps) {
   const { items, total } = useCart();
+  const { config } = useConfig();
   const isDevPanelOpen = useDevPanelState();
-  const [shippingFlow, setShippingFlow] = useState<ShippingFlow>(initialShippingFlow || "integrated");
+  // Shipping flow driven by centralized config; prop is kept as fallback for standalone usage
+  const shippingFlow: ShippingFlow = config.expressCheckout.type || initialShippingFlow || "integrated";
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,13 +73,15 @@ export function CheckoutExpress({ isActive, onLog, onLogUpdate, initialShippingF
   const itemsRef = useRef(items);
   const onLogRef = useRef(onLog);
   const onLogUpdateRef = useRef(onLogUpdate);
+  const captureModeRef = useRef(config.captureMode);
 
   useEffect(() => {
     totalRef.current = total;
     itemsRef.current = items;
     onLogRef.current = onLog;
     onLogUpdateRef.current = onLogUpdate;
-  }, [total, items, onLog, onLogUpdate]);
+    captureModeRef.current = config.captureMode;
+  }, [total, items, onLog, onLogUpdate, config.captureMode]);
 
   const createCheckoutToken = useCallback(async () => {
     const currentItems = itemsRef.current;
@@ -244,8 +249,8 @@ export function CheckoutExpress({ isActive, onLog, onLogUpdate, initialShippingF
             logCallback("onComplete", { status: event.data.status, orderInfo: event.data.orderInfo });
 
             if (event.data.status === "SUCCESS") {
-              // Check capture mode from localStorage
-              const captureMode = localStorage.getItem("afterpay_capture_mode") || "deferred";
+              // Read capture mode from centralized config
+              const captureMode = captureModeRef.current;
               const isImmediateCapture = captureMode === "immediate";
 
               try {
@@ -578,37 +583,38 @@ Afterpay.initializeForPopup({
 
   return (
     <div className="space-y-6">
-      {/* Shipping Flow Toggle */}
+      {/* Shipping Flow Indicator (controlled by config) */}
       <div>
         <label className="block text-sm font-medium mb-3">Shipping Flow</label>
         <div className="flex gap-2">
-          <button
-            onClick={() => setShippingFlow("integrated")}
+          <div
             className={`flex-1 py-2 px-4 rounded-lg border-2 transition-colors ${
               shippingFlow === "integrated"
                 ? "border-afterpay-mint bg-afterpay-mint/10"
-                : "border-afterpay-gray-200 dark:border-afterpay-gray-700 hover:border-afterpay-gray-300 dark:hover:border-afterpay-gray-600"
+                : "border-afterpay-gray-200 dark:border-afterpay-gray-700"
             }`}
           >
             <span className="block font-medium">Integrated</span>
             <span className="block text-xs text-afterpay-gray-500">
               Shipping in popup
             </span>
-          </button>
-          <button
-            onClick={() => setShippingFlow("deferred")}
+          </div>
+          <div
             className={`flex-1 py-2 px-4 rounded-lg border-2 transition-colors ${
               shippingFlow === "deferred"
                 ? "border-afterpay-mint bg-afterpay-mint/10"
-                : "border-afterpay-gray-200 dark:border-afterpay-gray-700 hover:border-afterpay-gray-300 dark:hover:border-afterpay-gray-600"
+                : "border-afterpay-gray-200 dark:border-afterpay-gray-700"
             }`}
           >
             <span className="block font-medium">Deferred</span>
             <span className="block text-xs text-afterpay-gray-500">
               Shipping on site
             </span>
-          </button>
+          </div>
         </div>
+        <p className="text-xs text-afterpay-gray-500 mt-2">
+          Controlled via Settings panel
+        </p>
       </div>
 
       {/* Flow Description */}

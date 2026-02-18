@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/components/CartProvider";
+import { useConfig } from "@/components/ConfigProvider";
 import { formatPrice } from "@/lib/products";
 import { addFlowLog, updateFlowSummary } from "@/lib/flowLogs";
 import { FlowLogsDevPanel, toggleDevPanel, useDevPanelState } from "@/components/FlowLogsDevPanel";
@@ -63,6 +64,7 @@ function ShippingContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { items, total } = useCart();
+  const { config } = useConfig();
   const [selectedShipping, setSelectedShipping] = useState(SHIPPING_OPTIONS[0]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -236,9 +238,8 @@ function ShippingContent() {
     setIsProcessing(true);
     setError(null);
 
-    // Check capture mode from localStorage
-    const captureMode = localStorage.getItem("afterpay_capture_mode") || "deferred";
-    const isImmediateCapture = captureMode === "immediate";
+    // Read capture mode from centralized config
+    const isImmediateCapture = config.captureMode === "immediate";
 
     try {
       let orderId: string;

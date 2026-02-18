@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/components/CartProvider";
+import { useConfig } from "@/components/ConfigProvider";
 import { formatPrice } from "@/lib/products";
 import { addFlowLog, getFlowLogs } from "@/lib/flowLogs";
 import { FlowLogsDevPanel } from "@/components/FlowLogsDevPanel";
@@ -14,16 +15,13 @@ function ReviewContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { items, total } = useCart();
+  const { config } = useConfig();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderToken, setOrderToken] = useState<string | null>(null);
-  const [captureMode, setCaptureMode] = useState<"deferred" | "immediate">("deferred");
 
-  // Read capture mode on mount
-  useEffect(() => {
-    const mode = localStorage.getItem("afterpay_capture_mode") || "deferred";
-    setCaptureMode(mode as "deferred" | "immediate");
-  }, []);
+  // Capture mode driven by centralized config
+  const captureMode = config.captureMode;
 
   useEffect(() => {
     const token = searchParams.get("orderToken");
@@ -57,9 +55,8 @@ function ReviewContent() {
     setIsProcessing(true);
     setError(null);
 
-    // Check capture mode from localStorage
-    const captureMode = localStorage.getItem("afterpay_capture_mode") || "deferred";
-    const isImmediateCapture = captureMode === "immediate";
+    // Read capture mode from centralized config
+    const isImmediateCapture = config.captureMode === "immediate";
 
     try {
       let orderId: string;

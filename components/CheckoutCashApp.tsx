@@ -122,6 +122,7 @@ export function CheckoutCashApp({ isActive, onShippingChange }: CheckoutCashAppP
   // Refs to keep current values accessible in callbacks
   const itemsRef = useRef(items);
   const totalRef = useRef(finalTotal);
+  const captureModeRef = useRef(config.captureMode);
 
   useEffect(() => {
     itemsRef.current = items;
@@ -130,6 +131,10 @@ export function CheckoutCashApp({ isActive, onShippingChange }: CheckoutCashAppP
   useEffect(() => {
     totalRef.current = finalTotal;
   }, [finalTotal]);
+
+  useEffect(() => {
+    captureModeRef.current = config.captureMode;
+  }, [config.captureMode]);
 
   // Handle shipping selection change
   const handleShippingSelect = (option: ShippingOption) => {
@@ -353,8 +358,8 @@ export function CheckoutCashApp({ isActive, onShippingChange }: CheckoutCashAppP
     setIsLoading(true);
 
     try {
-      // Read capture mode from localStorage
-      const captureMode = localStorage.getItem("afterpay_capture_mode") || "deferred";
+      // Read capture mode from centralized config
+      const captureMode = captureModeRef.current;
       const isImmediateCapture = captureMode === "immediate";
 
       let orderId: string;

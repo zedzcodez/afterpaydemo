@@ -172,9 +172,8 @@ export function CheckoutStandard({ isActive, onLog, onLogUpdate, onShippingChang
           data: { status: "SUCCESS", orderToken: event.data.orderToken.substring(0, 20) + "..." },
         });
 
-        // Check capture mode from localStorage
-        const captureMode = localStorage.getItem("afterpay_capture_mode") || "deferred";
-        const isImmediateCapture = captureMode === "immediate";
+        // Read capture mode from centralized config
+        const isImmediateCapture = config.captureMode === "immediate";
 
         try {
           let orderId: string;
@@ -316,7 +315,7 @@ export function CheckoutStandard({ isActive, onLog, onLogUpdate, onShippingChang
         setIsLoading(false);
       }
     };
-  }, [router]);
+  }, [router, config.captureMode]);
 
   const handleSubmit = async () => {
     setIsLoading(true);
