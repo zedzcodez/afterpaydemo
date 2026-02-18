@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "./CartProvider";
+import { useConfig } from "@/components/ConfigProvider";
 import { formatPrice } from "@/lib/products";
 import { initFlowLogs, addFlowLog, setFlowSummary, updateFlowSummary, FlowSummary } from "@/lib/flowLogs";
 import { toggleDevPanel, useDevPanelState } from "./FlowLogsDevPanel";
@@ -91,6 +92,7 @@ function applyCashAppButtonStyles() {
 export function CheckoutCashApp({ isActive, onShippingChange }: CheckoutCashAppProps) {
   const router = useRouter();
   const { items, total } = useCart();
+  const { config } = useConfig();
   const isDevPanelOpen = useDevPanelState();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -598,32 +600,34 @@ export function CheckoutCashApp({ isActive, onShippingChange }: CheckoutCashAppP
 
   return (
     <div className="space-y-6">
-      {/* Developer Tools Section */}
-      <div className="space-y-3">
-        {/* Developer Panel Toggle */}
-        <div className="flex items-center justify-between p-3 bg-afterpay-gray-100 dark:bg-afterpay-gray-800 rounded-lg">
-          <div className="flex-1 mr-4">
-            <p className="text-sm font-medium text-afterpay-black dark:text-white">Developer Panel</p>
-            <p className="text-xs text-afterpay-gray-500 dark:text-afterpay-gray-400">
-              View API requests, responses, and integration flow logs
-            </p>
+      {/* Developer Tools Section (developer mode only) */}
+      {config.developerMode && (
+        <div className="space-y-3">
+          {/* Developer Panel Toggle */}
+          <div className="flex items-center justify-between p-3 bg-afterpay-gray-100 dark:bg-afterpay-gray-800 rounded-lg">
+            <div className="flex-1 mr-4">
+              <p className="text-sm font-medium text-afterpay-black dark:text-white">Developer Panel</p>
+              <p className="text-xs text-afterpay-gray-500 dark:text-afterpay-gray-400">
+                View API requests, responses, and integration flow logs
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => toggleDevPanel(25)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isDevPanelOpen
+                  ? "bg-afterpay-mint text-afterpay-black hover:bg-afterpay-mint-dark"
+                  : "bg-afterpay-gray-800 dark:bg-afterpay-gray-700 text-white hover:bg-afterpay-gray-700 dark:hover:bg-afterpay-gray-600"
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+              {isDevPanelOpen ? "Hide Developer Panel" : "Show Developer Panel"}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => toggleDevPanel(25)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              isDevPanelOpen
-                ? "bg-afterpay-mint text-afterpay-black hover:bg-afterpay-mint-dark"
-                : "bg-afterpay-gray-800 dark:bg-afterpay-gray-700 text-white hover:bg-afterpay-gray-700 dark:hover:bg-afterpay-gray-600"
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-            </svg>
-            {isDevPanelOpen ? "Hide Developer Panel" : "Show Developer Panel"}
-          </button>
         </div>
-      </div>
+      )}
 
       {/* Shipping Form (collapsible after submission) */}
       {!formSubmitted ? (
@@ -917,8 +921,8 @@ export function CheckoutCashApp({ isActive, onShippingChange }: CheckoutCashAppP
         style={{ display: showPaymentButton && formSubmitted ? undefined : 'none' }}
       />
 
-      {/* Cash App Pay Developer Info Section */}
-      <CashAppInfoSection />
+      {/* Cash App Pay Developer Info Section (developer mode only) */}
+      {config.developerMode && <CashAppInfoSection />}
     </div>
   );
 }

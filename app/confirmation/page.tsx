@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/components/CartProvider";
+import { useConfig } from "@/components/ConfigProvider";
 import { getFlowLogs, FlowLogs, FlowLogEntry, FlowSummary, formatFlowName } from "@/lib/flowLogs";
 import { CheckoutProgress } from "@/components/CheckoutProgress";
 import { saveOrder, Order, OrderItem } from "@/lib/orders";
@@ -12,6 +13,7 @@ import { getStoredCart, calculateTotal } from "@/lib/cart";
 function ConfirmationContent() {
   const searchParams = useSearchParams();
   const { clearCart } = useCart();
+  const { config } = useConfig();
   const [orderDetails, setOrderDetails] = useState<{
     orderId: string;
     status: string;
@@ -237,8 +239,8 @@ function ConfirmationContent() {
           </Link>
         </div>
 
-        {/* Show flow logs even on error */}
-        {flowLogs && flowLogs.entries.length > 0 && (
+        {/* Show flow logs even on error (developer mode only) */}
+        {config.developerMode && flowLogs && flowLogs.entries.length > 0 && (
           <div className="mt-8">
             <FlowLogsSection
               flowLogs={flowLogs}
@@ -366,8 +368,8 @@ function ConfirmationContent() {
         </dl>
       </div>
 
-      {/* Integration Flow Logs */}
-      {flowLogs && flowLogs.entries.length > 0 && (
+      {/* Integration Flow Logs (developer mode only) */}
+      {config.developerMode && flowLogs && flowLogs.entries.length > 0 && (
         <FlowLogsSection
           flowLogs={flowLogs}
           expandedLogs={expandedLogs}

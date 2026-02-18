@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useConfig } from "@/components/ConfigProvider";
 import { OSMPlacement } from "./OSMPlacement";
 
 interface OSMInfoSectionProps {
@@ -131,6 +132,7 @@ export function OSMInfoSection({
   productSku = "",
   productCategory = ""
 }: OSMInfoSectionProps) {
+  const { config } = useConfig();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const currentPlacementId = pageType === "product" ? pdpPlacementId : cartPlacementId;
@@ -151,15 +153,17 @@ export function OSMInfoSection({
 
   return (
     <div className="space-y-4">
-      {/* Environment Badge & Quick Links */}
-      <div className="flex items-center justify-between">
-        <EnvironmentBadge />
-        <QuickLink href="https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging">
-          OSM Docs
-        </QuickLink>
-      </div>
+      {/* Environment Badge & Quick Links (developer mode only) */}
+      {config.developerMode && (
+        <div className="flex items-center justify-between">
+          <EnvironmentBadge />
+          <QuickLink href="https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging">
+            OSM Docs
+          </QuickLink>
+        </div>
+      )}
 
-      {/* OSM Widget */}
+      {/* OSM Widget — consumer-facing, always visible */}
       <div className="p-3 bg-white dark:bg-afterpay-gray-50 rounded-lg">
         <OSMPlacement
           pageType={pageType}
@@ -170,101 +174,103 @@ export function OSMInfoSection({
         />
       </div>
 
-      {/* Expandable Code Section */}
-      <div className="border border-afterpay-gray-200 dark:border-afterpay-gray-700 rounded-lg overflow-hidden">
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-afterpay-gray-50 dark:bg-afterpay-gray-800 hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-750 transition-colors text-left"
-        >
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-afterpay-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-            </svg>
-            <span className="text-sm font-medium text-afterpay-black dark:text-white">View OSM Integration Code</span>
-          </div>
-          <svg
-            className={`w-4 h-4 text-afterpay-gray-500 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+      {/* Expandable Code Section (developer mode only) */}
+      {config.developerMode && (
+        <div className="border border-afterpay-gray-200 dark:border-afterpay-gray-700 rounded-lg overflow-hidden">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-afterpay-gray-50 dark:bg-afterpay-gray-800 hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-750 transition-colors text-left"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        <div className={`transition-all duration-300 ease-in-out ${isExpanded ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"} overflow-hidden`}>
-          <div className="p-4 space-y-4 bg-white dark:bg-afterpay-gray-900/50">
-            {/* Configuration Summary */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-afterpay-gray-500 dark:text-afterpay-gray-400">
-                Current Configuration
-              </h4>
-              <div className="grid grid-cols-1 gap-2 text-xs">
-                <div className="flex justify-between items-center py-1.5 px-3 bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded">
-                  <span className="text-afterpay-gray-600 dark:text-afterpay-gray-400">MPID</span>
-                  <code className="font-mono text-afterpay-black dark:text-white">{mpid.slice(0, 8)}...{mpid.slice(-4)}</code>
-                </div>
-                <div className="flex justify-between items-center py-1.5 px-3 bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded">
-                  <span className="text-afterpay-gray-600 dark:text-afterpay-gray-400">{placementIdLabel}</span>
-                  <code className="font-mono text-afterpay-black dark:text-white">{currentPlacementId.slice(0, 8)}...</code>
-                </div>
-                <div className="flex justify-between items-center py-1.5 px-3 bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded">
-                  <span className="text-afterpay-gray-600 dark:text-afterpay-gray-400">Page Type</span>
-                  <code className="font-mono text-afterpay-black dark:text-white">{pageType}</code>
-                </div>
-              </div>
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-afterpay-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+              <span className="text-sm font-medium text-afterpay-black dark:text-white">View OSM Integration Code</span>
             </div>
+            <svg
+              className={`w-4 h-4 text-afterpay-gray-500 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
 
-            {/* Script Tag */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+          <div className={`transition-all duration-300 ease-in-out ${isExpanded ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"} overflow-hidden`}>
+            <div className="p-4 space-y-4 bg-white dark:bg-afterpay-gray-900/50">
+              {/* Configuration Summary */}
+              <div className="space-y-2">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-afterpay-gray-500 dark:text-afterpay-gray-400">
-                  1. Include Script
+                  Current Configuration
                 </h4>
-                <CopyButton text={scriptTag} label="script tag" />
-              </div>
-              <CodeBlock code={scriptTag} language="html" />
-            </div>
-
-            {/* Placement Element */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-afterpay-gray-500 dark:text-afterpay-gray-400">
-                  2. Add Placement Element
-                </h4>
-                <CopyButton text={placementCode} label="placement code" />
-              </div>
-              <CodeBlock code={placementCode} language="html" />
-            </div>
-
-            {/* PDP vs Cart Info */}
-            <div className="p-3 bg-afterpay-mint/10 dark:bg-afterpay-mint/5 border border-afterpay-mint/20 rounded-lg">
-              <div className="flex gap-2">
-                <svg className="w-4 h-4 text-afterpay-mint flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div className="text-xs text-afterpay-gray-700 dark:text-afterpay-gray-300">
-                  <p className="font-medium mb-1">PDP vs Cart Placement IDs</p>
-                  <p className="text-afterpay-gray-600 dark:text-afterpay-gray-400">
-                    Use different placement IDs for product pages (PDP) and cart/checkout pages.
-                    This enables Afterpay to show contextually relevant messaging and track conversion funnels.
-                  </p>
+                <div className="grid grid-cols-1 gap-2 text-xs">
+                  <div className="flex justify-between items-center py-1.5 px-3 bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded">
+                    <span className="text-afterpay-gray-600 dark:text-afterpay-gray-400">MPID</span>
+                    <code className="font-mono text-afterpay-black dark:text-white">{mpid.slice(0, 8)}...{mpid.slice(-4)}</code>
+                  </div>
+                  <div className="flex justify-between items-center py-1.5 px-3 bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded">
+                    <span className="text-afterpay-gray-600 dark:text-afterpay-gray-400">{placementIdLabel}</span>
+                    <code className="font-mono text-afterpay-black dark:text-white">{currentPlacementId.slice(0, 8)}...</code>
+                  </div>
+                  <div className="flex justify-between items-center py-1.5 px-3 bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded">
+                    <span className="text-afterpay-gray-600 dark:text-afterpay-gray-400">Page Type</span>
+                    <code className="font-mono text-afterpay-black dark:text-white">{pageType}</code>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Documentation Links */}
-            <div className="flex flex-wrap gap-3 pt-2 border-t border-afterpay-gray-200 dark:border-afterpay-gray-700">
-              <QuickLink href="https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging">
-                OSM Documentation
-              </QuickLink>
-              <QuickLink href="https://developers.cash.app/cash-app-afterpay/docs/api">
-                API Reference
-              </QuickLink>
+              {/* Script Tag */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-afterpay-gray-500 dark:text-afterpay-gray-400">
+                    1. Include Script
+                  </h4>
+                  <CopyButton text={scriptTag} label="script tag" />
+                </div>
+                <CodeBlock code={scriptTag} language="html" />
+              </div>
+
+              {/* Placement Element */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-afterpay-gray-500 dark:text-afterpay-gray-400">
+                    2. Add Placement Element
+                  </h4>
+                  <CopyButton text={placementCode} label="placement code" />
+                </div>
+                <CodeBlock code={placementCode} language="html" />
+              </div>
+
+              {/* PDP vs Cart Info */}
+              <div className="p-3 bg-afterpay-mint/10 dark:bg-afterpay-mint/5 border border-afterpay-mint/20 rounded-lg">
+                <div className="flex gap-2">
+                  <svg className="w-4 h-4 text-afterpay-mint flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="text-xs text-afterpay-gray-700 dark:text-afterpay-gray-300">
+                    <p className="font-medium mb-1">PDP vs Cart Placement IDs</p>
+                    <p className="text-afterpay-gray-600 dark:text-afterpay-gray-400">
+                      Use different placement IDs for product pages (PDP) and cart/checkout pages.
+                      This enables Afterpay to show contextually relevant messaging and track conversion funnels.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Documentation Links */}
+              <div className="flex flex-wrap gap-3 pt-2 border-t border-afterpay-gray-200 dark:border-afterpay-gray-700">
+                <QuickLink href="https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging">
+                  OSM Documentation
+                </QuickLink>
+                <QuickLink href="https://developers.cash.app/cash-app-afterpay/docs/api">
+                  API Reference
+                </QuickLink>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -279,6 +285,7 @@ export function PaymentScheduleCodeSection({
   amount,
   currency = "USD"
 }: PaymentScheduleCodeSectionProps) {
+  const { config } = useConfig();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const widgetScriptTag = `<script src="https://portal.afterpay.com/afterpay.js"></script>`;
@@ -311,6 +318,11 @@ const widget = new AfterPay.Widgets.PaymentSchedule({
 widget.update({
   amount: { amount: newTotal.toFixed(2), currency: "${currency}" }
 });`;
+
+  // Entirely developer content — hide when dev mode is off
+  if (!config.developerMode) {
+    return null;
+  }
 
   return (
     <div className="border border-afterpay-gray-200 dark:border-afterpay-gray-700 rounded-lg overflow-hidden">

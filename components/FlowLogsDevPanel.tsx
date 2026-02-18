@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { getFlowLogs, FlowLogs, FlowLogEntry } from "@/lib/flowLogs";
+import { useConfig } from "@/components/ConfigProvider";
 
 interface FlowLogsDevPanelProps {
   className?: string;
@@ -44,6 +46,9 @@ export const useDevPanelState = () => {
 };
 
 export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
+  const { config } = useConfig();
+  const pathname = usePathname();
+
   const [isOpen, setIsOpen] = useState(false);
   const [showResizeHint, setShowResizeHint] = useState(false);
   const [flowLogs, setFlowLogs] = useState<FlowLogs | null>(null);
@@ -431,6 +436,11 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
     { value: "callback", label: "Events" },
     { value: "redirect", label: "Redirects" },
   ];
+
+  // Hide dev panel when developer mode is off (admin page always shows it)
+  if (!config.developerMode && pathname !== "/admin") {
+    return null;
+  }
 
   return (
     <div ref={panelRef} className={`fixed bottom-0 left-0 right-0 bg-afterpay-gray-900 text-white z-50 ${className}`}>
