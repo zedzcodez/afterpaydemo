@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/components/CartProvider";
+import { useConfig } from "@/components/ConfigProvider";
 import { formatPrice } from "@/lib/products";
-import { CheckoutExpress } from "@/components/CheckoutExpress";
 import { CheckoutStandard } from "@/components/CheckoutStandard";
 import { CheckoutCashApp } from "@/components/CheckoutCashApp";
 import { CheckoutProgress } from "@/components/CheckoutProgress";
@@ -14,8 +14,7 @@ import { FlowLogsDevPanel } from "@/components/FlowLogsDevPanel";
 import { OSMInfoSection } from "@/components/OSMInfoSection";
 import { getCartSkus, getCartCategories } from "@/lib/cart";
 
-type CheckoutMethod = "express" | "standard" | "cashapp";
-type ShippingFlow = "integrated" | "deferred";
+type CheckoutMethod = "standard" | "cashapp";
 
 export interface ShippingOption {
   id: string;
@@ -26,14 +25,13 @@ export interface ShippingOption {
 
 export default function CheckoutPage() {
   const { items, total } = useCart();
+  const { config } = useConfig();
   const searchParams = useSearchParams();
 
-  // Read initial values from URL params
+  // Read initial method from URL params
   const initialMethod = searchParams.get("method") as CheckoutMethod | null;
-  const initialShipping = searchParams.get("shipping") as ShippingFlow | null;
 
-  const [method, setMethod] = useState<CheckoutMethod>(initialMethod || "express");
-  const [initialShippingFlow] = useState<ShippingFlow | undefined>(initialShipping || undefined);
+  const [method, setMethod] = useState<CheckoutMethod>(initialMethod || "standard");
 
   // Shipping state for Order Summary - only used in Standard Checkout
   const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null);
@@ -45,15 +43,10 @@ export default function CheckoutPage() {
     setShippingAnimationKey((prev) => prev + 1);
   }, []);
 
-  // Reset shipping when switching away from Standard/Cash App (shipping happens in popup for Express)
-  useEffect(() => {
-    if (method !== "standard" && method !== "cashapp") {
-      setSelectedShipping(null);
-    }
-  }, [method]);
-
   // Calculate final total including shipping
   const finalTotal = total + (selectedShipping?.price ?? 0);
+
+  const showTabs = config.cashAppPay.enabled;
 
   if (items.length === 0) {
     return (
@@ -98,72 +91,50 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-3">
-            {/* Method Toggle */}
-            <div className="mb-8">
-              <div className="relative flex border-b border-afterpay-gray-200 dark:border-afterpay-gray-700">
-                {/* Sliding indicator */}
-                <div
-                  className="absolute bottom-0 h-0.5 bg-afterpay-mint transition-all duration-300 ease-out"
-                  style={{
-                    width: "33.333%",
-                    transform: `translateX(${method === "express" ? "0" : method === "standard" ? "100%" : "200%"})`,
-                  }}
-                />
-                <button
-                  onClick={() => setMethod("express")}
-                  className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
-                    method === "express"
-                      ? "text-afterpay-black dark:text-white"
-                      : "text-afterpay-gray-500 hover:text-afterpay-gray-700 dark:hover:text-afterpay-gray-300"
-                  }`}
-                >
-                  Express Checkout
-                  <span className="block text-xs font-normal mt-1">
-                    Afterpay.js Popup
-                  </span>
-                </button>
-                <button
-                  onClick={() => setMethod("standard")}
-                  className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
-                    method === "standard"
-                      ? "text-afterpay-black dark:text-white"
-                      : "text-afterpay-gray-500 hover:text-afterpay-gray-700 dark:hover:text-afterpay-gray-300"
-                  }`}
-                >
-                  Standard Checkout
-                  <span className="block text-xs font-normal mt-1">
-                    API Integration
-                  </span>
-                </button>
-                <button
-                  onClick={() => setMethod("cashapp")}
-                  className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
-                    method === "cashapp"
-                      ? "text-afterpay-black dark:text-white"
-                      : "text-afterpay-gray-500 hover:text-afterpay-gray-700 dark:hover:text-afterpay-gray-300"
-                  }`}
-                >
-                  Cash App Pay
-                  <span className="block text-xs font-normal mt-1">
-                    Pay Now
-                  </span>
-                </button>
+            {/* Method Toggle — only shown when Cash App Pay is enabled */}
+            {showTabs && (
+              <div className="mb-8">
+                <div className="relative flex border-b border-afterpay-gray-200 dark:border-afterpay-gray-700">
+                  {/* Sliding indicator */}
+                  <div
+                    className="absolute bottom-0 h-0.5 bg-afterpay-mint transition-all duration-300 ease-out"
+                    style={{
+                      width: "50%",
+                      transform: `translateX(${method === "standard" ? "0%" : "100%"})`,
+                    }}
+                  />
+                  <button
+                    onClick={() => setMethod("standard")}
+                    className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
+                      method === "standard"
+                        ? "text-afterpay-black dark:text-white"
+                        : "text-afterpay-gray-500 hover:text-afterpay-gray-700 dark:hover:text-afterpay-gray-300"
+                    }`}
+                  >
+                    Standard Checkout
+                    <span className="block text-xs font-normal mt-1">
+                      API Integration
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setMethod("cashapp")}
+                    className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
+                      method === "cashapp"
+                        ? "text-afterpay-black dark:text-white"
+                        : "text-afterpay-gray-500 hover:text-afterpay-gray-700 dark:hover:text-afterpay-gray-300"
+                    }`}
+                  >
+                    Cash App Pay
+                    <span className="block text-xs font-normal mt-1">
+                      Pay Now
+                    </span>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Method Description */}
             <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-lg p-4 mb-6">
-              {method === "express" && (
-                <div>
-                  <h3 className="font-medium mb-2">Express Checkout Flow</h3>
-                  <p className="text-sm text-afterpay-gray-600">
-                    Uses Afterpay.js to open a popup where customers can quickly
-                    complete their purchase. Supports integrated shipping
-                    (options shown in popup) or deferred shipping (options shown
-                    on your site).
-                  </p>
-                </div>
-              )}
               {method === "standard" && (
                 <div>
                   <h3 className="font-medium mb-2">Standard Checkout Flow</h3>
@@ -188,24 +159,20 @@ export default function CheckoutPage() {
             </div>
 
             {/* Checkout Forms — always mounted to preserve state, hidden via CSS */}
-            <div style={{ display: method === "express" ? undefined : "none" }}>
-              <CheckoutExpress
-                isActive={method === "express"}
-                initialShippingFlow={initialShippingFlow}
-              />
-            </div>
             <div style={{ display: method === "standard" ? undefined : "none" }}>
               <CheckoutStandard
                 isActive={method === "standard"}
                 onShippingChange={method === "standard" ? handleShippingChange : undefined}
               />
             </div>
-            <div style={{ display: method === "cashapp" ? undefined : "none" }}>
-              <CheckoutCashApp
-                isActive={method === "cashapp"}
-                onShippingChange={method === "cashapp" ? handleShippingChange : undefined}
-              />
-            </div>
+            {showTabs && (
+              <div style={{ display: method === "cashapp" ? undefined : "none" }}>
+                <CheckoutCashApp
+                  isActive={method === "cashapp"}
+                  onShippingChange={method === "cashapp" ? handleShippingChange : undefined}
+                />
+              </div>
+            )}
           </div>
 
           {/* Order Summary Sidebar */}

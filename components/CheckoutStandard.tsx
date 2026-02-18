@@ -19,8 +19,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "./CartProvider";
+import { useConfig } from "./ConfigProvider";
 import { formatPrice } from "@/lib/products";
 import { OSMPlacement } from "./OSMPlacement";
+import { AfterpayButton } from "./AfterpayButton";
 import { CodeViewer } from "./CodeViewer";
 import { getCartSkus, getCartCategories } from "@/lib/cart";
 import { initFlowLogs, addFlowLog, logCallback, setFlowSummary, updateFlowSummary, FlowSummary } from "@/lib/flowLogs";
@@ -99,11 +101,14 @@ const getShippingOptions = (cartTotal: number): ShippingOption[] => {
 export function CheckoutStandard({ isActive, onLog, onLogUpdate, onShippingChange }: CheckoutStandardProps) {
   const router = useRouter();
   const { items, total } = useCart();
+  const { config } = useConfig();
   const isDevPanelOpen = useDevPanelState();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [checkoutMode, setCheckoutMode] = useState<CheckoutMode>("redirect");
   const [isAfterpayReady, setIsAfterpayReady] = useState(false);
+
+  // Checkout mode driven by config
+  const checkoutMode: CheckoutMode = config.standardCheckout.method === "popup" ? "popup" : "redirect";
   const [formData, setFormData] = useState<FormData>({
     email: "",
     firstName: "",
@@ -313,8 +318,7 @@ export function CheckoutStandard({ isActive, onLog, onLogUpdate, onShippingChang
     };
   }, [router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setIsLoading(true);
     setError(null);
 
@@ -559,41 +563,39 @@ Afterpay.transfer({ token });`;
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Checkout Mode Toggle */}
+      <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
+        {/* Checkout Mode Indicator (controlled by config) */}
         <div>
           <label className="block text-sm font-medium mb-3">Checkout Method</label>
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setCheckoutMode("redirect")}
+            <div
               className={`flex-1 py-2 px-4 rounded-lg border-2 transition-colors ${
                 checkoutMode === "redirect"
                   ? "border-afterpay-mint bg-afterpay-mint/10"
-                  : "border-afterpay-gray-200 dark:border-afterpay-gray-700 hover:border-afterpay-gray-300 dark:hover:border-afterpay-gray-600"
+                  : "border-afterpay-gray-200 dark:border-afterpay-gray-700"
               }`}
             >
               <span className="block font-medium">Redirect</span>
               <span className="block text-xs text-afterpay-gray-500">
                 Full page navigation
               </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setCheckoutMode("popup")}
-              disabled={!isAfterpayReady}
+            </div>
+            <div
               className={`flex-1 py-2 px-4 rounded-lg border-2 transition-colors ${
                 checkoutMode === "popup"
                   ? "border-afterpay-mint bg-afterpay-mint/10"
-                  : "border-afterpay-gray-200 dark:border-afterpay-gray-700 hover:border-afterpay-gray-300 dark:hover:border-afterpay-gray-600"
-              } ${!isAfterpayReady ? "opacity-50 cursor-not-allowed" : ""}`}
+                  : "border-afterpay-gray-200 dark:border-afterpay-gray-700"
+              }`}
             >
               <span className="block font-medium">Popup</span>
               <span className="block text-xs text-afterpay-gray-500">
                 Modal overlay
               </span>
-            </button>
+            </div>
           </div>
+          <p className="text-xs text-afterpay-gray-500 mt-2">
+            Controlled via Settings panel
+          </p>
         </div>
 
         {/* Mode Description */}
@@ -823,28 +825,8 @@ Afterpay.transfer({ token });`;
           </div>
         )}
 
-        {/* Submit Button - Official Afterpay Asset */}
-        <button
-          type="submit"
-          disabled={isLoading || items.length === 0}
-          aria-label="Pay with Cash App Afterpay"
-          className="w-full flex items-center justify-center bg-afterpay-black rounded-lg hover:bg-afterpay-gray-800 transition-colors py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? (
-            <span className="flex items-center justify-center gap-2 py-2">
-              <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              <span className="text-white font-medium">Processing...</span>
-            </span>
-          ) : (
-            <img
-              alt="Pay with Cash App Afterpay"
-              aria-hidden="true"
-              src="https://static.afterpaycdn.com/en-US/integration/button/pay-with-afterpay/color-on-black.svg"
-              height="48"
-              className="h-12"
-            />
-          )}
-        </button>
+        {/* Submit Button - Branded Afterpay Button */}
+        <AfterpayButton variant="pay" onClick={handleSubmit} disabled={isLoading} />
       </form>
     </div>
   );
