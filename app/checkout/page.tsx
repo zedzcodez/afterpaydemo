@@ -9,7 +9,6 @@ import { useConfig } from "@/components/ConfigProvider";
 import { formatPrice } from "@/lib/products";
 import { CheckoutStandard } from "@/components/CheckoutStandard";
 import { CheckoutCashApp } from "@/components/CheckoutCashApp";
-import { CheckoutProgress } from "@/components/CheckoutProgress";
 import { FlowLogsDevPanel } from "@/components/FlowLogsDevPanel";
 import { OSMInfoSection } from "@/components/OSMInfoSection";
 import { getCartSkus, getCartCategories } from "@/lib/cart";
@@ -84,9 +83,6 @@ export default function CheckoutPage() {
             Edit Cart
           </Link>
         </div>
-
-        {/* Progress Timeline */}
-        <CheckoutProgress currentStep="checkout" />
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           {/* Main Content */}
