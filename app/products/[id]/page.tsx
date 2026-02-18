@@ -1,16 +1,18 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { getProduct, formatPrice, products } from "@/lib/products";
 import { useCart } from "@/components/CartProvider";
 import { OSMInfoSection } from "@/components/OSMInfoSection";
+import { BuyNowButton } from "@/components/BuyNowButton";
+import { useBuyNowCheckout } from "@/hooks/useBuyNowCheckout";
 
 export default function ProductDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const { addToCart } = useCart();
+  const { startBuyNow, isLoading: isBuyNowLoading } = useBuyNowCheckout();
   const product = getProduct(params.id as string);
 
   if (!product) {
@@ -26,12 +28,6 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = () => {
     addToCart(product);
-  };
-
-  const handleBuyNow = () => {
-    addToCart(product);
-    // Navigate to checkout with Express Checkout and Integrated Shipping pre-selected
-    router.push("/checkout?method=express&shipping=integrated");
   };
 
   return (
@@ -97,20 +93,18 @@ export default function ProductDetailPage() {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            {/* Buy with Afterpay - Official Asset */}
-            <button
-              onClick={handleBuyNow}
-              aria-label="Buy with Cash App Afterpay"
-              className="w-full flex items-center justify-center bg-afterpay-black rounded-lg hover:bg-afterpay-gray-800 transition-colors py-2"
-            >
-              <img
-                alt="Buy with Cash App Afterpay"
-                aria-hidden="true"
-                src="https://static.afterpaycdn.com/en-US/integration/button/buy-with-afterpay/color-on-black.svg"
-                height="48"
-                className="h-12"
-              />
-            </button>
+            {/* Buy Now with Afterpay Express Checkout */}
+            <BuyNowButton
+              onClick={() =>
+                startBuyNow({
+                  items: [{ product, quantity: 1 }],
+                  total: product.price,
+                })
+              }
+              disabled={isBuyNowLoading}
+            />
+            {/* Hidden target for Afterpay SDK popup initialization */}
+            <div id="buynow-afterpay-button" className="hidden" />
             <button
               onClick={handleAddToCart}
               className="w-full btn-outline"
