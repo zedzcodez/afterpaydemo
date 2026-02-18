@@ -184,13 +184,13 @@ export function Header() {
         href={href}
         className={`relative px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all duration-200 ${
           active
-            ? "text-afterpay-black dark:text-white"
-            : "text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white"
+            ? "text-white"
+            : "text-afterpay-gray-400 hover:text-white"
         }`}
       >
         {label}
         {active && (
-          <span className="absolute inset-0 bg-afterpay-mint/20 dark:bg-afterpay-mint/10 rounded-full -z-10" />
+          <span className="absolute inset-0 bg-afterpay-mint/15 rounded-full -z-10" />
         )}
       </Link>
     );
@@ -303,7 +303,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 glass dark:bg-afterpay-gray-900/90 border-b border-afterpay-gray-200/50 dark:border-afterpay-gray-700/50 shadow-soft">
+      <header className="sticky top-0 z-50 bg-afterpay-black border-b border-afterpay-gray-800 shadow-soft">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative flex items-center justify-between h-16">
             {/* Logo */}
@@ -311,10 +311,7 @@ export function Header() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 alt="Cash App Afterpay"
-                src={resolvedTheme === "dark"
-                  ? "https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-mono-white-32.svg"
-                  : "https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-mono-black-32.svg"
-                }
+                src="https://static.afterpaycdn.com/en-US/integration/logo/lockup/new-mono-white-32.svg"
                 height="32"
                 className="h-7 sm:h-8"
               />
@@ -334,7 +331,7 @@ export function Header() {
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-lg text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-800 transition-all duration-200"
+                className="p-2 rounded-lg text-afterpay-gray-400 hover:text-white hover:bg-white/10 transition-all duration-200"
                 aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               >
                 {resolvedTheme === "dark" ? (
@@ -349,7 +346,7 @@ export function Header() {
                 <button
                   ref={cartButtonRef}
                   onClick={toggleMiniCart}
-                  className="relative p-2 rounded-lg text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-800 transition-all duration-200"
+                  className="relative p-2 rounded-lg text-afterpay-gray-400 hover:text-white hover:bg-white/10 transition-all duration-200"
                   aria-label={`Shopping cart${itemCount > 0 ? `, ${itemCount} items` : ""}`}
                   aria-expanded={miniCartOpen}
                 >
@@ -400,7 +397,7 @@ export function Header() {
                 onClick={() => {
                   setMobileMenuOpen(true);
                 }}
-                className="relative p-2 rounded-lg text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-800 transition-all duration-200"
+                className="relative p-2 rounded-lg text-afterpay-gray-400 hover:text-white hover:bg-white/10 transition-all duration-200"
                 aria-label={`Shopping cart${itemCount > 0 ? `, ${itemCount} items` : ""}`}
               >
                 <ShoppingBagIcon className="w-5 h-5" />
@@ -419,7 +416,7 @@ export function Header() {
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="p-2 rounded-lg text-afterpay-gray-500 dark:text-afterpay-gray-400 hover:text-afterpay-black dark:hover:text-white hover:bg-afterpay-gray-100 dark:hover:bg-afterpay-gray-800 transition-all duration-200"
+                className="p-2 rounded-lg text-afterpay-gray-400 hover:text-white hover:bg-white/10 transition-all duration-200"
                 aria-label="Open menu"
               >
                 <MenuIcon className="w-5 h-5" />

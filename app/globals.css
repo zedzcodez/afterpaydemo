@@ -59,10 +59,17 @@ body {
   /* Mint gradient backgrounds */
   .bg-mint-gradient {
     @apply bg-gradient-to-br from-white via-afterpay-mint-light to-afterpay-mint/30;
+    @apply dark:from-afterpay-gray-900 dark:via-afterpay-gray-900 dark:to-afterpay-mint/10;
   }
 
   .bg-mint-gradient-strong {
     @apply bg-gradient-to-br from-afterpay-mint-light via-afterpay-mint to-afterpay-mint-dark;
+    @apply dark:from-afterpay-gray-900 dark:via-afterpay-gray-800 dark:to-afterpay-mint/20;
+  }
+
+  /* Interactive card hover with mint glow */
+  .hover-mint-glow {
+    @apply hover:shadow-mint-glow transition-shadow duration-300;
   }
 
   /* Glass effect */

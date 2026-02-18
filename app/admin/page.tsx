@@ -39,7 +39,7 @@ function ActionModal({ action, orderId, maxAmount, onClose, onSubmit, isLoading 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-        <h2 className="text-xl font-bold mb-2">{actionLabels[action].title}</h2>
+        <h2 className="text-xl font-display font-bold mb-2">{actionLabels[action].title}</h2>
         <p className="text-afterpay-gray-600 dark:text-afterpay-gray-400 text-sm mb-4">{actionLabels[action].description}</p>
 
         <form onSubmit={handleSubmit}>
@@ -144,7 +144,7 @@ function RadioCard({
   return (
     <div
       onClick={disabled ? undefined : onClick}
-      className={`p-4 rounded-lg border-2 transition-all ${
+      className={`p-4 rounded-xl border-2 transition-all ${
         disabled
           ? "opacity-50 cursor-not-allowed border-afterpay-gray-200 dark:border-afterpay-gray-700"
           : isSelected
@@ -173,8 +173,8 @@ function RadioCard({
 
 function ConfigCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 p-6 mb-6">
-      <h3 className="text-lg font-semibold dark:text-white mb-1">{title}</h3>
+    <div className="bg-white dark:bg-afterpay-gray-800 rounded-xl shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 p-6 mb-6">
+      <h3 className="text-lg font-display font-semibold dark:text-white mb-1">{title}</h3>
       {children}
     </div>
   );
@@ -767,10 +767,10 @@ function AdminContent() {
       <SectionHeader title="Merchant Info" />
 
       {/* Merchant Configuration */}
-      <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 p-6 mb-6">
+      <div className="bg-white dark:bg-afterpay-gray-800 rounded-xl shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold dark:text-white">Merchant Configuration</h3>
+            <h3 className="text-lg font-display font-semibold dark:text-white">Merchant Configuration</h3>
             <p className="text-sm text-afterpay-gray-600 dark:text-afterpay-gray-400 mt-1">
               Using environment credentials
             </p>
@@ -822,7 +822,7 @@ function AdminContent() {
   const renderOperationsTab = () => (
     <div>
       {/* Webhook Demo Section - Temporarily Unavailable */}
-      <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 mb-6 overflow-hidden opacity-60">
+      <div className="bg-white dark:bg-afterpay-gray-800 rounded-xl shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 mb-6 overflow-hidden opacity-60">
         <div className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-afterpay-gray-50 to-purple-50 dark:from-afterpay-gray-700 dark:to-purple-900/30">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
@@ -844,8 +844,8 @@ function AdminContent() {
       </div>
 
       {/* Lookup Section */}
-      <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 p-6 mb-6">
-        <h2 className="text-lg font-semibold mb-4 dark:text-white">Lookup Payment</h2>
+      <div className="bg-white dark:bg-afterpay-gray-800 rounded-xl shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 p-6 mb-6">
+        <h2 className="text-lg font-display font-semibold mb-4 dark:text-white">Lookup Payment</h2>
         <div className="flex gap-3">
           <input
             type="text"
@@ -876,7 +876,7 @@ function AdminContent() {
       {payment && (
         <div className="space-y-6">
           {/* Payment Overview */}
-          <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 overflow-hidden">
+          <div className="bg-white dark:bg-afterpay-gray-800 rounded-xl shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 overflow-hidden">
             <div className="px-6 py-4 bg-gradient-to-r from-afterpay-gray-50 to-blue-50 dark:from-afterpay-gray-700 dark:to-blue-900/30 border-b border-afterpay-gray-200 dark:border-afterpay-gray-700">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -916,7 +916,7 @@ function AdminContent() {
           </div>
 
           {/* Amount Breakdown */}
-          <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 overflow-hidden">
+          <div className="bg-white dark:bg-afterpay-gray-800 rounded-xl shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 overflow-hidden">
             <div className="px-6 py-4 bg-gradient-to-r from-afterpay-gray-50 to-afterpay-mint/10 dark:from-afterpay-gray-700 dark:to-afterpay-mint/20 border-b border-afterpay-gray-200 dark:border-afterpay-gray-700">
               <h2 className="text-lg font-semibold dark:text-white">Amount Breakdown</h2>
             </div>
@@ -1018,7 +1018,7 @@ function AdminContent() {
           )}
 
           {/* Actions */}
-          <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 overflow-hidden">
+          <div className="bg-white dark:bg-afterpay-gray-800 rounded-xl shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 overflow-hidden">
             <div className="px-6 py-4 bg-gradient-to-r from-afterpay-gray-50 to-afterpay-mint/10 dark:from-afterpay-gray-700 dark:to-afterpay-mint/20 border-b border-afterpay-gray-200 dark:border-afterpay-gray-700">
               <h2 className="text-lg font-semibold dark:text-white">Actions</h2>
             </div>
@@ -1056,7 +1056,7 @@ function AdminContent() {
 
           {/* Event History */}
           {((payment.events && payment.events.length > 0) || (payment.refunds && payment.refunds.length > 0)) && (
-            <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 overflow-hidden">
+            <div className="bg-white dark:bg-afterpay-gray-800 rounded-xl shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 overflow-hidden">
               <div className="px-6 py-4 bg-gradient-to-r from-afterpay-gray-50 to-purple-50 dark:from-afterpay-gray-700 dark:to-purple-900/30 border-b border-afterpay-gray-200 dark:border-afterpay-gray-700">
                 <h2 className="text-lg font-semibold dark:text-white">Event History</h2>
               </div>
@@ -1105,7 +1105,7 @@ function AdminContent() {
 
       {/* Empty State */}
       {!payment && !isLoading && !error && (
-        <div className="bg-white dark:bg-afterpay-gray-800 rounded-lg shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 p-12 text-center">
+        <div className="bg-white dark:bg-afterpay-gray-800 rounded-xl shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 p-12 text-center">
           <div className="w-16 h-16 bg-afterpay-gray-100 dark:bg-afterpay-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-afterpay-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

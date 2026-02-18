@@ -33,7 +33,7 @@ export default function CartPage() {
             d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
           />
         </svg>
-        <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
+        <h1 className="text-2xl font-display font-bold mb-4">Your cart is empty</h1>
         <p className="text-afterpay-gray-600 mb-6">
           Add some products to get started
         </p>
@@ -49,7 +49,7 @@ export default function CartPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold mb-8">Shopping Cart</h1>
+      <h1 className="text-3xl font-display font-bold mb-8 dark:text-white">Shopping Cart</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Cart Items */}
@@ -58,7 +58,7 @@ export default function CartPage() {
             {items.map((item) => (
               <div
                 key={item.product.id}
-                className="flex items-center gap-4 p-4 bg-white dark:bg-afterpay-gray-800 border border-afterpay-gray-200 dark:border-afterpay-gray-700 rounded-lg"
+                className="flex items-center gap-4 p-4 bg-white dark:bg-afterpay-gray-800 border border-afterpay-gray-200 dark:border-afterpay-gray-700 rounded-xl"
               >
                 {/* Product Image */}
                 <div className="w-24 h-24 bg-afterpay-gray-100 dark:bg-afterpay-gray-700 rounded-lg overflow-hidden flex-shrink-0 relative">
@@ -147,8 +147,8 @@ export default function CartPage() {
 
         {/* Order Summary */}
         <div className="lg:col-span-1">
-          <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-lg p-6 sticky top-24">
-            <h2 className="text-xl font-semibold mb-4 dark:text-white">Order Summary</h2>
+          <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-xl p-6 sticky top-24">
+            <h2 className="text-xl font-display font-semibold mb-4 dark:text-white">Order Summary</h2>
 
             <div className="space-y-3 mb-6">
               <div className="flex justify-between text-afterpay-gray-600 dark:text-afterpay-gray-300">

@@ -51,7 +51,7 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-        <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
+        <h1 className="text-2xl font-display font-bold mb-4">Your cart is empty</h1>
         <p className="text-afterpay-gray-600 mb-6">
           Add some products before checking out
         </p>
@@ -71,7 +71,7 @@ export default function CheckoutPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Checkout</h1>
+            <h1 className="text-3xl font-display font-bold dark:text-white">Checkout</h1>
             <p className="text-afterpay-gray-600">
               {items.length} {items.length === 1 ? "item" : "items"} -{" "}
               {formatPrice(total)}
@@ -134,7 +134,7 @@ export default function CheckoutPage() {
             )}
 
             {/* Method Description */}
-            <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-lg p-4 mb-6">
+            <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-xl p-4 mb-6">
               {method === "standard" && (
                 <div>
                   <h3 className="font-medium mb-2">Standard Checkout Flow</h3>
@@ -177,8 +177,8 @@ export default function CheckoutPage() {
 
           {/* Order Summary Sidebar */}
           <div className="lg:col-span-2">
-            <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-lg p-6 sticky top-24">
-              <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
+            <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-xl p-6 sticky top-24">
+              <h2 className="text-lg font-display font-semibold mb-4 dark:text-white">Order Summary</h2>
 
               {/* Cart Items */}
               <div className="space-y-4 mb-6">

@@ -227,7 +227,7 @@ function ConfirmationContent() {
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold mb-2 dark:text-white">Payment Failed</h1>
+          <h1 className="text-2xl font-display font-bold mb-2 dark:text-white">Payment Failed</h1>
           <p className="text-afterpay-gray-600 dark:text-afterpay-gray-400 mb-6">{error}</p>
           <Link
             href="/checkout"
@@ -254,7 +254,7 @@ function ConfirmationContent() {
   if (!orderDetails) {
     return (
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-        <h1 className="text-2xl font-bold mb-4 dark:text-white">No order found</h1>
+        <h1 className="text-2xl font-display font-bold mb-4 dark:text-white">No order found</h1>
         <Link
           href="/"
           className="inline-block px-6 py-3 bg-afterpay-black dark:bg-white text-white dark:text-afterpay-black font-medium rounded-lg hover:bg-afterpay-gray-800 dark:hover:bg-afterpay-gray-100 transition-colors"
@@ -300,7 +300,7 @@ function ConfirmationContent() {
             />
           </svg>
         </div>
-        <h1 className="text-3xl font-bold mb-2 dark:text-white">
+        <h1 className="text-3xl font-display font-bold mb-2 dark:text-white">
           {orderDetails.status === "CAPTURED"
             ? "Thank you for your order!"
             : "Payment Authorized!"}
@@ -314,7 +314,7 @@ function ConfirmationContent() {
 
       {/* Deferred Capture Notice */}
       {orderDetails.status === "AUTHORIZED" && (
-        <div className="bg-blue-50 dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-lg p-4 mb-8">
+        <div className="bg-blue-50 dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-xl p-4 mb-8">
           <div className="flex items-start gap-3">
             <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -340,8 +340,8 @@ function ConfirmationContent() {
       )}
 
       {/* Order Details */}
-      <div className="bg-afterpay-gray-50 dark:bg-slate-800 rounded-lg p-6 mb-8">
-        <h2 className="font-semibold mb-4 dark:text-white">Order Details</h2>
+      <div className="bg-afterpay-gray-50 dark:bg-slate-800 rounded-xl p-6 mb-8">
+        <h2 className="font-display font-semibold mb-4 dark:text-white">Order Details</h2>
         <dl className="space-y-3">
           <div className="flex justify-between">
             <dt className="text-afterpay-gray-600 dark:text-afterpay-gray-400">Order ID</dt>
