@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { captureFullPayment } from "@/lib/afterpay";
+import { captureFullPayment, toMoney } from "@/lib/afterpay";
 import { sanitizeError } from "@/lib/errors";
 import { captureFullRequestSchema, validateRequest } from "@/lib/validation";
 
 const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
 
 // Capture Full Payment - combines auth and capture in one call
-// Used for Immediate Capture mode
+// Used for Immediate Capture mode across all flows (Standard, Express, Cash App Pay)
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   const requestId = randomUUID();
@@ -20,14 +20,28 @@ export async function POST(request: NextRequest) {
     if (!validation.success) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
-    const { token, merchantReference } = validation.data;
+    const { token, merchantReference, amount, isCheckoutAdjusted, paymentScheduleChecksum } = validation.data;
 
     const requestBody: Record<string, unknown> = { requestId, token };
     if (merchantReference) {
       requestBody.merchantReference = merchantReference;
     }
+    if (amount) {
+      requestBody.amount = toMoney(amount);
+    }
+    if (isCheckoutAdjusted) {
+      requestBody.isCheckoutAdjusted = isCheckoutAdjusted;
+      if (paymentScheduleChecksum) {
+        requestBody.paymentScheduleChecksum = paymentScheduleChecksum;
+      }
+    }
 
-    const response = await captureFullPayment(token, requestId, merchantReference);
+    const response = await captureFullPayment(token, requestId, {
+      merchantReference,
+      amount: amount ? toMoney(amount) : undefined,
+      isCheckoutAdjusted,
+      paymentScheduleChecksum,
+    });
     const duration = Date.now() - startTime;
 
     // Return response with metadata for Developer Panel

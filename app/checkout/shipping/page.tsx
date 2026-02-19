@@ -244,127 +244,150 @@ function ShippingContent() {
     try {
       let orderId: string;
 
-      // Authorize with adjusted amount + checksum (for deferred shipping)
-      const authClientRequest = {
-        token: orderToken,
-        amount: finalTotal,
-        isCheckoutAdjusted: true,
-        paymentScheduleChecksum,
-      };
-
-      const authStartTime = Date.now();
-      const authResponse = await fetch("/api/afterpay/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(authClientRequest),
-      });
-
-      const authData = await authResponse.json();
-      const authDuration = Date.now() - authStartTime;
-
-      // Log request with FULL server-side payload from _meta
-      addFlowLog({
-        type: "api_request",
-        label: `Authorize Payment (${isImmediateCapture ? "Immediate" : "Deferred"} Mode)`,
-        method: "POST",
-        endpoint: "/api/afterpay/auth → /v2/payments/auth",
-        data: authData._meta?.requestBody || {
-          ...authClientRequest,
-          paymentScheduleChecksum: paymentScheduleChecksum.substring(0, 20) + "...",
-        },
-        fullUrl: authData._meta?.fullUrl,
-        headers: authData._meta?.headers,
-      });
-
-      addFlowLog({
-        type: "api_response",
-        label: "Authorization Response",
-        method: "POST",
-        endpoint: "/v2/payments/auth",
-        status: authResponse.status,
-        data: authData,
-        duration: authDuration,
-        fullUrl: authData._meta?.fullUrl,
-      });
-
-      if (authData.error) {
-        throw new Error(authData.error);
-      }
-
-      if (authData.status !== "APPROVED") {
-        throw new Error("Payment was not approved");
-      }
-
-      // Update flow summary with adjustment details and auth response
-      updateFlowSummary({
-        requestConfig: {
-          isCheckoutAdjusted: true,
-          paymentScheduleChecksum: paymentScheduleChecksum,
-        },
-        responseData: {
-          id: authData.id,
-          status: authData.status,
-          originalAmount: authData.originalAmount,
-          openToCaptureAmount: authData.openToCapture,
-        },
-        adjustment: {
-          originalAmount: { amount: cartTotal.toFixed(2), currency: "USD" },
-          shippingAmount: { amount: selectedShipping.price.toFixed(2), currency: "USD" },
-          shippingName: selectedShipping.name,
-          adjustedAmount: { amount: finalTotal.toFixed(2), currency: "USD" },
-          checksum: paymentScheduleChecksum,
-        },
-      });
-
-      orderId = authData.id;
-
-      // Only capture immediately if in Immediate Capture mode
       if (isImmediateCapture) {
+        // Immediate Capture: Single-step capture-full with adjusted amount
         const captureClientRequest = {
-          orderId: authData.id,
+          token: orderToken,
           amount: finalTotal,
           isCheckoutAdjusted: true,
           paymentScheduleChecksum,
         };
 
-        const captureStartTime = Date.now();
-        const captureResponse = await fetch("/api/afterpay/capture", {
+        const startTime = Date.now();
+        const response = await fetch("/api/afterpay/capture-full", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(captureClientRequest),
         });
 
-        const captureData = await captureResponse.json();
-        const captureDuration = Date.now() - captureStartTime;
+        const data = await response.json();
+        const duration = Date.now() - startTime;
 
-        // Log request with FULL server-side payload from _meta
         addFlowLog({
           type: "api_request",
-          label: "Capture Payment (Immediate Mode)",
+          label: "Capture Full Payment (Immediate Mode - Adjusted Amount)",
           method: "POST",
-          endpoint: `/api/afterpay/capture → /v2/payments/${authData.id}/capture`,
-          data: captureData._meta?.requestBody || {
+          endpoint: "/api/afterpay/capture-full → /v2/payments/capture",
+          data: data._meta?.requestBody || {
             ...captureClientRequest,
             paymentScheduleChecksum: paymentScheduleChecksum.substring(0, 20) + "...",
           },
-          fullUrl: captureData._meta?.fullUrl,
-          headers: captureData._meta?.headers,
+          fullUrl: data._meta?.fullUrl,
+          headers: data._meta?.headers,
         });
 
         addFlowLog({
           type: "api_response",
-          label: "Capture Response",
+          label: "Capture Full Response",
           method: "POST",
-          endpoint: `/v2/payments/${authData.id}/capture`,
-          status: captureResponse.status,
-          data: captureData,
-          duration: captureDuration,
-          fullUrl: captureData._meta?.fullUrl,
+          endpoint: "/v2/payments/capture",
+          status: response.status,
+          data,
+          duration,
+          fullUrl: data._meta?.fullUrl,
         });
 
-        if (captureData.error) {
-          throw new Error(captureData.error);
+        if (data.error) {
+          throw new Error(data.errorDetail || data.error);
         }
+
+        if (data.status !== "APPROVED") {
+          throw new Error("Payment was not approved");
+        }
+
+        updateFlowSummary({
+          requestConfig: {
+            isCheckoutAdjusted: true,
+            paymentScheduleChecksum: paymentScheduleChecksum,
+          },
+          responseData: {
+            id: data.id,
+            status: data.status,
+            originalAmount: data.originalAmount,
+            openToCaptureAmount: data.openToCapture,
+          },
+          adjustment: {
+            originalAmount: { amount: cartTotal.toFixed(2), currency: "USD" },
+            shippingAmount: { amount: selectedShipping.price.toFixed(2), currency: "USD" },
+            shippingName: selectedShipping.name,
+            adjustedAmount: { amount: finalTotal.toFixed(2), currency: "USD" },
+            checksum: paymentScheduleChecksum,
+          },
+        });
+
+        orderId = data.id;
+      } else {
+        // Deferred Capture: Authorize only, capture later from Admin Panel
+        const authClientRequest = {
+          token: orderToken,
+          amount: finalTotal,
+          isCheckoutAdjusted: true,
+          paymentScheduleChecksum,
+        };
+
+        const startTime = Date.now();
+        const authResponse = await fetch("/api/afterpay/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(authClientRequest),
+        });
+
+        const authData = await authResponse.json();
+        const duration = Date.now() - startTime;
+
+        addFlowLog({
+          type: "api_request",
+          label: "Authorize Payment (Deferred Mode - Adjusted Amount)",
+          method: "POST",
+          endpoint: "/api/afterpay/auth → /v2/payments/auth",
+          data: authData._meta?.requestBody || {
+            ...authClientRequest,
+            paymentScheduleChecksum: paymentScheduleChecksum.substring(0, 20) + "...",
+          },
+          fullUrl: authData._meta?.fullUrl,
+          headers: authData._meta?.headers,
+        });
+
+        addFlowLog({
+          type: "api_response",
+          label: "Authorization Response",
+          method: "POST",
+          endpoint: "/v2/payments/auth",
+          status: authResponse.status,
+          data: authData,
+          duration,
+          fullUrl: authData._meta?.fullUrl,
+        });
+
+        if (authData.error) {
+          throw new Error(authData.errorDetail || authData.error);
+        }
+
+        if (authData.status !== "APPROVED") {
+          throw new Error("Payment was not approved");
+        }
+
+        updateFlowSummary({
+          requestConfig: {
+            isCheckoutAdjusted: true,
+            paymentScheduleChecksum: paymentScheduleChecksum,
+          },
+          responseData: {
+            id: authData.id,
+            status: authData.status,
+            originalAmount: authData.originalAmount,
+            openToCaptureAmount: authData.openToCapture,
+          },
+          adjustment: {
+            originalAmount: { amount: cartTotal.toFixed(2), currency: "USD" },
+            shippingAmount: { amount: selectedShipping.price.toFixed(2), currency: "USD" },
+            shippingName: selectedShipping.name,
+            adjustedAmount: { amount: finalTotal.toFixed(2), currency: "USD" },
+            checksum: paymentScheduleChecksum,
+          },
+        });
+
+        orderId = authData.id;
       }
 
       // Store cart data in sessionStorage before clearing (for confirmation page)

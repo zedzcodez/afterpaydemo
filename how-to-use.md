@@ -205,10 +205,10 @@ Express Checkout uses Afterpay.js to provide a streamlined popup-based checkout 
 │                                                                             │
 │  5. Process Payment (depends on capture mode)                               │
 │                                                                             │
-│     IMMEDIATE CAPTURE (two steps):                                          │
-│     LOCAL:    POST /api/afterpay/auth → POST /api/afterpay/capture          │
-│     AFTERPAY: POST /v2/payments/auth → POST /v2/payments/{id}/capture       │
-│     → Authorize first, then capture immediately                             │
+│     IMMEDIATE CAPTURE (single step):                                        │
+│     LOCAL:    POST /api/afterpay/capture-full                               │
+│     AFTERPAY: POST /v2/payments/capture                                     │
+│     → Auth + capture combined, status = CAPTURED                            │
 │                                                                             │
 │     DEFERRED CAPTURE (auth only):                                           │
 │     LOCAL:    POST /api/afterpay/auth                                       │

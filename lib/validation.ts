@@ -85,6 +85,9 @@ export const voidRequestSchema = z.object({
 export const captureFullRequestSchema = z.object({
   token: z.string().min(1, 'Token is required'),
   merchantReference: z.string().optional(),
+  amount: z.number().positive().optional(),
+  isCheckoutAdjusted: z.boolean().optional(),
+  paymentScheduleChecksum: z.string().optional(),
 });
 
 // Type inference helpers

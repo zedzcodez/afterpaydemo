@@ -204,7 +204,7 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
         });
       };
 
-      // Helper: handle authorization (and optional capture for immediate mode)
+      // Helper: handle payment processing (capture-full for immediate, auth for deferred)
       const handleAuthorization = async (orderToken: string): Promise<void> => {
         const isImmediateCapture = captureMode === "immediate";
         const currentParams = paramsRef.current!;
@@ -213,99 +213,61 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
           let orderId: string;
 
           if (isImmediateCapture) {
-            // Immediate Capture: Auth first then capture
-            const authClientRequest = { token: orderToken };
+            // Immediate Capture: Single-step capture-full (auth + capture combined)
+            const captureClientRequest = { token: orderToken };
 
-            const authStartTime = Date.now();
-            const authResponse = await fetch("/api/afterpay/auth", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(authClientRequest),
-            });
-
-            const authData = await authResponse.json();
-            const authDuration = Date.now() - authStartTime;
-
-            addFlowLog({
-              type: "api_request",
-              label: "Authorize Payment (Immediate Mode - Step 1)",
-              method: "POST",
-              endpoint: "/api/afterpay/auth -> /v2/payments/auth",
-              data: authData._meta?.requestBody || authClientRequest,
-              fullUrl: authData._meta?.fullUrl,
-              headers: authData._meta?.headers,
-            });
-
-            addFlowLog({
-              type: "api_response",
-              label: "Authorization Response",
-              method: "POST",
-              endpoint: "/v2/payments/auth",
-              status: authResponse.status,
-              data: authData,
-              duration: authDuration,
-              fullUrl: authData._meta?.fullUrl,
-            });
-
-            if (authData.status !== "APPROVED") {
-              throw new Error("Payment authorization failed");
-            }
-
-            // Capture the authorized amount
-            const captureAmount = parseFloat(
-              authData.amount?.amount || authData.originalAmount?.amount
-            );
-            const captureClientRequest = { orderId: authData.id, amount: captureAmount };
-
-            const captureStartTime = Date.now();
-            const captureResponse = await fetch("/api/afterpay/capture", {
+            const startTime = Date.now();
+            const response = await fetch("/api/afterpay/capture-full", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(captureClientRequest),
             });
 
-            const captureData = await captureResponse.json();
-            const captureDuration = Date.now() - captureStartTime;
+            const data = await response.json();
+            const duration = Date.now() - startTime;
 
             addFlowLog({
               type: "api_request",
-              label: "Capture Payment (Immediate Mode - Step 2)",
+              label: "Capture Full Payment (Immediate Mode)",
               method: "POST",
-              endpoint: `/api/afterpay/capture -> /v2/payments/${authData.id}/capture`,
-              data: captureData._meta?.requestBody || captureClientRequest,
-              fullUrl: captureData._meta?.fullUrl,
-              headers: captureData._meta?.headers,
+              endpoint: "/api/afterpay/capture-full -> /v2/payments/capture",
+              data: data._meta?.requestBody || captureClientRequest,
+              fullUrl: data._meta?.fullUrl,
+              headers: data._meta?.headers,
             });
 
             addFlowLog({
               type: "api_response",
-              label: "Capture Response",
+              label: "Capture Full Response",
               method: "POST",
-              endpoint: `/v2/payments/${authData.id}/capture`,
-              status: captureResponse.status,
-              data: captureData,
-              duration: captureDuration,
-              fullUrl: captureData._meta?.fullUrl,
+              endpoint: "/v2/payments/capture",
+              status: response.status,
+              data,
+              duration,
+              fullUrl: data._meta?.fullUrl,
             });
 
-            if (captureData.error) {
-              throw new Error(captureData.error);
+            if (data.error) {
+              throw new Error(data.errorDetail || data.error);
+            }
+
+            if (data.status !== "APPROVED") {
+              throw new Error("Payment was not approved");
             }
 
             updateFlowSummary({
               responseData: {
-                token: authData.token,
                 "data.orderToken": orderToken,
-                id: authData.id,
-                status: captureData.status || "CAPTURED",
-                originalAmount: authData.originalAmount,
-                openToCaptureAmount: captureData.openToCapture,
+                id: data.id,
+                status: data.status,
+                originalAmount: data.originalAmount,
+                openToCaptureAmount: data.openToCapture,
               },
             });
 
-            orderId = authData.id;
+            orderId = data.id;
           } else {
-            // Deferred Capture: Only authorize
+            // Deferred Capture: Only authorize, capture later from Admin Panel
             const authClientRequest = { token: orderToken };
 
             const startTime = Date.now();
@@ -338,6 +300,10 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
               duration,
               fullUrl: data._meta?.fullUrl,
             });
+
+            if (data.error) {
+              throw new Error(data.errorDetail || data.error);
+            }
 
             if (data.status !== "APPROVED") {
               throw new Error("Payment was not approved");

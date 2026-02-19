@@ -226,15 +226,31 @@ export async function getCheckout(token: string): Promise<CheckoutResponse> {
 }
 
 // Capture Full Payment - combines auth and capture in one call
-// Used for Immediate Capture mode
+// Used for Immediate Capture mode across all flows (Standard, Express, Cash App Pay)
+export interface CaptureFullOptions {
+  merchantReference?: string;
+  amount?: Money;
+  isCheckoutAdjusted?: boolean;
+  paymentScheduleChecksum?: string;
+}
+
 export async function captureFullPayment(
   token: string,
   requestId: string,
-  merchantReference?: string
+  options?: CaptureFullOptions
 ): Promise<CaptureResponse> {
-  const body: { token: string; requestId: string; merchantReference?: string } = { token, requestId };
-  if (merchantReference) {
-    body.merchantReference = merchantReference;
+  const body: Record<string, unknown> = { token, requestId };
+  if (options?.merchantReference) {
+    body.merchantReference = options.merchantReference;
+  }
+  if (options?.amount) {
+    body.amount = options.amount;
+  }
+  if (options?.isCheckoutAdjusted) {
+    body.isCheckoutAdjusted = true;
+    if (options.paymentScheduleChecksum) {
+      body.paymentScheduleChecksum = options.paymentScheduleChecksum;
+    }
   }
   return afterpayFetch<CaptureResponse>("/v2/payments/capture", {
     method: "POST",
