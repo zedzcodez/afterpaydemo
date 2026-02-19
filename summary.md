@@ -122,6 +122,11 @@ Wraps all Afterpay v2 endpoints:
 | POST /api/afterpay/refund | POST /v2/payments/{id}/refund | Refund (full/partial) |
 | POST /api/afterpay/void | POST /v2/payments/{id}/void | Void (full/partial) |
 
+### Reliability
+
+- **Retry Logic** - Automatic retry on transient 500/502/503/504 errors with linear backoff
+- **Error Detail** - API responses include both sanitized (`error`) and raw (`errorDetail`) error messages
+
 ### Security
 
 - **Input Validation** - All API routes validate input with Zod schemas

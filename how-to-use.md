@@ -203,13 +203,17 @@ Express Checkout uses Afterpay.js to provide a streamlined popup-based checkout 
 │  4. Customer Completes in Popup                                             │
 │     → Returns orderToken via onComplete callback                            │
 │                                                                             │
-│  5. Authorize Payment                                                       │
+│  5. Process Payment (depends on capture mode)                               │
+│                                                                             │
+│     IMMEDIATE CAPTURE (two steps):                                          │
+│     LOCAL:    POST /api/afterpay/auth → POST /api/afterpay/capture          │
+│     AFTERPAY: POST /v2/payments/auth → POST /v2/payments/{id}/capture       │
+│     → Authorize first, then capture immediately                             │
+│                                                                             │
+│     DEFERRED CAPTURE (auth only):                                           │
 │     LOCAL:    POST /api/afterpay/auth                                       │
 │     AFTERPAY: POST /v2/payments/auth                                        │
-│                                                                             │
-│  6. Capture (if immediate mode)                                             │
-│     LOCAL:    POST /api/afterpay/capture-full                               │
-│     AFTERPAY: POST /v2/payments/capture                                     │
+│     → Auth only, capture later from Admin Panel                             │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -375,15 +379,17 @@ Standard Checkout uses server-side API calls with customer information collected
 │  3. Customer Returns                                                        │
 │     ← orderToken in URL query parameter                                     │
 │                                                                             │
-│  4. Authorize Payment                                                       │
+│  4. Process Payment (depends on capture mode)                               │
+│                                                                             │
+│     IMMEDIATE CAPTURE (single step):                                        │
+│     LOCAL:    POST /api/afterpay/capture-full                               │
+│     AFTERPAY: POST /v2/payments/capture                                     │
+│     → Auth + capture combined, status = CAPTURED                            │
+│                                                                             │
+│     DEFERRED CAPTURE (auth only):                                           │
 │     LOCAL:    POST /api/afterpay/auth                                       │
 │     AFTERPAY: POST /v2/payments/auth                                        │
-│     DOCS:     .../payments/auth                                             │
-│                                                                             │
-│  5. Capture Payment (if immediate mode)                                     │
-│     LOCAL:    POST /api/afterpay/capture                                    │
-│     AFTERPAY: POST /v2/payments/{orderId}/capture                           │
-│     DOCS:     .../payments/capture-payment                                  │
+│     → Auth only, capture later from Admin Panel                             │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -497,13 +503,17 @@ Cash App Pay lets customers pay now using their Cash App account. On desktop, a 
 │  5. onComplete Callback                                                     │
 │     → Returns orderToken, status, cashtag                                   │
 │                                                                             │
-│  6. Authorize Payment                                                       │
-│     LOCAL:    POST /api/afterpay/auth                                       │
-│     AFTERPAY: POST /v2/payments/auth                                        │
+│  6. Process Payment (depends on capture mode)                               │
 │                                                                             │
-│  7. Capture (if immediate mode)                                             │
+│     IMMEDIATE CAPTURE (single step):                                        │
 │     LOCAL:    POST /api/afterpay/capture-full                               │
 │     AFTERPAY: POST /v2/payments/capture                                     │
+│     → Auth + capture combined, status = CAPTURED                            │
+│                                                                             │
+│     DEFERRED CAPTURE (auth only):                                           │
+│     LOCAL:    POST /api/afterpay/auth                                       │
+│     AFTERPAY: POST /v2/payments/auth                                        │
+│     → Auth only, capture later from Admin Panel                             │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -922,6 +932,33 @@ This ensures customers don't lose their cart if checkout is interrupted.
 | `/api/webhooks/afterpay` | POST | - | Receive webhook events | [Webhooks](https://developers.cash.app/cash-app-afterpay/guides/api-development/webhook-signature-generation) |
 
 **Sandbox Base URL:** `https://global-api-sandbox.afterpay.com`
+
+### Server-Side Retry Logic
+
+All Afterpay API calls include automatic retry logic for transient server errors. The `afterpayFetch` wrapper in `lib/afterpay.ts` handles this transparently:
+
+- **Retried status codes:** 500, 502, 503, 504
+- **Max retries:** 2 (3 total attempts)
+- **Backoff:** Linear (1s, 2s)
+- **Non-retried errors:** 4xx client errors are thrown immediately
+
+This is especially useful with the Afterpay sandbox environment, which occasionally returns transient 502 "Bad Gateway" or 500 "INTERNAL" errors.
+
+### Error Response Format
+
+All API routes return structured error responses:
+
+```json
+{
+  "error": "An error occurred. Please try again.",
+  "errorDetail": "Afterpay API error: Bad Gateway"
+}
+```
+
+- `error` — Sanitized, user-safe error message (from `lib/errors.ts`)
+- `errorDetail` — Raw Afterpay API error message for debugging
+
+The client components use `errorDetail` (when available) to display more specific error information in the UI.
 
 ---
 
@@ -1383,6 +1420,13 @@ Toggle between light and dark themes using the sun/moon icon in the header. The 
 ## Changelog
 
 ### February 2026
+
+#### v3.0.1 - Cash App Pay Capture Fix
+- **Immediate Capture Fix**: Cash App Pay now uses single-step `POST /v2/payments/capture` (was incorrectly using two-step auth + capture)
+- **Deferred Capture Fix**: Cash App Pay deferred flow correctly uses `POST /v2/payments/auth` only
+- **Error Detail Surfacing**: All API routes now return `errorDetail` field with raw Afterpay error messages alongside sanitized `error` field
+- **Server-Side Retry Logic**: `afterpayFetch` automatically retries on transient 500/502/503/504 errors with linear backoff (max 2 retries)
+- **SDK Navigation Fix**: Cash App Pay confirmation redirect uses `window.location.href` instead of `router.push` to fully clear Pay Kit state between orders
 
 #### v3.0.0 - Configurable Demo Platform
 - **Centralized Configuration**: New Admin Configuration tab with toggles for Express Checkout, Cash App Pay, Developer Mode, capture mode, and checkout method
