@@ -14,7 +14,8 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { startBuyNow, isLoading: isBuyNowLoading } = useBuyNowCheckout();
+  const targetId = `buynow-afterpay-button-${product.id}`;
+  const { startBuyNow, isLoading: isBuyNowLoading } = useBuyNowCheckout(targetId);
   const { addToCart } = useCart();
 
   return (
@@ -61,9 +62,8 @@ export function ProductCard({ product }: ProductCardProps) {
       </Link>
 
       {/* Buy Now & Add to Cart Buttons */}
-      <div className="flex gap-2 px-4 pb-4">
+      <div className="space-y-2 px-4 pb-4">
         <BuyNowButton
-          size="compact"
           onClick={() =>
             startBuyNow({
               items: [{ product, quantity: 1 }],
@@ -71,20 +71,19 @@ export function ProductCard({ product }: ProductCardProps) {
             })
           }
           disabled={isBuyNowLoading}
-          className="flex-[3]"
         />
         <button
           onClick={() => {
             addToCart(product);
           }}
-          className="flex-[2] h-10 rounded-[12px] border-2 border-afterpay-black dark:border-white text-afterpay-black dark:text-white font-display font-bold text-sm hover:bg-afterpay-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all active:scale-[0.98] cursor-pointer"
+          className="w-full btn-outline"
         >
-          ADD
+          Add to Cart
         </button>
       </div>
 
-      {/* Hidden SDK target for Buy Now popup */}
-      <div id="buynow-afterpay-button" className="hidden" />
+      {/* SDK target for Buy Now popup (zero-size, must not be display:none) */}
+      <div id={targetId} className="absolute w-0 h-0 overflow-hidden" />
     </div>
   );
 }

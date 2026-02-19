@@ -77,7 +77,7 @@ function getAfterpaySdk() {
   return window.Afterpay ?? null;
 }
 
-export function useBuyNowCheckout(): UseBuyNowCheckoutReturn {
+export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): UseBuyNowCheckoutReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -397,7 +397,7 @@ export function useBuyNowCheckout(): UseBuyNowCheckoutReturn {
         shippingFlow === "integrated"
           ? {
               countryCode: "US",
-              target: "#buynow-afterpay-button",
+              target: `#${targetId}`,
               addressMode:
                 sdk.ADDRESS_MODES?.ADDRESS_WITH_SHIPPING_OPTIONS ||
                 "ADDRESS_WITH_SHIPPING_OPTIONS",
@@ -482,7 +482,7 @@ export function useBuyNowCheckout(): UseBuyNowCheckoutReturn {
             }
           : {
               countryCode: "US",
-              target: "#buynow-afterpay-button",
+              target: `#${targetId}`,
               shippingOptionRequired: false,
               buyNow: true,
               onCommenceCheckout: async (actions: {
@@ -570,13 +570,18 @@ export function useBuyNowCheckout(): UseBuyNowCheckoutReturn {
 
       try {
         sdk.initializeForPopup(popupConfig);
+
+        // initializeForPopup binds a click handler to the target element.
+        // Clicking the target triggers onCommenceCheckout and opens the popup.
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) targetEl.click();
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to initialize Afterpay popup";
         setError(message);
         setIsLoading(false);
       }
     },
-    [config.expressCheckout.type, config.captureMode, clearCart, router]
+    [targetId, config.expressCheckout.type, config.captureMode, clearCart, router]
   );
 
   return { startBuyNow, isLoading, error };

@@ -4,18 +4,13 @@ import React from "react";
 import { useTheme } from "@/components/ThemeProvider";
 
 interface AfterpayButtonProps {
-  variant: "continue" | "pay";
+  variant: "pay";
   onClick: () => void;
   disabled?: boolean;
   className?: string;
 }
 
 const SVG_URLS = {
-  continue: {
-    light:
-      "https://static.afterpaycdn.com/en-US/integration/button/continue-with-afterpay/color-on-black.svg",
-    dark: "https://static.afterpay.com/en-US/integration/button/continue-with-afterpay/black-on-green.svg",
-  },
   pay: {
     light:
       "https://static.afterpaycdn.com/en-US/integration/button/pay-with-afterpay/color-on-black.svg",
@@ -24,7 +19,6 @@ const SVG_URLS = {
 } as const;
 
 const ARIA_LABELS = {
-  continue: "Continue with Afterpay",
   pay: "Pay with Afterpay",
 } as const;
 
@@ -47,7 +41,7 @@ export function AfterpayButton({
       disabled={disabled}
       aria-label={ariaLabel}
       className={[
-        "w-full h-12 bg-transparent border-none p-0 transition-opacity duration-150 ease-in-out",
+        "w-full h-12 bg-afterpay-black dark:bg-afterpay-mint rounded-xl border-none p-0 transition-opacity duration-150 ease-in-out",
         disabled
           ? "opacity-50 cursor-not-allowed"
           : "hover:opacity-90 cursor-pointer",
@@ -60,7 +54,7 @@ export function AfterpayButton({
       <img
         src={svgUrl}
         alt={ariaLabel}
-        className="w-full h-full object-contain"
+        className="h-full mx-auto object-contain"
         draggable={false}
       />
     </button>

@@ -64,6 +64,8 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     const safeMessage = sanitizeError(error, "auth");
-    return NextResponse.json({ error: safeMessage }, { status: 500 });
+    // Include raw error for developer panel debugging
+    const rawMessage = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: safeMessage, errorDetail: rawMessage }, { status: 500 });
   }
 }

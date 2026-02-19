@@ -275,5 +275,84 @@ Access the testing guide directly within the app at `/docs`:
 
 ---
 
+## v3.0.0 - Configurable Demo Platform (2026-02-18)
+
+Major redesign transforming the app from a developer showcase into a configurable demo platform with centralized Admin configuration, inline Express Checkout, and developer mode toggle.
+
+### New Architecture
+
+| Component | Description |
+|-----------|-------------|
+| ConfigProvider | React Context + localStorage for centralized app configuration |
+| AppConfig | Interface defining all configurable features (Express, Cash App, Developer Mode, etc.) |
+| useBuyNowCheckout | Reusable hook for inline Express Checkout popup flow |
+| BuyNowButton | Custom mint-colored Express Checkout button, config-gated |
+| AfterpayButton | Official Afterpay SVG branded buttons (continue/pay variants) |
+
+### Key Changes
+
+| Change | Before (v2.x) | After (v3.0) |
+|--------|---------------|--------------|
+| Express Checkout | Tab on `/checkout` page | Inline via "Buy Now" buttons on Product, Cart, Mini-cart |
+| Configuration | Scattered localStorage keys | Centralized ConfigProvider + Admin Configuration tab |
+| Checkout page | 3 tabs (Express, Standard, Cash App) | Standard + Cash App only (conditional) |
+| Admin page | Single page with capture toggle | Two tabs: Configuration + Payment Operations |
+| Developer content | Always visible | Toggleable via Developer Mode setting |
+| Typography | Outfit + Plus Jakarta Sans | Clash Display + General Sans + JetBrains Mono |
+| Navigation | Grouped (Demo / Tools) | Flat nav + mini-cart dropdown + dev mode indicator |
+| Submit button | Text "Pay with Afterpay" | Official branded SVG button |
+
+### Commits
+
+```
+f8331b1 feat: add ConfigProvider with AppConfig types and localStorage persistence
+fe95d43 feat: add Bold Brand-Forward typography with Clash Display, General Sans, JetBrains Mono
+53781f4 feat: add BuyNowButton and AfterpayButton branded components
+9633c63 feat: redesign Admin page with Configuration and Payment Operations tabs
+f64fe2b feat: redesign Header with mini-cart dropdown and developer mode indicator
+97de863 feat: add inline Buy Now Express Checkout to product detail page
+77f33b8 feat: add Buy Now and Add to Cart buttons on product grid cards
+cccc2d2 feat: add Buy Now and Continue with Afterpay branded buttons to Cart page
+5a13252 feat: simplify checkout page to Standard + Cash App only, add branded Pay button
+7e1e583 feat: wire developer mode toggle across all pages
+7e1780d feat: wire all checkout components to centralized config
+1059d3f feat: apply Bold Brand-Forward visual styling across all pages
+2c29e97 chore: remove legacy CheckoutProgress from checkout page
+169c787 fix: prevent Buy Now button text clipping on product grid cards
+```
+
+### Files Created
+
+```
+lib/config.ts                    # AppConfig types, defaults, storage utilities
+components/ConfigProvider.tsx     # React Context provider with useConfig() hook
+components/BuyNowButton.tsx      # Custom Express Checkout button (config-gated)
+components/AfterpayButton.tsx    # Official Afterpay branded SVG buttons
+hooks/useBuyNowCheckout.ts       # Reusable Express Checkout popup hook
+```
+
+### Files Modified (Major)
+
+```
+app/layout.tsx                   # ConfigProvider wrapper, Fontshare CDN, JetBrains Mono
+app/admin/page.tsx               # Configuration + Payment Operations tabs
+components/Header.tsx            # Flat nav, mini-cart dropdown, dev mode indicator
+app/checkout/page.tsx            # Simplified to Standard + Cash App
+components/CheckoutStandard.tsx  # Branded Pay button, config-driven mode
+components/ProductCard.tsx       # Buy Now + Add buttons
+app/products/[id]/page.tsx       # Buy Now button integration
+app/cart/page.tsx                # Buy Now + Continue with Afterpay buttons
+components/FlowLogsDevPanel.tsx  # Developer mode gating
+tailwind.config.ts               # New font families, terminal colors
+app/globals.css                  # Dev panel utilities, mint gradients
+```
+
+### Design Document
+
+- [2026-02-17-app-redesign-design.md](./2026-02-17-app-redesign-design.md) - Full design specification
+- [2026-02-17-app-redesign-plan.md](./2026-02-17-app-redesign-plan.md) - Implementation plan (13 tasks, all complete)
+
+---
+
 *Generated: 2026-02-04*
-*Updated: 2026-02-04 - Added documentation viewer, navigation redesign, and UI improvements*
+*Updated: 2026-02-18 - Added v3.0.0 Configurable Demo Platform release*

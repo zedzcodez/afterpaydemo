@@ -14,36 +14,24 @@ This application demonstrates how merchants integrate Afterpay into their e-comm
 - **Test checkout flows** - Standard and Cash App Pay on the checkout page, Express Checkout inline via Buy Now buttons
 - **Process payments** - Authorize, capture, refund, and void operations
 - **View real-time API logs** - See exactly what's sent to and received from Afterpay
-- **Explore On-Site Messaging** - Payment breakdown badges on product and cart pages
+- **Explore OSM messaging** - Payment breakdown badges on product and cart pages
 
 ---
 
 ## Core Features
 
-### Shopping Experience
-| Feature | Description |
-|---------|-------------|
-| On-Site Messaging | "Pay in 4" and "Pay Monthly" badges on product and cart pages |
-| Buy Now | Express Checkout popup from product pages, cart, and mini-cart |
-
-### Checkout
-| Feature | Description |
-|---------|-------------|
-| Standard Checkout | Redirect or popup flow to Afterpay |
-| Cash App Pay | QR code on desktop, Cash App redirect on mobile |
-
-### Payment Operations
-| Feature | Description |
-|---------|-------------|
-| Capture Modes | Deferred (authorize then capture) or Immediate |
-| Refunds & Voids | Full/partial refunds and void authorization |
-| Order History | Track completed orders with status |
-
-### Admin & Developer
-| Feature | Description |
-|---------|-------------|
-| Admin Panel | Configuration + Payment Operations tabs |
-| Developer Mode | Toggle to show/hide API logs, code, dev tools |
+| Category | Features |
+|----------|----------|
+| **Admin Configuration** | Feature toggles for Express Checkout, Cash App Pay, Developer Mode, capture mode, and checkout method |
+| **Checkout Flows** | Standard Checkout (redirect/popup modes) + Cash App Pay (QR code on desktop / mobile redirect) on the checkout page |
+| **Buy Now** | Inline Express Checkout from product pages, cart, and mini-cart via branded Buy Now buttons |
+| **Developer Mode** | Toggle to show/hide code snippets, flow logs, and dev panels for a clean shopping vs developer experience |
+| **Payment Operations** | Deferred & Immediate capture, partial/full refunds, void authorization |
+| **On-Site Messaging** | "Pay in 4" and "Pay Monthly" badges on PDP, cart, and checkout |
+| **Admin Panel** | Configuration tab (feature toggles) + Payment Operations tab (lookup, capture, refund, void, event history) |
+| **Developer Tools** | API request/response logging, cURL/HAR export, code snippets, flow summaries |
+| **Order Management** | Persistent order history, individual deletion, status tracking |
+| **Branded Buttons** | BuyNowButton (custom mint) and AfterpayButton (official "Pay with Afterpay" SVG) components |
 
 ---
 
@@ -54,7 +42,7 @@ This application demonstrates how merchants integrate Afterpay into their e-comm
 See the full customer experience before integrating - from product pages with payment badges through checkout completion. Toggle features on and off from the Admin Configuration tab to compare different checkout setups without writing any code.
 
 **Key value:**
-- Visual preview of On-Site Messaging badge placements
+- Visual preview of OSM badge placements
 - Toggle Express Checkout, Cash App Pay, and capture modes to see different configurations
 - Understand deferred vs immediate capture implications
 
@@ -80,7 +68,7 @@ Compare Express vs Standard checkout trade-offs. Evaluate deferred vs immediate 
 
 ### Product & Business Teams
 
-Visualize checkout UX without writing code. Demo payment operations (refunds, voids) to understand merchant capabilities. See how On-Site Messaging appears on different pages.
+Visualize checkout UX without writing code. Demo payment operations (refunds, voids) to understand merchant capabilities. See how OSM messaging appears on different pages.
 
 **Key value:**
 - No-code feature exploration
@@ -98,7 +86,7 @@ Sandbox environment with test card CVVs (000=approved, 051=declined). Complete e
 
 ### Afterpay Sales & Solutions Teams
 
-Live demo for merchant presentations. Shows On-Site Messaging placement options, checkout customization, and admin capabilities in a polished, professional interface.
+Live demo for merchant presentations. Shows OSM placement options, checkout customization, and admin capabilities in a polished, professional interface.
 
 **Key value:**
 - Presentation-ready demo environment

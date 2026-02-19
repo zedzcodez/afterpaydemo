@@ -53,6 +53,7 @@ const config: Config = {
         "fade-in": "fadeIn 0.4s ease-out forwards",
         "slide-in-right": "slideInRight 0.4s ease-out forwards",
         "bounce-sm": "bounceSm 0.3s ease-out",
+        "pulse-glow": "pulseGlow 2s ease-in-out infinite",
       },
       keyframes: {
         fadeInUp: {
@@ -70,6 +71,10 @@ const config: Config = {
         bounceSm: {
           "0%, 100%": { transform: "scale(1)" },
           "50%": { transform: "scale(1.15)" },
+        },
+        pulseGlow: {
+          "0%, 100%": { boxShadow: "0 0 12px rgba(178, 252, 228, 0.6), 0 0 24px rgba(178, 252, 228, 0.2)" },
+          "50%": { boxShadow: "0 0 24px rgba(178, 252, 228, 1), 0 0 48px rgba(178, 252, 228, 0.5), 0 0 72px rgba(178, 252, 228, 0.2)" },
         },
       },
     },

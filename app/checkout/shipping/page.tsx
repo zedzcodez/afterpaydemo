@@ -521,29 +521,31 @@ function ShippingContent() {
         </div>
       </div>
 
-      {/* Developer Panel Toggle */}
-      <div className="flex items-center justify-between p-3 bg-afterpay-gray-100 dark:bg-afterpay-gray-800 rounded-lg mb-6">
-        <div className="flex-1 mr-4">
-          <p className="text-sm font-medium text-afterpay-black dark:text-white">Developer Panel</p>
-          <p className="text-xs text-afterpay-gray-500 dark:text-afterpay-gray-400">
-            View API requests, responses, and integration flow logs
-          </p>
+      {/* Developer Panel Toggle (only when developer mode is on) */}
+      {config.developerMode && (
+        <div className="flex items-center justify-between p-3 bg-afterpay-gray-100 dark:bg-afterpay-gray-800 rounded-lg mb-6">
+          <div className="flex-1 mr-4">
+            <p className="text-sm font-medium text-afterpay-black dark:text-white">Developer Panel</p>
+            <p className="text-xs text-afterpay-gray-500 dark:text-afterpay-gray-400">
+              View API requests, responses, and integration flow logs
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => toggleDevPanel(25)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              isDevPanelOpen
+                ? "bg-afterpay-mint text-afterpay-black hover:bg-afterpay-mint-dark"
+                : "bg-afterpay-gray-800 dark:bg-afterpay-gray-700 text-white hover:bg-afterpay-gray-700 dark:hover:bg-afterpay-gray-600"
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+            </svg>
+            {isDevPanelOpen ? "Hide Developer Panel" : "Show Developer Panel"}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => toggleDevPanel(25)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            isDevPanelOpen
-              ? "bg-afterpay-mint text-afterpay-black hover:bg-afterpay-mint-dark"
-              : "bg-afterpay-gray-800 dark:bg-afterpay-gray-700 text-white hover:bg-afterpay-gray-700 dark:hover:bg-afterpay-gray-600"
-          }`}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-          </svg>
-          {isDevPanelOpen ? "Hide Developer Panel" : "Show Developer Panel"}
-        </button>
-      </div>
+      )}
 
       {/* Afterpay Payment Schedule Widget */}
       <div className="bg-white dark:bg-afterpay-gray-700 border border-afterpay-gray-200 dark:border-afterpay-gray-600 rounded-lg overflow-hidden mb-6">

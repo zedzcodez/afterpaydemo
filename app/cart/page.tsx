@@ -8,13 +8,13 @@ import { formatPrice } from "@/lib/products";
 import { OSMPlacement } from "@/components/OSMPlacement";
 import { getCartSkus, getCartCategories } from "@/lib/cart";
 import { BuyNowButton } from "@/components/BuyNowButton";
-import { AfterpayButton } from "@/components/AfterpayButton";
+
 import { useBuyNowCheckout } from "@/hooks/useBuyNowCheckout";
 
 export default function CartPage() {
   const { items, total, updateQuantity, removeFromCart } = useCart();
   const router = useRouter();
-  const { startBuyNow, isLoading } = useBuyNowCheckout();
+  const { startBuyNow, isLoading } = useBuyNowCheckout("buynow-afterpay-button-cart");
 
   if (items.length === 0) {
     return (
@@ -184,10 +184,13 @@ export default function CartPage() {
                 disabled={isLoading}
               />
 
-              <AfterpayButton
-                variant="continue"
+              <button
+                type="button"
                 onClick={() => router.push("/checkout")}
-              />
+                className="w-full h-12 bg-afterpay-gray-100 dark:bg-afterpay-gray-700 text-afterpay-black dark:text-white font-medium rounded-xl border border-afterpay-gray-300 dark:border-afterpay-gray-600 hover:bg-afterpay-gray-200 dark:hover:bg-afterpay-gray-600 transition-colors cursor-pointer"
+              >
+                Continue to checkout
+              </button>
 
               <Link
                 href="/"
@@ -197,8 +200,8 @@ export default function CartPage() {
               </Link>
             </div>
 
-            {/* Hidden SDK target for Buy Now popup */}
-            <div id="buynow-afterpay-button" className="hidden" />
+            {/* SDK target for Buy Now popup (zero-size, must not be display:none) */}
+            <div id="buynow-afterpay-button-cart" className="absolute w-0 h-0 overflow-hidden" />
           </div>
         </div>
       </div>

@@ -36,10 +36,22 @@ export default function HomePage() {
                 <span className="absolute -bottom-2 left-0 right-0 h-3 bg-afterpay-black/10 dark:bg-afterpay-mint/30 -z-10 transform -rotate-1" />
               </span>
             </h1>
-            <p className="text-lg md:text-xl text-afterpay-black/70 dark:text-afterpay-gray-300 mb-8 opacity-0 animate-fade-in-up animate-delay-100">
+            <p className="text-lg md:text-xl text-afterpay-black/70 dark:text-afterpay-gray-300 mb-6 opacity-0 animate-fade-in-up animate-delay-100">
               Experience seamless checkout with Afterpay. Split your purchase into 4
               interest-free payments and get what you love today.
             </p>
+            {/* Cash App Pay Badge */}
+            <div className="flex justify-center mb-8 opacity-0 animate-fade-in-up animate-delay-100">
+              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-black/90 dark:bg-white/10 backdrop-blur-sm border border-afterpay-mint/30 shadow-mint-glow-lg dark:shadow-none animate-pulse-glow">
+                <span className="text-sm font-semibold text-white tracking-wide">Now with</span>
+                <img
+                  alt="Cash App Pay"
+                  src="https://static.afterpaycdn.com/en-US/integration/logo/lockup/cashapppay-color-white-32.svg"
+                  height="20"
+                  className="h-5"
+                />
+              </div>
+            </div>
             <div className="flex flex-wrap justify-center gap-4 opacity-0 animate-fade-in-up animate-delay-200">
               <a
                 href="#products"

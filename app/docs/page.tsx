@@ -309,7 +309,7 @@ export default function DocsPage() {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <span className="px-2 py-0.5 text-xs font-semibold bg-afterpay-mint/20 text-afterpay-black dark:text-afterpay-mint rounded-full">
-                  v1.0
+                  v3.0
                 </span>
                 <span className="text-xs text-afterpay-gray-500 dark:text-afterpay-gray-400">
                   Last updated: Feb 2026
@@ -319,7 +319,7 @@ export default function DocsPage() {
                 User Guide
               </h1>
               <p className="text-afterpay-gray-600 dark:text-afterpay-gray-400 text-lg max-w-2xl">
-                Learn how to test all features of the Afterpay demo application.
+                Learn how to configure and test all features of the Afterpay demo platform.
               </p>
             </div>
           </div>

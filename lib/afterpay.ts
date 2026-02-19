@@ -20,27 +20,47 @@ function getAuthHeader(): string {
   return `Basic ${credentials}`;
 }
 
+const TRANSIENT_STATUS_CODES = [500, 502, 503, 504];
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 1000;
+
 async function afterpayFetch<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: getAuthHeader(),
-      ...options.headers,
-    },
-  });
+  let lastError: Error | undefined;
 
-  if (!response.ok) {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      console.log(`[afterpayFetch] Retry ${attempt}/${MAX_RETRIES} for ${endpoint}`);
+      await new Promise(r => setTimeout(r, RETRY_DELAY_MS * attempt));
+    }
+
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: getAuthHeader(),
+        ...options.headers,
+      },
+    });
+
+    if (response.ok) {
+      return response.json();
+    }
+
     const error = await response.json().catch(() => ({}));
-    throw new Error(
+    lastError = new Error(
       error.message || `Afterpay API error: ${response.statusText}`
     );
+
+    // Only retry on transient server errors
+    if (!TRANSIENT_STATUS_CODES.includes(response.status)) {
+      throw lastError;
+    }
   }
 
-  return response.json();
+  throw lastError!;
 }
 
 export function toMoney(amount: number, currency: string = "USD"): Money {

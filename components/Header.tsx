@@ -8,7 +8,7 @@ import { useCart } from "./CartProvider";
 import { useConfig } from "./ConfigProvider";
 import { useTheme } from "./ThemeProvider";
 import { BuyNowButton } from "./BuyNowButton";
-import { AfterpayButton } from "./AfterpayButton";
+
 import { useBuyNowCheckout } from "@/hooks/useBuyNowCheckout";
 import { formatPrice } from "@/lib/products";
 
@@ -79,7 +79,7 @@ export function Header() {
   const { items, total, itemCount, removeFromCart, cartAnimationTrigger } = useCart();
   const { config } = useConfig();
   const { resolvedTheme, setTheme } = useTheme();
-  const { startBuyNow, isLoading } = useBuyNowCheckout();
+  const { startBuyNow, isLoading } = useBuyNowCheckout("buynow-afterpay-button-minicart");
 
   const [isAnimating, setIsAnimating] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -266,6 +266,9 @@ export function Header() {
               </span>
             </div>
 
+            {/* SDK target for Buy Now popup (zero-size, must not be display:none) */}
+            <div id="buynow-afterpay-button-minicart" className="absolute w-0 h-0 overflow-hidden" />
+
             {/* Checkout Buttons */}
             <div className="space-y-2">
               <BuyNowButton
@@ -273,15 +276,17 @@ export function Header() {
                 disabled={isLoading}
                 size="compact"
               />
-              <AfterpayButton
-                variant="continue"
+              <button
+                type="button"
                 onClick={() => {
                   setMiniCartOpen(false);
                   setMobileMenuOpen(false);
                   router.push("/checkout");
                 }}
-                className="!h-10"
-              />
+                className="w-full h-10 bg-afterpay-gray-100 dark:bg-afterpay-gray-700 text-afterpay-black dark:text-white text-sm font-medium rounded-xl border border-afterpay-gray-300 dark:border-afterpay-gray-600 hover:bg-afterpay-gray-200 dark:hover:bg-afterpay-gray-600 transition-colors cursor-pointer"
+              >
+                Continue to checkout
+              </button>
             </div>
 
             {/* View Full Cart Link */}

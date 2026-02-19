@@ -384,7 +384,7 @@ function ConfirmationContent() {
           Continue Shopping
         </Link>
         <Link
-          href="/checkout"
+          href="/#products"
           className="flex-1 py-3 px-6 bg-white dark:bg-afterpay-gray-800 text-afterpay-black dark:text-white text-center font-medium rounded-lg border-2 border-afterpay-black dark:border-afterpay-gray-600 hover:bg-afterpay-gray-50 dark:hover:bg-afterpay-gray-700 transition-colors"
         >
           Try Another Flow

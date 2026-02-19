@@ -12,7 +12,8 @@ import { useBuyNowCheckout } from "@/hooks/useBuyNowCheckout";
 export default function ProductDetailPage() {
   const params = useParams();
   const { addToCart } = useCart();
-  const { startBuyNow, isLoading: isBuyNowLoading } = useBuyNowCheckout();
+  const pdpTargetId = `buynow-afterpay-button-pdp-${params.id}`;
+  const { startBuyNow, isLoading: isBuyNowLoading } = useBuyNowCheckout(pdpTargetId);
   const product = getProduct(params.id as string);
 
   if (!product) {
@@ -103,8 +104,8 @@ export default function ProductDetailPage() {
               }
               disabled={isBuyNowLoading}
             />
-            {/* Hidden target for Afterpay SDK popup initialization */}
-            <div id="buynow-afterpay-button" className="hidden" />
+            {/* SDK target for Buy Now popup (zero-size, must not be display:none) */}
+            <div id={pdpTargetId} className="absolute w-0 h-0 overflow-hidden" />
             <button
               onClick={handleAddToCart}
               className="w-full btn-outline"

@@ -5,27 +5,42 @@
 >
 > This README is for developers maintaining or extending this project.
 
-A comprehensive merchant checkout integration demo showcasing Afterpay's payment solutions. This demo serves merchants evaluating Afterpay, developers learning integration patterns, and stakeholders understanding payment flows.
+A configurable merchant checkout demo platform showcasing Afterpay's payment solutions. Features a centralized configuration system, inline Buy Now express checkout, Cash App Pay, developer mode toggle, and a full payment admin panel. Built for merchants evaluating Afterpay, developers learning integration patterns, and stakeholders understanding payment flows.
 
 **Live Demo:** [afterpay-demo-v2.vercel.app](https://afterpay-demo-v2.vercel.app)
 
 ## Features
+
+### Configuration System
+Centralized app configuration via React Context:
+- `ConfigProvider` wraps the app (ThemeProvider > ConfigProvider > CartProvider)
+- Config stored in localStorage under key `"afterpay-demo-config"`
+- `useConfig()` hook provides `{ config, updateConfig, resetConfig }`
+- Controls Express Checkout (enabled/type), Cash App Pay (enabled), Standard Checkout (method), Capture Mode, and Developer Mode
+- All settings saved instantly from the Admin Configuration tab
 
 ### On-Site Messaging (OSM)
 - Payment breakdown badges showing "4 interest-free payments of $X"
 - Uses `<square-placement>` web component
 - Available on Product Detail Pages (PDP), Cart, and Checkout
 - Automatic installment calculation display
+- Always visible regardless of Developer Mode setting (consumer-facing)
 
-### Express Checkout (Afterpay.js)
-Two shipping flow options with popup-based checkout:
-- **Integrated Shipping**: Customer selects shipping within Afterpay popup using `onShippingAddressChange` callback
-- **Deferred Shipping**: Customer returns to merchant site for shipping selection with Payment Schedule Widget
+### Buy Now Express Checkout (Afterpay.js)
+Popup-based express checkout launched inline via Buy Now buttons (not a checkout page tab):
+- **Buy Now buttons** appear on product detail pages, product grid cards, cart page, and mini-cart dropdown
+- Two shipping flow options configured in Admin:
+  - **Integrated Shipping**: Customer selects shipping within Afterpay popup using `onShippingAddressChange` callback
+  - **Deferred Shipping**: Customer returns to merchant site for shipping selection with Payment Schedule Widget
+- Uses `useBuyNowCheckout` hook and `BuyNowButton` component
+- Only visible when `config.expressCheckout.enabled` is true
 
 ### Standard Checkout (API)
-Server-side API integration with two checkout methods:
+Server-side API integration at `/checkout` with two checkout methods:
 - **Redirect Flow**: Full page navigation to Afterpay
 - **Popup Flow**: Modal overlay using Afterpay.js
+- "Pay with Afterpay" official branded SVG button (`AfterpayButton` component)
+- Shows as the only option when Cash App Pay is disabled; shown alongside Cash App Pay tab when enabled
 
 ### Cash App Pay
 Pay-now checkout using Cash App:
@@ -36,18 +51,16 @@ Pay-now checkout using Cash App:
 - Supports both deferred and immediate capture modes
 
 ### Capture Modes
-Toggle between capture strategies from the Admin Panel:
+Toggle between capture strategies from the Admin Configuration tab:
 - **Deferred Capture (default)**: Authorization only at checkout, capture later from Admin Panel (up to 13 days)
 - **Immediate Capture**: Full payment capture at checkout completion
+- Configuration managed centrally via `ConfigProvider` (replaces old `afterpay_capture_mode` localStorage key)
 
 ### Payment Admin Panel
-Full payment management interface at `/admin`:
-- **Merchant Configuration**: View min/max order thresholds and currency
-- Payment lookup by Order ID
-- Capture authorized payments
-- Process refunds (full or partial)
-- Void uncaptured authorizations
-- Real-time API request/response logging
+Full management interface at `/admin` with two tabs:
+- **Configuration Tab**: Express Checkout toggle + type, Standard Checkout method, Cash App Pay toggle, Capture Mode, Developer Mode, Merchant Config
+- **Payment Operations Tab**: Payment lookup by Order ID, capture authorized payments, process refunds (full or partial), void uncaptured authorizations, real-time API request/response logging
+- All configuration settings saved instantly via ConfigProvider (no save button)
 - **Webhook Handler**: Dispute notifications endpoint (coming soon)
 
 ### Order History
@@ -67,9 +80,18 @@ Access the testing guide directly within the app at `/docs`:
 - **Quick links**: Fast access to Checkout Demo, Admin Panel, and API docs
 - Full dark mode support with premium typography
 
+### Developer Mode
+Global toggle controlled from the Admin Configuration tab:
+- **When OFF**: Hides code snippets, flow logs, developer panel, and API metadata across all pages
+- **When ON**: Shows full developer tools including terminal-style dark panels
+- Admin page always shows full content regardless of Developer Mode setting
+- OSM widgets always visible (consumer-facing)
+- Header shows "DEVELOPER MODE" indicator bar when ON
+
 ### Developer Features
+Visible only when Developer Mode is enabled:
 - **Code Viewer**: Implementation snippets for each checkout method
-- **Developer Panel**: Enhanced API inspection tool with:
+- **Developer Panel**: Enhanced API inspection tool (`FlowLogsDevPanel.tsx`) with:
   - **Collapsed by default**: Click the panel header to expand and view logs
   - **Resizable panel**: Drag the top edge to adjust height (persisted to localStorage)
   - Real-time request/response logging (reverse-chronological order)
@@ -88,14 +110,16 @@ Access the testing guide directly within the app at `/docs`:
   - Checkout adjustment breakdown (deferred shipping flows)
   - Key response data with links to Afterpay documentation
   - Copy button for sharing flow configuration
-- **Toggle Controls**: Compare different checkout approaches side-by-side
 - **Official Afterpay Assets**: All checkout buttons use official Afterpay brand assets from CDN
 
 ### UI Features
 - **Official Branding**: Cash App Afterpay logo from CDN with dark/light mode variants
-- **Navigation**: Grouped navigation (Demo: Shop, Checkout | Tools: Admin, Orders, Docs) with mobile slide-out menu
+- **Navigation**: Flat nav (Shop, Admin, Orders, User Guide) with mobile slide-out menu
+- **Mini-Cart Dropdown**: Cart icon click reveals dropdown with items, Buy Now button, Continue with Afterpay button, and View Full Cart link
+- **Developer Mode Indicator**: Visible bar below header when Developer Mode is ON
+- **Buy Now Buttons**: Custom mint "BUY NOW [afterpay-logo]" buttons on product pages, grid cards, cart, and mini-cart (theme-aware, config-gated)
+- **Branded Checkout Buttons**: `AfterpayButton` component with official SVG branded buttons ('continue' variant for cart, 'pay' variant for checkout)
 - **Dark Mode**: System preference detection with manual toggle, persisted to localStorage
-- **Checkout Progress Timeline**: Visual stepper showing Cart → Checkout → Shipping → Review → Confirm
 - **Micro-interactions**: Cart bounce animation on add, sliding tab indicators, active nav indicators
 - **Loading States**: Skeleton loaders for products, mint-colored spinners throughout
 - **Error Boundaries**: Graceful error handling with user-friendly fallback UI
@@ -178,17 +202,18 @@ If `popupOriginUrl` doesn't match `window.location.origin`, the browser won't di
   error.tsx                     # Global error boundary
   /products/[id]/page.tsx       # Product detail page
   /cart/page.tsx                # Shopping cart
-  /checkout/page.tsx            # Checkout (Express + Standard + Cash App Pay tabs)
+  /checkout/page.tsx            # Checkout (Standard + Cash App Pay tabs)
   /checkout/error.tsx           # Checkout-specific error boundary
   /checkout/review/page.tsx     # Standard checkout review page
   /checkout/shipping/page.tsx   # Deferred shipping selection
   /confirmation/page.tsx        # Order confirmation with flow logs
   /orders/page.tsx              # Order history page
-  /admin/page.tsx               # Payment management panel
+  /admin/page.tsx               # Payment management panel (Configuration + Payment Operations tabs)
   /docs/page.tsx                # In-app documentation viewer
   /api/docs
     /readme/route.ts            # Serve README.md content
     /how-to-use/route.ts        # Serve how-to-use.md content
+    /summary/route.ts           # Serve documentation summary
   /api/afterpay
     /checkout/route.ts          # Create checkout
     /auth/route.ts              # Authorize payment
@@ -202,12 +227,15 @@ If `popupOriginUrl` doesn't match `window.location.origin`, the browser won't di
     /route.ts                   # Webhook endpoint for payment notifications
 
 /components
-  Header.tsx                    # Navigation with cart and dark mode text labels
+  Header.tsx                    # Flat navigation (Shop, Admin, Orders, User Guide) with mini-cart dropdown and dev mode indicator
   ProductCard.tsx               # Product display card with dark mode support
   ProductGrid.tsx               # Homepage product grid with skeleton loading
   CartProvider.tsx              # Cart state (Context + localStorage + animation trigger)
+  ConfigProvider.tsx            # App configuration React Context (config stored in localStorage)
   ThemeProvider.tsx             # Dark mode state (Context + localStorage + system preference)
-  CheckoutProgress.tsx          # Visual checkout progress stepper
+  BuyNowButton.tsx              # Custom mint "BUY NOW" express checkout button (config-gated)
+  AfterpayButton.tsx            # Official SVG branded buttons ('continue' and 'pay' variants)
+  CheckoutProgress.tsx          # Visual checkout progress stepper (legacy, not used on checkout page)
   LoadingSpinner.tsx            # Reusable mint-colored loading spinner
   ErrorBoundary.tsx             # Reusable error boundary component
   OSMPlacement.tsx              # Afterpay OSM wrapper
@@ -216,10 +244,14 @@ If `popupOriginUrl` doesn't match `window.location.origin`, the browser won't di
   CheckoutCashApp.tsx           # Cash App Pay checkout component
   CashAppInfoSection.tsx        # Cash App Pay developer docs/code snippets
   CodeViewer.tsx                # Expandable code snippets
-  FlowLogsDevPanel.tsx          # Enhanced dev panel with filters, search, cURL export, HAR export
+  FlowLogsDevPanel.tsx          # Enhanced dev panel with filters, search, cURL export, HAR export (primary)
   DevPanel.tsx                  # Legacy developer panel component
 
+/hooks
+  useBuyNowCheckout.ts          # Express checkout hook for Buy Now buttons
+
 /lib
+  config.ts                     # App config types, defaults, and utilities
   products.ts                   # Static product data
   cart.ts                       # Cart utilities
   afterpay.ts                   # Server-side Afterpay API client
@@ -324,30 +356,33 @@ Or deploy directly:
 
 - **Framework**: Next.js 16 (App Router)
 - **Styling**: Tailwind CSS with custom design system
-- **Typography**: Outfit (display) + Plus Jakarta Sans (body)
+- **Typography**: Clash Display (display) + General Sans (body) + JetBrains Mono (code)
 - **Images**: Unsplash (optimized via Next.js Image)
 - **State Management**: React Context with localStorage persistence
 - **Deployment**: Vercel-ready
 
 ## Design System
 
-The demo features a polished, distinctive UI built on Afterpay's brand colors with full dark mode support:
+The demo features a bold, brand-forward UI built on Afterpay's mint-dominant palette with full dark mode support:
 
 ### Colors
 - **Primary**: Afterpay Mint (`#B2FCE4`) - Used for CTAs, accents, and highlights
 - **Mint Dark**: `#8EEBC8` - Hover states
 - **Mint Light**: `#D4FEF0` - Subtle backgrounds
 - **Dark Mode**: Charcoal backgrounds with mint accents
+- **Terminal**: Dark background with green/amber text for Developer Mode panels
 
 ### Typography
-- **Display Font**: Outfit - Bold, geometric sans-serif for headings
-- **Body Font**: Plus Jakarta Sans - Clean, readable for body text
+- **Display Font**: Clash Display (via Fontshare CDN) - Bold, brand-forward display font for headings
+- **Body Font**: General Sans (via Fontshare CDN) - Clean, modern sans-serif for body text
+- **Code Font**: JetBrains Mono (via Google Fonts) - Monospace font for code snippets and developer panels
 
 ### Components
 - **Buttons**: Three variants - `btn-primary` (mint), `btn-secondary` (black), `btn-outline`
+- **Buy Now Button**: Custom mint button with Afterpay logo for express checkout
+- **Afterpay Button**: Official SVG branded buttons for cart ('continue') and checkout ('pay')
 - **Cards**: Elevated with shadows, hover lift effects, and mint glow
 - **Forms**: Styled inputs with mint focus ring, custom checkboxes/radios
-- **Progress Stepper**: Visual checkout timeline with completed step indicators
 - **Loading States**: Skeleton screens and mint-colored spinners
 
 ### Animations
@@ -368,8 +403,12 @@ The demo features a polished, distinctive UI built on Afterpay's brand colors wi
 
 ### Completed
 - [x] Express Checkout with integrated/deferred shipping
+- [x] Buy Now inline express checkout via product pages, grid cards, cart, and mini-cart (v3.0)
 - [x] Standard Checkout with redirect/popup modes
 - [x] Cash App Pay checkout (QR on desktop, redirect on mobile)
+- [x] Configurable demo platform with centralized ConfigProvider (v3.0)
+- [x] Developer Mode toggle - show/hide developer tools globally (v3.0)
+- [x] Admin Configuration tab with instant-save settings (v3.0)
 - [x] Payment Admin Panel with capture/refund/void
 - [x] Developer Panel with cURL/HAR export (collapsed by default)
 - [x] Order History with localStorage persistence and individual deletion
@@ -380,8 +419,9 @@ The demo features a polished, distinctive UI built on Afterpay's brand colors wi
 - [x] Security: Error message sanitization
 - [x] Security: HTTP security headers
 - [x] In-App Documentation (`/docs`) with TOC sidebar
-- [x] Navigation redesign with grouped items and mobile menu
+- [x] Flat navigation with mini-cart dropdown and developer mode indicator (v3.0)
 - [x] Official Cash App Afterpay branding
+- [x] Branded checkout buttons (BuyNowButton, AfterpayButton) (v3.0)
 - [x] Integration Flow Summary on confirmation page
 - [x] Pay Monthly messaging option for OSM
 - [x] Documentation restructure and audit
