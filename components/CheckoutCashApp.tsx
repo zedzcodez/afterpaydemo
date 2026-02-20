@@ -19,7 +19,7 @@ import { useCart } from "./CartProvider";
 import { useConfig } from "@/components/ConfigProvider";
 import { initFlowLogs, addFlowLog, setFlowSummary, updateFlowSummary, FlowSummary } from "@/lib/flowLogs";
 import { CashAppPayCompleteEvent } from "@/lib/types";
-import type { CheckoutFormData, LocalShippingOption } from "./CheckoutStandard";
+import type { CheckoutFormData, LocalShippingOption } from "@/lib/types";
 
 const FLOW_SUMMARY: Omit<FlowSummary, 'requestConfig' | 'responseData'> = {
   flow: 'cashapp',
@@ -197,7 +197,7 @@ export function CheckoutCashApp({ formData, selectedShipping, total, finalTotal,
         });
 
         if (captureData.error) {
-          throw new Error(captureData.errorDetail || captureData.error);
+          throw new Error(captureData.error);
         }
 
         orderId = captureData.id;
@@ -248,7 +248,7 @@ export function CheckoutCashApp({ formData, selectedShipping, total, finalTotal,
         });
 
         if (authData.error) {
-          throw new Error(authData.errorDetail || authData.error);
+          throw new Error(authData.error);
         }
 
         if (authData.status !== "APPROVED") {
@@ -388,7 +388,7 @@ export function CheckoutCashApp({ formData, selectedShipping, total, finalTotal,
         });
 
         if (data.error) {
-          throw new Error(data.errorDetail || data.error);
+          throw new Error(data.error);
         }
 
         // Extract request config for flow summary

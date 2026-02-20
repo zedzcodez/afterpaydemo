@@ -288,7 +288,7 @@ function ShippingContent() {
         });
 
         if (data.error) {
-          throw new Error(data.errorDetail || data.error);
+          throw new Error(data.error);
         }
 
         if (data.status !== "APPROVED") {
@@ -360,7 +360,7 @@ function ShippingContent() {
         });
 
         if (authData.error) {
-          throw new Error(authData.errorDetail || authData.error);
+          throw new Error(authData.error);
         }
 
         if (authData.status !== "APPROVED") {

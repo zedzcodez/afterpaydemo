@@ -12,9 +12,9 @@ export async function GET(
   try {
     const { orderId } = await params;
 
-    if (!orderId) {
+    if (!orderId || !/^[a-zA-Z0-9-]+$/.test(orderId)) {
       return NextResponse.json(
-        { error: "Order ID is required" },
+        { error: "Order ID is required and must be alphanumeric" },
         { status: 400 }
       );
     }

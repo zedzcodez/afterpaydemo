@@ -14,7 +14,7 @@ import { CodeViewer } from "@/components/CodeViewer";
 import { CashAppInfoSection } from "@/components/CashAppInfoSection";
 import { toggleDevPanel, useDevPanelState } from "@/components/FlowLogsDevPanel";
 import { getCartSkus, getCartCategories } from "@/lib/cart";
-import type { CheckoutFormData, LocalShippingOption } from "@/components/CheckoutStandard";
+import type { CheckoutFormData, LocalShippingOption } from "@/lib/types";
 
 const FREE_SHIPPING_THRESHOLD = 100;
 

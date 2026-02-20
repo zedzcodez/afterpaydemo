@@ -14,6 +14,26 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface CheckoutFormData {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  address1: string;
+  address2: string;
+  city: string;
+  state: string;
+  postcode: string;
+  country: string;
+}
+
+export interface LocalShippingOption {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+}
+
 export interface Cart {
   items: CartItem[];
   total: number;

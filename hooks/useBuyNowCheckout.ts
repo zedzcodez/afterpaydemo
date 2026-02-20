@@ -248,7 +248,7 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
             });
 
             if (data.error) {
-              throw new Error(data.errorDetail || data.error);
+              throw new Error(data.error);
             }
 
             if (data.status !== "APPROVED") {
@@ -302,7 +302,7 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
             });
 
             if (data.error) {
-              throw new Error(data.errorDetail || data.error);
+              throw new Error(data.error);
             }
 
             if (data.status !== "APPROVED") {

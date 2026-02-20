@@ -17,6 +17,7 @@ import { useCart } from "./CartProvider";
 import { useConfig } from "./ConfigProvider";
 import { AfterpayButton } from "./AfterpayButton";
 import { initFlowLogs, addFlowLog, logCallback, setFlowSummary, updateFlowSummary, FlowSummary } from "@/lib/flowLogs";
+import type { CheckoutFormData, LocalShippingOption } from "@/lib/types";
 
 type CheckoutMode = "redirect" | "popup";
 
@@ -35,26 +36,6 @@ const FLOW_SUMMARIES: Record<string, Omit<FlowSummary, 'requestConfig' | 'respon
     docsUrl: 'https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart/create-a-checkout#implement-the-popup-method',
   },
 };
-
-export interface CheckoutFormData {
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  address1: string;
-  address2: string;
-  city: string;
-  state: string;
-  postcode: string;
-  country: string;
-}
-
-export interface LocalShippingOption {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-}
 
 interface CheckoutStandardProps {
   formData: CheckoutFormData;
