@@ -8,6 +8,7 @@ import { CodeViewer } from "./CodeViewer";
 import { getCartSkus, getCartCategories } from "@/lib/cart";
 import { AfterpayShippingOption } from "@/lib/types";
 import { getAfterpayShippingOptions } from "@/lib/shipping";
+import { authorizePaymentClient } from "@/lib/payment-client";
 import { initFlowLogs, addFlowLog, logCallback, setFlowSummary, updateFlowSummary, FLOW_SUMMARIES } from "@/lib/flowLogs";
 import { toggleDevPanel, useDevPanelState } from "./FlowLogsDevPanel";
 
@@ -304,59 +305,20 @@ export function CheckoutExpress({ isActive, onLog, onLogUpdate, initialShippingF
                   orderId = authData.id;
                 } else {
                   // Deferred Capture Mode: Only authorize
-                  const authClientRequest = { token: event.data.orderToken };
-                  const logId = onLogRef.current?.("POST", "/api/afterpay/auth", authClientRequest);
+                  const result = await authorizePaymentClient(event.data.orderToken);
 
-                  const startTime = Date.now();
-                  const response = await fetch("/api/afterpay/auth", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(authClientRequest),
-                  });
-
-                  const data = await response.json();
-                  const duration = Date.now() - startTime;
-                  onLogUpdateRef.current?.(logId!, { response: data, status: response.status });
-
-                  // Log request with FULL server-side payload from _meta
-                  addFlowLog({
-                    type: "api_request",
-                    label: "Authorize Payment (Deferred Mode)",
-                    method: "POST",
-                    endpoint: "/api/afterpay/auth → /v2/payments/auth",
-                    data: data._meta?.requestBody || authClientRequest,
-                    fullUrl: data._meta?.fullUrl,
-                    headers: data._meta?.headers,
-                  });
-
-                  addFlowLog({
-                    type: "api_response",
-                    label: "Authorization Response",
-                    method: "POST",
-                    endpoint: "/v2/payments/auth",
-                    status: response.status,
-                    data: data,
-                    duration,
-                    fullUrl: data._meta?.fullUrl,
-                  });
-
-                  if (data.status !== "APPROVED") {
-                    throw new Error("Payment was not approved");
-                  }
-
-                  // Update flow summary with auth response data
                   updateFlowSummary({
                     responseData: {
-                      token: data.token,
+                      token: result.data.token,
                       'data.orderToken': event.data.orderToken,
-                      id: data.id,
-                      status: data.status,
-                      originalAmount: data.originalAmount,
-                      openToCaptureAmount: data.openToCapture,
+                      id: result.data.id,
+                      status: result.data.status,
+                      originalAmount: result.data.originalAmount,
+                      openToCaptureAmount: result.data.openToCapture,
                     },
                   });
 
-                  orderId = data.id;
+                  orderId = result.orderId;
                 }
 
                 // Store cart data in sessionStorage before redirecting (for confirmation page)

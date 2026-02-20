@@ -18,6 +18,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useCart } from "./CartProvider";
 import { useConfig } from "@/components/ConfigProvider";
 import { initFlowLogs, addFlowLog, setFlowSummary, updateFlowSummary, FLOW_SUMMARIES } from "@/lib/flowLogs";
+import { captureFullPaymentClient, authorizePaymentClient } from "@/lib/payment-client";
 import { CashAppPayCompleteEvent } from "@/lib/types";
 import type { CheckoutFormData, LocalShippingOption } from "@/lib/types";
 
@@ -151,115 +152,25 @@ export function CheckoutCashApp({ formData, selectedShipping, total, finalTotal,
       const captureMode = captureModeRef.current;
       const isImmediateCapture = captureMode === "immediate";
 
-      let orderId: string;
-
       if (isImmediateCapture) {
-        // Immediate capture: single POST /v2/payments/capture (auth + capture combined)
         setProcessingStep("Capturing payment...");
-        const captureClientRequest = { token: event.data.orderToken };
-
-        const captureStartTime = Date.now();
-        const captureResponse = await fetch("/api/afterpay/capture-full", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(captureClientRequest),
-        });
-
-        const captureData = await captureResponse.json();
-        const captureDuration = Date.now() - captureStartTime;
-
-        addFlowLog({
-          type: "api_request",
-          label: "Capture Full Payment (Immediate Mode)",
-          method: "POST",
-          endpoint: "/api/afterpay/capture-full → /v2/payments/capture",
-          data: captureData._meta?.requestBody || captureClientRequest,
-          fullUrl: captureData._meta?.fullUrl,
-          headers: captureData._meta?.headers,
-        });
-
-        addFlowLog({
-          type: "api_response",
-          label: "Capture Response",
-          method: "POST",
-          endpoint: "/v2/payments/capture",
-          status: captureResponse.status,
-          data: captureData,
-          duration: captureDuration,
-          fullUrl: captureData._meta?.fullUrl,
-        });
-
-        if (captureData.error) {
-          throw new Error(captureData.error);
-        }
-
-        orderId = captureData.id;
-
-        updateFlowSummary({
-          responseData: {
-            'data.orderToken': event.data.orderToken,
-            id: captureData.id,
-            status: captureData.status || 'CAPTURED',
-            originalAmount: captureData.originalAmount,
-            openToCaptureAmount: captureData.openToCapture,
-          },
-        });
-      } else {
-        // Deferred capture: POST /v2/payments/auth (capture later from Admin)
-        setProcessingStep("Authorizing payment...");
-        const authClientRequest = { token: event.data.orderToken };
-
-        const authStartTime = Date.now();
-        const authResponse = await fetch("/api/afterpay/auth", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(authClientRequest),
-        });
-
-        const authData = await authResponse.json();
-        const authDuration = Date.now() - authStartTime;
-
-        addFlowLog({
-          type: "api_request",
-          label: "Authorize Payment (Deferred Mode)",
-          method: "POST",
-          endpoint: "/api/afterpay/auth → /v2/payments/auth",
-          data: authData._meta?.requestBody || authClientRequest,
-          fullUrl: authData._meta?.fullUrl,
-          headers: authData._meta?.headers,
-        });
-
-        addFlowLog({
-          type: "api_response",
-          label: "Authorization Response",
-          method: "POST",
-          endpoint: "/v2/payments/auth",
-          status: authResponse.status,
-          data: authData,
-          duration: authDuration,
-          fullUrl: authData._meta?.fullUrl,
-        });
-
-        if (authData.error) {
-          throw new Error(authData.error);
-        }
-
-        if (authData.status !== "APPROVED") {
-          throw new Error("Payment was not approved");
-        }
-
-        orderId = authData.id;
-
-        updateFlowSummary({
-          responseData: {
-            'data.orderToken': event.data.orderToken,
-            id: authData.id,
-            status: authData.status,
-            originalAmount: authData.originalAmount,
-            openToCaptureAmount: authData.openToCapture,
-          },
-        });
       }
+
+      const result = isImmediateCapture
+        ? await captureFullPaymentClient(event.data.orderToken)
+        : await authorizePaymentClient(event.data.orderToken);
+
+      const orderId = result.orderId;
+
+      updateFlowSummary({
+        responseData: {
+          'data.orderToken': event.data.orderToken,
+          id: result.data.id,
+          status: result.data.status || (isImmediateCapture ? 'CAPTURED' : result.data.status),
+          originalAmount: result.data.originalAmount,
+          openToCaptureAmount: result.data.openToCapture,
+        },
+      });
 
       // Store pending order in sessionStorage
       const currentItems = itemsRef.current;
