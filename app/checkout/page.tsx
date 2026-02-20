@@ -14,16 +14,11 @@ import { CodeViewer } from "@/components/CodeViewer";
 import { CashAppInfoSection } from "@/components/CashAppInfoSection";
 import { toggleDevPanel, useDevPanelState } from "@/components/FlowLogsDevPanel";
 import { getCartSkus, getCartCategories } from "@/lib/cart";
+import { SHIPPING_OPTIONS, FREE_SHIPPING_THRESHOLD } from "@/lib/shipping";
 import type { CheckoutFormData, LocalShippingOption } from "@/lib/types";
 
-const FREE_SHIPPING_THRESHOLD = 100;
-
 const getShippingOptions = (cartTotal: number): LocalShippingOption[] => {
-  const options: LocalShippingOption[] = [
-    { id: "standard", name: "Standard Shipping", description: "5-7 business days", price: 5.99 },
-    { id: "express", name: "Express Shipping", description: "2-3 business days", price: 12.99 },
-    { id: "overnight", name: "Overnight Shipping", description: "Next business day", price: 24.99 },
-  ];
+  const options = [...SHIPPING_OPTIONS];
 
   if (cartTotal >= FREE_SHIPPING_THRESHOLD) {
     options.unshift({

@@ -218,6 +218,58 @@ export function logRedirect(destination: string, reason: string): void {
   });
 }
 
+// Centralized flow summary definitions used by all checkout components
+export type FlowSummaryBase = Omit<FlowSummary, "requestConfig" | "responseData">;
+
+export const FLOW_SUMMARIES: Record<string, FlowSummaryBase> = {
+  // Standard Checkout
+  "standard": {
+    flow: "standard-redirect",
+    description: "Full-page redirect to Afterpay where customer completes checkout, then returns to merchant site via redirectConfirmUrl for payment authorization.",
+    steps: ["Create Checkout", "Redirect to Afterpay", "Customer Returns", "Authorize Payment"],
+    docsUrl: "https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart",
+  },
+  "standard-popup": {
+    flow: "standard-popup",
+    description: "Modal popup checkout using Afterpay.js where customer stays on merchant site. Payment is authorized via the onComplete callback.",
+    steps: ["Create Checkout", "Open Afterpay Popup", "Authorize Payment"],
+    docsUrl: "https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart/create-a-checkout#implement-the-popup-method",
+  },
+  // Express Checkout
+  "express-integrated": {
+    flow: "express-integrated",
+    description: "Popup-based checkout where customer selects shipping options directly within the Afterpay popup using the onShippingAddressChange callback.",
+    steps: ["Create Checkout", "Afterpay Popup (with shipping)", "Authorize Payment"],
+    docsUrl: "https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout",
+  },
+  "express-deferred": {
+    flow: "express-deferred",
+    description: "Popup-based checkout where customer completes payment in Afterpay, then returns to merchant site to select shipping before authorization.",
+    steps: ["Create Checkout", "Afterpay Popup", "Select Shipping", "Authorize Payment"],
+    docsUrl: "https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout#deferred-shipping",
+  },
+  // Buy Now (Express variant)
+  "buynow-integrated": {
+    flow: "buynow-integrated",
+    description: "Buy Now popup checkout where customer selects shipping options directly within the Afterpay popup using the onShippingAddressChange callback.",
+    steps: ["Create Checkout", "Afterpay Popup (with shipping)", "Authorize Payment"],
+    docsUrl: "https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout",
+  },
+  "buynow-deferred": {
+    flow: "buynow-deferred",
+    description: "Buy Now popup checkout where customer completes payment in Afterpay, then returns to merchant site to select shipping before authorization.",
+    steps: ["Create Checkout", "Afterpay Popup", "Select Shipping", "Authorize Payment"],
+    docsUrl: "https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout#deferred-shipping",
+  },
+  // Cash App Pay
+  "cashapp": {
+    flow: "cashapp",
+    description: "Cash App Pay checkout where customer scans a QR code or taps the Cash App Pay button to authorize payment via Cash App.",
+    steps: ["Create Checkout", "Initialize Cash App Pay", "Customer Authorizes via Cash App", "Authorize Payment"],
+    docsUrl: "https://developers.cash.app/cash-app-afterpay/guides/api-development/add-cash-app-pay-to-your-site/overview",
+  },
+};
+
 /**
  * Format a flow string into a human-readable description
  * @param flow - Flow string like "express-integrated-deferred" or "standard-popup-immediate"

@@ -7,7 +7,8 @@ import { OSMPlacement } from "./OSMPlacement";
 import { CodeViewer } from "./CodeViewer";
 import { getCartSkus, getCartCategories } from "@/lib/cart";
 import { AfterpayShippingOption } from "@/lib/types";
-import { initFlowLogs, addFlowLog, logCallback, setFlowSummary, updateFlowSummary, FlowSummary } from "@/lib/flowLogs";
+import { getAfterpayShippingOptions } from "@/lib/shipping";
+import { initFlowLogs, addFlowLog, logCallback, setFlowSummary, updateFlowSummary, FLOW_SUMMARIES } from "@/lib/flowLogs";
 import { toggleDevPanel, useDevPanelState } from "./FlowLogsDevPanel";
 
 type ShippingFlow = "integrated" | "deferred";
@@ -21,43 +22,6 @@ interface CheckoutExpressProps {
   ) => void;
   initialShippingFlow?: ShippingFlow;
 }
-
-// Flow summary definitions
-const FLOW_SUMMARIES: Record<string, Omit<FlowSummary, 'requestConfig' | 'responseData'>> = {
-  'express-integrated': {
-    flow: 'express-integrated',
-    description: 'Popup-based checkout where customer selects shipping options directly within the Afterpay popup using the onShippingAddressChange callback.',
-    steps: ['Create Checkout', 'Afterpay Popup (with shipping)', 'Authorize Payment'],
-    docsUrl: 'https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout',
-  },
-  'express-deferred': {
-    flow: 'express-deferred',
-    description: 'Popup-based checkout where customer completes payment in Afterpay, then returns to merchant site to select shipping before authorization.',
-    steps: ['Create Checkout', 'Afterpay Popup', 'Select Shipping', 'Authorize Payment'],
-    docsUrl: 'https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout#deferred-shipping',
-  },
-};
-
-const SHIPPING_OPTIONS = [
-  {
-    id: "standard",
-    name: "Standard Shipping",
-    description: "5-7 business days",
-    shippingAmount: { amount: "5.99", currency: "USD" },
-  },
-  {
-    id: "express",
-    name: "Express Shipping",
-    description: "2-3 business days",
-    shippingAmount: { amount: "12.99", currency: "USD" },
-  },
-  {
-    id: "overnight",
-    name: "Overnight Shipping",
-    description: "Next business day",
-    shippingAmount: { amount: "24.99", currency: "USD" },
-  },
-];
 
 export function CheckoutExpress({ isActive, onLog, onLogUpdate, initialShippingFlow }: CheckoutExpressProps) {
   const { items, total } = useCart();
@@ -151,26 +115,7 @@ export function CheckoutExpress({ isActive, onLog, onLogUpdate, initialShippingF
   }, []);
 
   const getShippingOptions = useCallback(() => {
-    const currentTotal = totalRef.current;
-
-    return SHIPPING_OPTIONS.map((opt) => {
-      const shippingCost = parseFloat(opt.shippingAmount.amount);
-      const isFreeShipping = currentTotal >= 100 && opt.id === "standard";
-
-      return {
-        id: opt.id,
-        name: isFreeShipping ? "Free Standard Shipping" : opt.name,
-        description: opt.description,
-        shippingAmount: isFreeShipping
-          ? { amount: "0.00", currency: "USD" }
-          : opt.shippingAmount,
-        taxAmount: { amount: "0.00", currency: "USD" },
-        orderAmount: {
-          amount: (currentTotal + (isFreeShipping ? 0 : shippingCost)).toFixed(2),
-          currency: "USD",
-        },
-      };
-    });
+    return getAfterpayShippingOptions(totalRef.current);
   }, []);
 
   useEffect(() => {

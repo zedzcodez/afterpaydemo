@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useCart } from "@/components/CartProvider";
 import { useConfig } from "@/components/ConfigProvider";
 import { formatPrice } from "@/lib/products";
+import { SHIPPING_OPTIONS } from "@/lib/shipping";
 import { addFlowLog, updateFlowSummary } from "@/lib/flowLogs";
 import { FlowLogsDevPanel, toggleDevPanel, useDevPanelState } from "@/components/FlowLogsDevPanel";
 import { PaymentScheduleCodeSection } from "@/components/OSMInfoSection";
@@ -38,27 +39,6 @@ interface PaymentScheduleWidget {
   update: (config: { amount: { amount: string; currency: string } }) => void;
   paymentScheduleChecksum: string;
 }
-
-const SHIPPING_OPTIONS = [
-  {
-    id: "standard",
-    name: "Standard Shipping",
-    description: "5-7 business days",
-    price: 5.99,
-  },
-  {
-    id: "express",
-    name: "Express Shipping",
-    description: "2-3 business days",
-    price: 12.99,
-  },
-  {
-    id: "overnight",
-    name: "Overnight Shipping",
-    description: "Next business day",
-    price: 24.99,
-  },
-];
 
 function ShippingContent() {
   const searchParams = useSearchParams();

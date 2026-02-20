@@ -16,26 +16,10 @@ import { useRouter } from "next/navigation";
 import { useCart } from "./CartProvider";
 import { useConfig } from "./ConfigProvider";
 import { AfterpayButton } from "./AfterpayButton";
-import { initFlowLogs, addFlowLog, logCallback, setFlowSummary, updateFlowSummary, FlowSummary } from "@/lib/flowLogs";
+import { initFlowLogs, addFlowLog, logCallback, setFlowSummary, updateFlowSummary, FLOW_SUMMARIES } from "@/lib/flowLogs";
 import type { CheckoutFormData, LocalShippingOption } from "@/lib/types";
 
 type CheckoutMode = "redirect" | "popup";
-
-// Flow summary definitions
-const FLOW_SUMMARIES: Record<string, Omit<FlowSummary, 'requestConfig' | 'responseData'>> = {
-  'standard': {
-    flow: 'standard-redirect',
-    description: 'Full-page redirect to Afterpay where customer completes checkout, then returns to merchant site via redirectConfirmUrl for payment authorization.',
-    steps: ['Create Checkout', 'Redirect to Afterpay', 'Customer Returns', 'Authorize Payment'],
-    docsUrl: 'https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart',
-  },
-  'standard-popup': {
-    flow: 'standard-popup',
-    description: 'Modal popup checkout using Afterpay.js where customer stays on merchant site. Payment is authorized via the onComplete callback.',
-    steps: ['Create Checkout', 'Open Afterpay Popup', 'Authorize Payment'],
-    docsUrl: 'https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart/create-a-checkout#implement-the-popup-method',
-  },
-};
 
 interface CheckoutStandardProps {
   formData: CheckoutFormData;

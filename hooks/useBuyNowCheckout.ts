@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import { useConfig } from "@/components/ConfigProvider";
 import { useCart } from "@/components/CartProvider";
 import { Product } from "@/lib/types";
+import { getAfterpayShippingOptions } from "@/lib/shipping";
 import {
   initFlowLogs,
   addFlowLog,
   logCallback,
   setFlowSummary,
   updateFlowSummary,
-  FlowSummary,
+  FLOW_SUMMARIES,
 } from "@/lib/flowLogs";
 
 interface BuyNowItem {
@@ -29,47 +30,6 @@ interface UseBuyNowCheckoutReturn {
   isLoading: boolean;
   error: string | null;
 }
-
-const SHIPPING_OPTIONS = [
-  {
-    id: "standard",
-    name: "Standard Shipping",
-    description: "5-7 business days",
-    shippingAmount: { amount: "5.99", currency: "USD" },
-  },
-  {
-    id: "express",
-    name: "Express Shipping",
-    description: "2-3 business days",
-    shippingAmount: { amount: "12.99", currency: "USD" },
-  },
-  {
-    id: "overnight",
-    name: "Overnight Shipping",
-    description: "Next business day",
-    shippingAmount: { amount: "24.99", currency: "USD" },
-  },
-];
-
-// Flow summary definitions for Buy Now
-const FLOW_SUMMARIES: Record<string, Omit<FlowSummary, "requestConfig" | "responseData">> = {
-  "buynow-integrated": {
-    flow: "buynow-integrated",
-    description:
-      "Buy Now popup checkout where customer selects shipping options directly within the Afterpay popup using the onShippingAddressChange callback.",
-    steps: ["Create Checkout", "Afterpay Popup (with shipping)", "Authorize Payment"],
-    docsUrl:
-      "https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout",
-  },
-  "buynow-deferred": {
-    flow: "buynow-deferred",
-    description:
-      "Buy Now popup checkout where customer completes payment in Afterpay, then returns to merchant site to select shipping before authorization.",
-    steps: ["Create Checkout", "Afterpay Popup", "Select Shipping", "Authorize Payment"],
-    docsUrl:
-      "https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout#deferred-shipping",
-  },
-};
 
 function getAfterpaySdk() {
   if (typeof window === "undefined") return null;
@@ -184,24 +144,7 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
 
       // Helper: get shipping options based on current total
       const getShippingOptions = () => {
-        const currentTotal = paramsRef.current!.total;
-        return SHIPPING_OPTIONS.map((opt) => {
-          const shippingCost = parseFloat(opt.shippingAmount.amount);
-          const isFreeShipping = currentTotal >= 100 && opt.id === "standard";
-          return {
-            id: opt.id,
-            name: isFreeShipping ? "Free Standard Shipping" : opt.name,
-            description: opt.description,
-            shippingAmount: isFreeShipping
-              ? { amount: "0.00", currency: "USD" }
-              : opt.shippingAmount,
-            taxAmount: { amount: "0.00", currency: "USD" },
-            orderAmount: {
-              amount: (currentTotal + (isFreeShipping ? 0 : shippingCost)).toFixed(2),
-              currency: "USD",
-            },
-          };
-        });
+        return getAfterpayShippingOptions(paramsRef.current!.total);
       };
 
       // Helper: handle payment processing (capture-full for immediate, auth for deferred)

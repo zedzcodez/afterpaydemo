@@ -17,16 +17,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 
 import { useCart } from "./CartProvider";
 import { useConfig } from "@/components/ConfigProvider";
-import { initFlowLogs, addFlowLog, setFlowSummary, updateFlowSummary, FlowSummary } from "@/lib/flowLogs";
+import { initFlowLogs, addFlowLog, setFlowSummary, updateFlowSummary, FLOW_SUMMARIES } from "@/lib/flowLogs";
 import { CashAppPayCompleteEvent } from "@/lib/types";
 import type { CheckoutFormData, LocalShippingOption } from "@/lib/types";
-
-const FLOW_SUMMARY: Omit<FlowSummary, 'requestConfig' | 'responseData'> = {
-  flow: 'cashapp',
-  description: 'Cash App Pay checkout where customer scans a QR code or taps the Cash App Pay button to authorize payment via Cash App.',
-  steps: ['Create Checkout', 'Initialize Cash App Pay', 'Customer Authorizes via Cash App', 'Authorize Payment'],
-  docsUrl: 'https://developers.cash.app/cash-app-afterpay/guides/api-development/add-cash-app-pay-to-your-site/overview',
-};
 
 const CASH_APP_BUTTON_OPTIONS = {
   size: "medium" as const,
@@ -314,7 +307,7 @@ export function CheckoutCashApp({ formData, selectedShipping, total, finalTotal,
       // Initialize flow logs
       initFlowLogs('cashapp');
       setFlowSummary({
-        ...FLOW_SUMMARY,
+        ...FLOW_SUMMARIES["cashapp"],
         requestConfig: {},
         responseData: {},
       });
