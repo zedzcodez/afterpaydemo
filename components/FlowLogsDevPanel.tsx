@@ -1,13 +1,27 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { getFlowLogs, FlowLogs, FlowLogEntry } from "@/lib/flowLogs";
+import { useConfig } from "@/components/ConfigProvider";
+import { LOCAL_STORAGE_KEYS } from "@/lib/storage-keys";
+import { COPY_FEEDBACK_MS } from "@/lib/constants";
 
 interface FlowLogsDevPanelProps {
   className?: string;
 }
 
 type FilterType = "all" | "api_request" | "api_response" | "callback" | "redirect";
+
+function extractRequestId(data: object | undefined): string | null {
+  if (!data || typeof data !== "object") return null;
+  const record = data as Record<string, unknown>;
+  const fromRequestBody = (record.requestBody as Record<string, unknown> | undefined)?.requestId;
+  if (typeof fromRequestBody === "string") return fromRequestBody;
+  const fromMeta = (record._meta as Record<string, unknown> | undefined)?.requestId;
+  if (typeof fromMeta === "string") return fromMeta;
+  return null;
+}
 
 const DEFAULT_PANEL_HEIGHT = 320;
 const MIN_PANEL_HEIGHT = 200;
@@ -44,6 +58,9 @@ export const useDevPanelState = () => {
 };
 
 export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
+  const { config } = useConfig();
+  const pathname = usePathname();
+
   const [isOpen, setIsOpen] = useState(false);
   const [showResizeHint, setShowResizeHint] = useState(false);
   const [flowLogs, setFlowLogs] = useState<FlowLogs | null>(null);
@@ -60,7 +77,7 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
 
   // Load persisted height from localStorage
   useEffect(() => {
-    const savedHeight = localStorage.getItem("devPanelHeight");
+    const savedHeight = localStorage.getItem(LOCAL_STORAGE_KEYS.DEV_PANEL_HEIGHT);
     if (savedHeight) {
       const height = parseInt(savedHeight, 10);
       if (!isNaN(height) && height >= MIN_PANEL_HEIGHT) {
@@ -83,7 +100,7 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
       if (isResizing) {
         setIsResizing(false);
         // Persist height to localStorage
-        localStorage.setItem("devPanelHeight", panelHeight.toString());
+        localStorage.setItem(LOCAL_STORAGE_KEYS.DEV_PANEL_HEIGHT, panelHeight.toString());
       }
     };
 
@@ -154,12 +171,13 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
 
   useEffect(() => {
     setFlowLogs(getFlowLogs());
+    if (!isOpen) return;
     const interval = setInterval(() => {
       const logs = getFlowLogs();
       setFlowLogs(logs);
     }, 500);
     return () => clearInterval(interval);
-  }, []);
+  }, [isOpen]);
 
   const logs = flowLogs?.entries || [];
 
@@ -357,7 +375,7 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
     try {
       await navigator.clipboard.writeText(text);
       setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
+      setTimeout(() => setCopySuccess(false), COPY_FEEDBACK_MS);
     } catch {
       console.error("Failed to copy to clipboard");
     }
@@ -431,6 +449,11 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
     { value: "callback", label: "Events" },
     { value: "redirect", label: "Redirects" },
   ];
+
+  // Hide dev panel when developer mode is off (admin page always shows it)
+  if (!config.developerMode && pathname !== "/admin") {
+    return null;
+  }
 
   return (
     <div ref={panelRef} className={`fixed bottom-0 left-0 right-0 bg-afterpay-gray-900 text-white z-50 ${className}`}>
@@ -634,7 +657,7 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
                   const docUrl = getDocUrl(log.endpoint);
                   const isExpanded = expandedEvents.has(log.id);
                   const typeInfo = getEventTypeLabel(log.type);
-                  const dataSize = log.data ? new Blob([JSON.stringify(log.data)]).size : 0;
+                  const dataSize = log.dataSize ?? (log.data ? new Blob([JSON.stringify(log.data)]).size : 0);
 
                   return (
                     <div
@@ -730,11 +753,11 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
                             )}
 
                             {/* Request ID - shown prominently for idempotency debugging */}
-                            {((log.data as Record<string, unknown>)?.requestBody as Record<string, unknown>)?.requestId || ((log.data as Record<string, unknown>)?._meta as Record<string, unknown>)?.requestId ? (
+                            {extractRequestId(log.data) ? (
                               <div className="bg-afterpay-gray-800 rounded p-3">
                                 <span className="text-xs text-afterpay-gray-400">Request ID: </span>
                                 <code className="text-xs text-afterpay-mint font-mono">
-                                  {(((log.data as Record<string, unknown>)?.requestBody as Record<string, unknown>)?.requestId || ((log.data as Record<string, unknown>)?._meta as Record<string, unknown>)?.requestId) as string}
+                                  {extractRequestId(log.data)}
                                 </code>
                               </div>
                             ) : null}

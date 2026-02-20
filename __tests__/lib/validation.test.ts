@@ -4,6 +4,7 @@ import {
   authRequestSchema,
   refundRequestSchema,
   captureRequestSchema,
+  captureFullRequestSchema,
   voidRequestSchema,
 } from '@/lib/validation';
 
@@ -114,6 +115,29 @@ describe('validateRequest', () => {
       });
       expect(result.success).toBe(false);
     });
+
+    it('accepts isCashAppPay: true and preserves the value', () => {
+      const result = validateRequest(checkoutRequestSchema, {
+        items: [createValidCartItem()],
+        total: 50,
+        isCashAppPay: true,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.isCashAppPay).toBe(true);
+      }
+    });
+
+    it('defaults isCashAppPay to false when not provided', () => {
+      const result = validateRequest(checkoutRequestSchema, {
+        items: [createValidCartItem()],
+        total: 50,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.isCashAppPay).toBe(false);
+      }
+    });
   });
 
   describe('authRequestSchema', () => {
@@ -206,6 +230,55 @@ describe('validateRequest', () => {
     it('rejects missing amount', () => {
       const result = validateRequest(captureRequestSchema, {
         orderId: '123',
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('captureFullRequestSchema', () => {
+    it('validates valid capture-full request with token only', () => {
+      const result = validateRequest(captureFullRequestSchema, {
+        token: 'valid-token',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('validates capture-full request with all optional fields', () => {
+      const result = validateRequest(captureFullRequestSchema, {
+        token: 'valid-token',
+        merchantReference: 'REF-001',
+        amount: 50,
+        isCheckoutAdjusted: true,
+        paymentScheduleChecksum: 'abc123',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects missing token', () => {
+      const result = validateRequest(captureFullRequestSchema, {});
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects empty token', () => {
+      const result = validateRequest(captureFullRequestSchema, { token: '' });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain('Token is required');
+      }
+    });
+
+    it('rejects negative amount', () => {
+      const result = validateRequest(captureFullRequestSchema, {
+        token: 'valid-token',
+        amount: -10,
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects zero amount', () => {
+      const result = validateRequest(captureFullRequestSchema, {
+        token: 'valid-token',
+        amount: 0,
       });
       expect(result.success).toBe(false);
     });

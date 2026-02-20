@@ -14,18 +14,29 @@ export interface CartItem {
   quantity: number;
 }
 
-export interface Cart {
-  items: CartItem[];
-  total: number;
+export interface CheckoutFormData {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  address1: string;
+  address2: string;
+  city: string;
+  state: string;
+  postcode: string;
+  country: string;
 }
 
-export interface ShippingOption {
+export interface LocalShippingOption {
   id: string;
   name: string;
   description?: string;
-  shippingAmount: Money;
-  taxAmount?: Money;
-  orderAmount: Money;
+  price: number;
+}
+
+export interface Cart {
+  items: CartItem[];
+  total: number;
 }
 
 export interface Money {
@@ -64,6 +75,7 @@ export interface CheckoutRequest {
     popupOriginUrl?: string;
   };
   mode?: "standard" | "express";
+  isCashAppPay?: boolean;
 }
 
 export interface CheckoutItem {
@@ -132,6 +144,19 @@ declare global {
       Widgets: {
         PaymentSchedule: new (config: AfterpayPaymentScheduleConfig) => AfterpayPaymentScheduleWidget;
       };
+      // Cash App Pay methods
+      initializeForCashAppPay: (config: CashAppPayConfig) => void;
+      initializeCashAppPayListeners: (config: { onComplete: (event: CashAppPayCompleteEvent) => void }) => void;
+      restartCashAppPay: () => void;
+      renderCashAppPayButton: (config?: {
+        countryCode?: string;
+        cashAppPayButtonOptions?: {
+          size?: 'small' | 'medium';
+          width?: 'full' | 'static';
+          theme?: 'dark' | 'light';
+          shape?: 'round' | 'semiround';
+        };
+      }) => void;
     };
   }
 }
@@ -223,4 +248,35 @@ export interface AfterpayShippingOptionData {
 export interface AfterpayMessage {
   severity: "log" | "warning" | "error";
   message: string;
+}
+
+export interface CashAppPayConfig {
+  countryCode: string;
+  token: string;
+  cashAppPayOptions: {
+    button?: {
+      size?: 'small' | 'medium';
+      width?: 'full' | 'static';
+      theme?: 'dark' | 'light';
+      shape?: 'round' | 'semiround';
+    } | false;
+    onComplete: (event: CashAppPayCompleteEvent) => void;
+    eventListeners?: {
+      CUSTOMER_INTERACTION?: (event: { isMobile: boolean }) => void;
+      CUSTOMER_REQUEST_APPROVED?: () => void;
+      CUSTOMER_REQUEST_DECLINED?: () => void;
+      CUSTOMER_REQUEST_FAILED?: () => void;
+      CUSTOMER_DISMISSED?: () => void;
+    };
+    manage?: boolean;
+    onBegin?: (args: { begin: () => void }) => void;
+  };
+}
+
+export interface CashAppPayCompleteEvent {
+  data: {
+    status: 'SUCCESS' | 'CANCELLED';
+    cashtag?: string;
+    orderToken: string;
+  };
 }

@@ -65,6 +65,8 @@ afterpay-demo-v2/
 | Express (Afterpay.js) | Integrated | Immediate | Popup → Auth → Capture → Confirmation |
 | Express (Afterpay.js) | Deferred | Deferred | Popup → Shipping Page → Auth → Confirmation |
 | Express (Afterpay.js) | Deferred | Immediate | Popup → Shipping Page → Auth → Capture → Confirmation |
+| Cash App Pay (SDK) | Form | Deferred | Form → SDK Init → QR/Redirect → Auth → Confirmation |
+| Cash App Pay (SDK) | Form | Immediate | Form → SDK Init → QR/Redirect → Auth → Capture → Confirmation |
 | Standard (API) | N/A | Deferred | Redirect/Popup → Review → Auth → Confirmation |
 | Standard (API) | N/A | Immediate | Redirect/Popup → Review → Capture Full → Confirmation |
 
@@ -522,6 +524,19 @@ export const config = {
 - ✅ Developer Panel resize on all pages (commits `9c3ba49`, `633c246`)
 - ✅ Dark mode support on all pages (commit `a95eade`)
 
+### Phase 6: v2.7.0 Cash App Pay (2026-02-07) ✅ COMPLETED
+**Cash App Pay Integration**
+- ✅ Cash App Pay as third checkout method (QR on desktop, redirect on mobile)
+- ✅ `isCashAppPay: true` flag in checkout API
+- ✅ SDK lifecycle management with `isActive` prop
+- ✅ Always-mounted tab rendering (CSS `display:none`) for state preservation
+- ✅ Shadow DOM button style override for consistent full-width dark theme
+- ✅ CashAppInfoSection developer docs component
+- ✅ Mobile/desktop responsive messaging
+- ✅ Edit, retry, and tab-switch flows with SDK restart lifecycle
+- ✅ Mobile redirect return handling on confirmation page
+- ✅ 57 tests passing, TypeScript clean
+
 ### Phase 5: v2.6.0 Release (2026-02-05) ✅ COMPLETED
 **Idempotency & Checkout UX**
 - ✅ Idempotency support via `requestId` for all payment operations
@@ -560,6 +575,6 @@ export const config = {
 ---
 
 *Document generated: 2026-02-04*
-*Last updated: 2026-02-05*
-*Status: Phase 1, 3, 4, 5 COMPLETED - Phase 2 (Core Security) PENDING*
-*Current Version: 2.6.0*
+*Last updated: 2026-02-07*
+*Status: Phase 1, 3, 4, 5, 6 COMPLETED - Phase 2 (Core Security) PENDING*
+*Current Version: 2.7.0*

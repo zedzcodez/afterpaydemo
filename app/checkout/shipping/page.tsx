@@ -5,11 +5,17 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/components/CartProvider";
+import { useConfig } from "@/components/ConfigProvider";
 import { formatPrice } from "@/lib/products";
+import { SHIPPING_OPTIONS } from "@/lib/shipping";
+import { roundCurrency } from "@/lib/cart";
 import { addFlowLog, updateFlowSummary } from "@/lib/flowLogs";
+import { captureFullPaymentClient, authorizePaymentClient } from "@/lib/payment-client";
 import { FlowLogsDevPanel, toggleDevPanel, useDevPanelState } from "@/components/FlowLogsDevPanel";
 import { PaymentScheduleCodeSection } from "@/components/OSMInfoSection";
 import { CheckoutProgress } from "@/components/CheckoutProgress";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { SDK_POLL_INTERVAL_MS } from "@/lib/constants";
 
 // Declare Afterpay widget types
 declare global {
@@ -38,31 +44,11 @@ interface PaymentScheduleWidget {
   paymentScheduleChecksum: string;
 }
 
-const SHIPPING_OPTIONS = [
-  {
-    id: "standard",
-    name: "Standard Shipping",
-    description: "5-7 business days",
-    price: 5.99,
-  },
-  {
-    id: "express",
-    name: "Express Shipping",
-    description: "2-3 business days",
-    price: 12.99,
-  },
-  {
-    id: "overnight",
-    name: "Overnight Shipping",
-    description: "Next business day",
-    price: 24.99,
-  },
-];
-
 function ShippingContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { items, total } = useCart();
+  const { config } = useConfig();
   const [selectedShipping, setSelectedShipping] = useState(SHIPPING_OPTIONS[0]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +64,7 @@ function ShippingContent() {
 
   // Use stored cart total from sessionStorage, fallback to cart context
   const cartTotal = storedCartTotal ?? total;
-  const finalTotal = cartTotal + selectedShipping.price;
+  const finalTotal = roundCurrency(cartTotal + selectedShipping.price);
 
   // Detect dark mode
   useEffect(() => {
@@ -100,7 +86,7 @@ function ShippingContent() {
 
   // Load stored cart data on mount
   useEffect(() => {
-    const storedData = sessionStorage.getItem('afterpay_checkout_cart');
+    const storedData = sessionStorage.getItem(STORAGE_KEYS.CHECKOUT_CART);
     if (storedData) {
       try {
         const parsed = JSON.parse(storedData);
@@ -118,7 +104,7 @@ function ShippingContent() {
     widgetInitialized.current = true;
 
     const initialAmount = {
-      amount: (baseTotal + SHIPPING_OPTIONS[0].price).toFixed(2),
+      amount: roundCurrency(baseTotal + SHIPPING_OPTIONS[0].price).toFixed(2),
       currency: "USD"
     };
 
@@ -139,7 +125,6 @@ function ShippingContent() {
         locale: "en-US",
         theme: currentDarkMode ? "dark" : "light",
         onReady: (event) => {
-          console.log("Widget ready:", event);
           setWidgetReady(true);
           addFlowLog({
             type: "callback",
@@ -148,7 +133,6 @@ function ShippingContent() {
           });
         },
         onChange: (event) => {
-          console.log("Widget changed:", event);
           setChecksum(event.data.paymentScheduleChecksum);
           addFlowLog({
             type: "callback",
@@ -160,7 +144,6 @@ function ShippingContent() {
           });
         },
         onError: (event) => {
-          console.error("Widget error:", event);
           addFlowLog({
             type: "callback",
             label: "Widget Error",
@@ -169,7 +152,11 @@ function ShippingContent() {
         },
       });
     } catch (err) {
-      console.error("Failed to initialize widget:", err);
+      addFlowLog({
+        type: "callback",
+        label: "Widget Initialization Error",
+        data: { error: err instanceof Error ? err.message : "Unknown error" },
+      });
     }
   }, []);
 
@@ -198,7 +185,7 @@ function ShippingContent() {
       if (window.AfterPay) {
         initializeWidget(orderToken, storedCartTotal);
       } else {
-        setTimeout(checkAndInit, 100);
+        setTimeout(checkAndInit, SDK_POLL_INTERVAL_MS);
       }
     };
     checkAndInit();
@@ -236,75 +223,32 @@ function ShippingContent() {
     setIsProcessing(true);
     setError(null);
 
-    // Check capture mode from localStorage
-    const captureMode = localStorage.getItem("afterpay_capture_mode") || "deferred";
-    const isImmediateCapture = captureMode === "immediate";
+    // Read capture mode from centralized config
+    const isImmediateCapture = config.captureMode === "immediate";
 
     try {
-      let orderId: string;
-
-      // Authorize with adjusted amount + checksum (for deferred shipping)
-      const authClientRequest = {
-        token: orderToken,
+      const adjustmentOptions = {
         amount: finalTotal,
         isCheckoutAdjusted: true,
         paymentScheduleChecksum,
       };
 
-      const authStartTime = Date.now();
-      const authResponse = await fetch("/api/afterpay/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(authClientRequest),
-      });
+      const result = isImmediateCapture
+        ? await captureFullPaymentClient(orderToken, adjustmentOptions)
+        : await authorizePaymentClient(orderToken, adjustmentOptions);
 
-      const authData = await authResponse.json();
-      const authDuration = Date.now() - authStartTime;
+      const orderId = result.orderId;
 
-      // Log request with FULL server-side payload from _meta
-      addFlowLog({
-        type: "api_request",
-        label: `Authorize Payment (${isImmediateCapture ? "Immediate" : "Deferred"} Mode)`,
-        method: "POST",
-        endpoint: "/api/afterpay/auth → /v2/payments/auth",
-        data: authData._meta?.requestBody || {
-          ...authClientRequest,
-          paymentScheduleChecksum: paymentScheduleChecksum.substring(0, 20) + "...",
-        },
-        fullUrl: authData._meta?.fullUrl,
-        headers: authData._meta?.headers,
-      });
-
-      addFlowLog({
-        type: "api_response",
-        label: "Authorization Response",
-        method: "POST",
-        endpoint: "/v2/payments/auth",
-        status: authResponse.status,
-        data: authData,
-        duration: authDuration,
-        fullUrl: authData._meta?.fullUrl,
-      });
-
-      if (authData.error) {
-        throw new Error(authData.error);
-      }
-
-      if (authData.status !== "APPROVED") {
-        throw new Error("Payment was not approved");
-      }
-
-      // Update flow summary with adjustment details and auth response
       updateFlowSummary({
         requestConfig: {
           isCheckoutAdjusted: true,
           paymentScheduleChecksum: paymentScheduleChecksum,
         },
         responseData: {
-          id: authData.id,
-          status: authData.status,
-          originalAmount: authData.originalAmount,
-          openToCaptureAmount: authData.openToCapture,
+          id: result.data.id,
+          status: result.data.status,
+          originalAmount: result.data.originalAmount,
+          openToCaptureAmount: result.data.openToCapture,
         },
         adjustment: {
           originalAmount: { amount: cartTotal.toFixed(2), currency: "USD" },
@@ -315,60 +259,9 @@ function ShippingContent() {
         },
       });
 
-      orderId = authData.id;
-
-      // Only capture immediately if in Immediate Capture mode
-      if (isImmediateCapture) {
-        const captureClientRequest = {
-          orderId: authData.id,
-          amount: finalTotal,
-          isCheckoutAdjusted: true,
-          paymentScheduleChecksum,
-        };
-
-        const captureStartTime = Date.now();
-        const captureResponse = await fetch("/api/afterpay/capture", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(captureClientRequest),
-        });
-
-        const captureData = await captureResponse.json();
-        const captureDuration = Date.now() - captureStartTime;
-
-        // Log request with FULL server-side payload from _meta
-        addFlowLog({
-          type: "api_request",
-          label: "Capture Payment (Immediate Mode)",
-          method: "POST",
-          endpoint: `/api/afterpay/capture → /v2/payments/${authData.id}/capture`,
-          data: captureData._meta?.requestBody || {
-            ...captureClientRequest,
-            paymentScheduleChecksum: paymentScheduleChecksum.substring(0, 20) + "...",
-          },
-          fullUrl: captureData._meta?.fullUrl,
-          headers: captureData._meta?.headers,
-        });
-
-        addFlowLog({
-          type: "api_response",
-          label: "Capture Response",
-          method: "POST",
-          endpoint: `/v2/payments/${authData.id}/capture`,
-          status: captureResponse.status,
-          data: captureData,
-          duration: captureDuration,
-          fullUrl: captureData._meta?.fullUrl,
-        });
-
-        if (captureData.error) {
-          throw new Error(captureData.error);
-        }
-      }
-
       // Store cart data in sessionStorage before clearing (for confirmation page)
       // Use stored cart data if available, otherwise use cart context
-      const storedCartData = sessionStorage.getItem('afterpay_checkout_cart');
+      const storedCartData = sessionStorage.getItem(STORAGE_KEYS.CHECKOUT_CART);
       let orderItems = items.map(item => ({
         productId: item.product.id,
         productName: item.product.name,
@@ -383,12 +276,12 @@ function ShippingContent() {
           // Use empty items
         }
       }
-      sessionStorage.setItem('afterpay_pending_order', JSON.stringify({
+      sessionStorage.setItem(STORAGE_KEYS.PENDING_ORDER, JSON.stringify({
         items: orderItems,
-        total: cartTotal + selectedShipping.price,
+        total: roundCurrency(cartTotal + selectedShipping.price),
       }));
       // Clean up the checkout cart data
-      sessionStorage.removeItem('afterpay_checkout_cart');
+      sessionStorage.removeItem(STORAGE_KEYS.CHECKOUT_CART);
 
       // Cart will be cleared on confirmation page after order is saved
       const flowSuffix = isImmediateCapture ? "immediate" : "deferred";
@@ -520,29 +413,31 @@ function ShippingContent() {
         </div>
       </div>
 
-      {/* Developer Panel Toggle */}
-      <div className="flex items-center justify-between p-3 bg-afterpay-gray-100 dark:bg-afterpay-gray-800 rounded-lg mb-6">
-        <div className="flex-1 mr-4">
-          <p className="text-sm font-medium text-afterpay-black dark:text-white">Developer Panel</p>
-          <p className="text-xs text-afterpay-gray-500 dark:text-afterpay-gray-400">
-            View API requests, responses, and integration flow logs
-          </p>
+      {/* Developer Panel Toggle (only when developer mode is on) */}
+      {config.developerMode && (
+        <div className="flex items-center justify-between p-3 bg-afterpay-gray-100 dark:bg-afterpay-gray-800 rounded-lg mb-6">
+          <div className="flex-1 mr-4">
+            <p className="text-sm font-medium text-afterpay-black dark:text-white">Developer Panel</p>
+            <p className="text-xs text-afterpay-gray-500 dark:text-afterpay-gray-400">
+              View API requests, responses, and integration flow logs
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => toggleDevPanel(25)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              isDevPanelOpen
+                ? "bg-afterpay-mint text-afterpay-black hover:bg-afterpay-mint-dark"
+                : "bg-afterpay-gray-800 dark:bg-afterpay-gray-700 text-white hover:bg-afterpay-gray-700 dark:hover:bg-afterpay-gray-600"
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+            </svg>
+            {isDevPanelOpen ? "Hide Developer Panel" : "Show Developer Panel"}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => toggleDevPanel(25)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            isDevPanelOpen
-              ? "bg-afterpay-mint text-afterpay-black hover:bg-afterpay-mint-dark"
-              : "bg-afterpay-gray-800 dark:bg-afterpay-gray-700 text-white hover:bg-afterpay-gray-700 dark:hover:bg-afterpay-gray-600"
-          }`}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-          </svg>
-          {isDevPanelOpen ? "Hide Developer Panel" : "Show Developer Panel"}
-        </button>
-      </div>
+      )}
 
       {/* Afterpay Payment Schedule Widget */}
       <div className="bg-white dark:bg-afterpay-gray-700 border border-afterpay-gray-200 dark:border-afterpay-gray-600 rounded-lg overflow-hidden mb-6">

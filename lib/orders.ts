@@ -18,11 +18,11 @@ export interface Order {
   captureMode: 'deferred' | 'immediate';
 }
 
-const ORDERS_STORAGE_KEY = 'afterpay-demo-orders';
+import { LOCAL_STORAGE_KEYS } from "./storage-keys";
 
 export function getOrders(): Order[] {
   if (typeof window === 'undefined') return [];
-  const stored = localStorage.getItem(ORDERS_STORAGE_KEY);
+  const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.ORDERS);
   try {
     return stored ? JSON.parse(stored) : [];
   } catch {
@@ -42,7 +42,7 @@ export function saveOrder(order: Order): void {
   }
   // Keep only last 20 orders
   const trimmed = orders.slice(0, 20);
-  localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(trimmed));
+  localStorage.setItem(LOCAL_STORAGE_KEYS.ORDERS, JSON.stringify(trimmed));
 }
 
 export function getOrder(orderId: string): Order | undefined {
@@ -54,20 +54,20 @@ export function updateOrderStatus(orderId: string, status: Order['status']): voi
   const order = orders.find(o => o.orderId === orderId);
   if (order) {
     order.status = status;
-    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+    localStorage.setItem(LOCAL_STORAGE_KEYS.ORDERS, JSON.stringify(orders));
   }
 }
 
 export function clearOrders(): void {
   if (typeof window === 'undefined') return;
-  localStorage.removeItem(ORDERS_STORAGE_KEY);
+  localStorage.removeItem(LOCAL_STORAGE_KEYS.ORDERS);
 }
 
 export function deleteOrder(orderId: string): void {
   if (typeof window === 'undefined') return;
   const orders = getOrders();
   const filtered = orders.filter(o => o.orderId !== orderId);
-  localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(filtered));
+  localStorage.setItem(LOCAL_STORAGE_KEYS.ORDERS, JSON.stringify(filtered));
 }
 
 export function formatOrderDate(dateString: string): string {

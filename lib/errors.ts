@@ -35,11 +35,3 @@ export function sanitizeError(error: unknown, context: string): string {
   // Default safe message
   return "An error occurred. Please try again.";
 }
-
-/**
- * Safe error response helper
- */
-export function errorResponse(error: unknown, context: string, status = 500) {
-  const safeMessage = sanitizeError(error, context);
-  return { error: safeMessage, status };
-}

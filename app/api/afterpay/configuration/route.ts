@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { API_URL } from "@/lib/afterpay";
 import { sanitizeError } from "@/lib/errors";
 
 export interface ConfigurationResponse {
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
     // Always use environment variables for credentials
     const merchantId = process.env.AFTERPAY_MERCHANT_ID;
     const secretKey = process.env.AFTERPAY_SECRET_KEY;
-    const apiUrl = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
+    const apiUrl = API_URL;
 
     if (!merchantId || !secretKey) {
       return NextResponse.json(

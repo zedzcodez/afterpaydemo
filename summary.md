@@ -1,6 +1,6 @@
 # Afterpay Demo App Summary
 
-A comprehensive merchant checkout integration demo showcasing Afterpay's Buy Now, Pay Later (BNPL) payment solutions. Built with Next.js 16, React 19, and TypeScript.
+A configurable demo platform for Afterpay's Buy Now, Pay Later (BNPL) payment solutions. Toggle features on and off from the Admin panel to explore different checkout configurations, capture modes, and developer tools - all built with Next.js 16, React 19, and TypeScript.
 
 **Live Demo:** [afterpay-demo-v2.vercel.app](https://afterpay-demo-v2.vercel.app)
 
@@ -10,23 +10,40 @@ A comprehensive merchant checkout integration demo showcasing Afterpay's Buy Now
 
 This application demonstrates how merchants integrate Afterpay into their e-commerce checkout experience. It provides a fully functional sandbox environment where you can:
 
-- **Test checkout flows** - Express and Standard checkout with multiple configuration options
+- **Configure features** - Enable/disable Express Checkout, Cash App Pay, Developer Mode, and capture settings from the Admin panel
+- **Test checkout flows** - Standard and Cash App Pay on the checkout page, Express Checkout inline via Buy Now buttons
 - **Process payments** - Authorize, capture, refund, and void operations
 - **View real-time API logs** - See exactly what's sent to and received from Afterpay
-- **Explore OSM messaging** - Payment breakdown badges on product and cart pages
+- **Explore On-Site Messaging** - Payment breakdown badges on product and cart pages
 
 ---
 
 ## Core Features
 
-| Category | Features |
-|----------|----------|
-| **Checkout Flows** | Express Checkout (popup with integrated/deferred shipping), Standard Checkout (redirect/popup modes) |
-| **Payment Operations** | Deferred & Immediate capture, partial/full refunds, void authorization |
-| **On-Site Messaging** | "Pay in 4" and "Pay Monthly" badges on PDP, cart, and checkout |
-| **Admin Panel** | Payment lookup, capture, refund, void, event history |
-| **Developer Tools** | API request/response logging, cURL/HAR export, code snippets, flow summaries |
-| **Order Management** | Persistent order history, individual deletion, status tracking |
+### Shopping Experience
+| Feature | Description |
+|---------|-------------|
+| On-Site Messaging | "Pay in 4" and "Pay Monthly" badges on product and cart pages |
+| Buy Now | Express Checkout popup from product pages, cart, and mini-cart |
+
+### Checkout
+| Feature | Description |
+|---------|-------------|
+| Standard Checkout | Redirect or popup flow to Afterpay |
+| Cash App Pay | QR code on desktop, Cash App redirect on mobile |
+
+### Payment Operations
+| Feature | Description |
+|---------|-------------|
+| Capture Modes | Deferred (authorize then capture) or Immediate |
+| Refunds & Voids | Full/partial refunds and void authorization |
+| Order History | Track completed orders with status |
+
+### Admin & Developer
+| Feature | Description |
+|---------|-------------|
+| Admin Panel | Configuration + Payment Operations tabs |
+| Developer Mode | Toggle to show/hide API logs, code, dev tools |
 
 ---
 
@@ -34,19 +51,20 @@ This application demonstrates how merchants integrate Afterpay into their e-comm
 
 ### Merchants Evaluating Afterpay
 
-See the full customer experience before integrating - from product pages with payment badges through checkout completion. Understand all available checkout flows and capture strategies without writing any code.
+See the full customer experience before integrating - from product pages with payment badges through checkout completion. Toggle features on and off from the Admin Configuration tab to compare different checkout setups without writing any code.
 
 **Key value:**
-- Visual preview of OSM badge placements
-- Compare Express vs Standard checkout UX
+- Visual preview of On-Site Messaging badge placements
+- Toggle Express Checkout, Cash App Pay, and capture modes to see different configurations
 - Understand deferred vs immediate capture implications
 
 ### Integration Developers
 
-Learn API patterns with real request/response logging. The Developer Panel shows exactly what's sent to Afterpay APIs, with cURL export for debugging and code snippets for each method.
+Learn API patterns with real request/response logging. Toggle Developer Mode on to see code snippets, flow logs, and the Developer Panel showing exactly what's sent to Afterpay APIs, with cURL export for debugging.
 
 **Key value:**
-- Token flow visualization (Checkout Token → Order Token → Order ID)
+- Token flow visualization (Checkout Token -> Order Token -> Order ID)
+- Developer Mode toggle for clean shopping vs full developer experience
 - Request/response body inspection
 - Copy as cURL for testing
 - HAR export for browser DevTools
@@ -62,7 +80,7 @@ Compare Express vs Standard checkout trade-offs. Evaluate deferred vs immediate 
 
 ### Product & Business Teams
 
-Visualize checkout UX without writing code. Demo payment operations (refunds, voids) to understand merchant capabilities. See how OSM messaging appears on different pages.
+Visualize checkout UX without writing code. Demo payment operations (refunds, voids) to understand merchant capabilities. See how On-Site Messaging appears on different pages.
 
 **Key value:**
 - No-code feature exploration
@@ -80,7 +98,7 @@ Sandbox environment with test card CVVs (000=approved, 051=declined). Complete e
 
 ### Afterpay Sales & Solutions Teams
 
-Live demo for merchant presentations. Shows OSM placement options, checkout customization, and admin capabilities in a polished, professional interface.
+Live demo for merchant presentations. Shows On-Site Messaging placement options, checkout customization, and admin capabilities in a polished, professional interface.
 
 **Key value:**
 - Presentation-ready demo environment
@@ -104,15 +122,20 @@ Wraps all Afterpay v2 endpoints:
 | POST /api/afterpay/refund | POST /v2/payments/{id}/refund | Refund (full/partial) |
 | POST /api/afterpay/void | POST /v2/payments/{id}/void | Void (full/partial) |
 
+### Reliability
+
+- **Retry Logic** - Automatic retry on transient 500/502/503/504 errors with linear backoff
+- **Error Detail** - API responses include both sanitized (`error`) and raw (`errorDetail`) error messages
+
 ### Security
 
 - **Input Validation** - All API routes validate input with Zod schemas
 - **Error Sanitization** - API errors are sanitized before returning to clients
-- **Security Headers** - X-Content-Type-Options, X-Frame-Options, X-XSS-Protection
+- **Security Headers** - X-Content-Type-Options, X-Frame-Options, Content-Security-Policy, Referrer-Policy
 
 ### Quality
 
-- **Test Coverage** - 55 unit tests with 99.63% coverage on lib utilities
+- **Test Coverage** - 139 unit tests across 10 test suites covering lib utilities
 - **TypeScript** - Full type safety throughout the codebase
 - **Error Boundaries** - Graceful error handling with user-friendly fallback UI
 
@@ -126,8 +149,8 @@ Wraps all Afterpay v2 endpoints:
 | UI Library | React 19 |
 | Language | TypeScript |
 | Styling | Tailwind CSS |
-| Typography | Outfit (display) + Plus Jakarta Sans (body) |
-| State | React Context + localStorage |
+| Typography | Clash Display (display) + General Sans (body) + JetBrains Mono (code) |
+| State | React Context (ConfigProvider) + localStorage |
 | Validation | Zod |
 | Testing | Jest |
 | Deployment | Vercel |
@@ -137,13 +160,14 @@ Wraps all Afterpay v2 endpoints:
 ## Getting Started
 
 1. **Try the live demo** at [afterpay-demo-v2.vercel.app](https://afterpay-demo-v2.vercel.app)
-2. **Add products to cart** from the Shop page
-3. **Test checkout flows** - try Express and Standard options
-4. **Explore the Admin Panel** at `/admin` to manage payments
-5. **View Order History** at `/orders` to track completed transactions
+2. **Configure features** at `/admin` > Configuration tab - toggle Express Checkout, Cash App Pay, Developer Mode, and capture settings
+3. **Add products to cart** from the Shop page - use Buy Now buttons for Express Checkout
+4. **Test checkout flows** - Standard and Cash App Pay on the checkout page
+5. **Explore the Admin Panel** at `/admin` > Payment Operations to manage payments
+6. **View Order History** at `/orders` to track completed transactions
 
 For detailed testing instructions, see the [How to Use This Demo](/docs) guide.
 
 ---
 
-**Version:** 2.6.0 | **Author:** [@zedzcodez](https://github.com/zedzcodez)
+**Version:** 3.0.0 | **Author:** [@zedzcodez](https://github.com/zedzcodez)

@@ -6,11 +6,6 @@ export interface RequestHeaders {
   userAgent?: string;
 }
 
-export interface ResponseHeaders {
-  contentType?: string;
-  requestId?: string;  // Afterpay request tracking ID
-}
-
 export interface FlowLogEntry {
   id: string;
   timestamp: string;
@@ -25,9 +20,7 @@ export interface FlowLogEntry {
   fullUrl?: string;  // Complete URL (e.g., https://global-api-sandbox.afterpay.com/v2/checkouts)
   pathParams?: Record<string, string>;  // Path parameters (e.g., { orderId: "123" })
   headers?: RequestHeaders;
-  responseHeaders?: ResponseHeaders;
-  requestSize?: number;  // Request body size in bytes
-  responseSize?: number;  // Response body size in bytes
+  dataSize?: number;  // Pre-computed size of JSON.stringify(data) in bytes
 }
 
 export interface FlowSummary {
@@ -53,7 +46,9 @@ export interface FlowLogs {
   summary?: FlowSummary;
 }
 
-const STORAGE_KEY = "afterpay-flow-logs";
+import { STORAGE_KEYS as CENTRALIZED_KEYS } from "./storage-keys";
+
+const STORAGE_KEY = CENTRALIZED_KEYS.FLOW_LOGS;
 
 // Counter to ensure unique IDs even when entries are added in the same millisecond
 let idCounter = 0;
@@ -124,10 +119,12 @@ export function addFlowLog(entry: Omit<FlowLogEntry, "id" | "timestamp">): void 
     return;
   }
 
+  const dataSize = entry.data ? new Blob([JSON.stringify(entry.data)]).size : 0;
   logs.entries.push({
     ...entry,
     id: generateUniqueId(),
     timestamp: new Date().toISOString(),
+    dataSize,
   });
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
 }
@@ -165,39 +162,12 @@ export function updateFlowSummary(updates: Partial<FlowSummary>): void {
   if (!stored) return;
 
   const logs: FlowLogs = JSON.parse(stored);
-  if (logs.summary) {
-    logs.summary = { ...logs.summary, ...updates };
-  } else {
-    logs.summary = updates as FlowSummary;
+  if (!logs.summary) {
+    console.warn("[flowLogs] updateFlowSummary called before setFlowSummary");
+    return;
   }
+  logs.summary = { ...logs.summary, ...updates };
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
-}
-
-// Helper to log an API call (request + response)
-export function logApiCall(
-  method: string,
-  endpoint: string,
-  request: object,
-  response: object,
-  status: number,
-  duration: number
-): void {
-  addFlowLog({
-    type: "api_request",
-    label: `${method} ${endpoint}`,
-    method,
-    endpoint,
-    data: request,
-  });
-  addFlowLog({
-    type: "api_response",
-    label: `Response ${status}`,
-    method,
-    endpoint,
-    status,
-    data: response,
-    duration,
-  });
 }
 
 // Helper to log Afterpay.js callbacks
@@ -209,14 +179,57 @@ export function logCallback(name: string, data?: object): void {
   });
 }
 
-// Helper to log redirects
-export function logRedirect(destination: string, reason: string): void {
-  addFlowLog({
-    type: "redirect",
-    label: reason,
-    endpoint: destination,
-  });
-}
+// Centralized flow summary definitions used by all checkout components
+export type FlowSummaryBase = Omit<FlowSummary, "requestConfig" | "responseData">;
+
+export const FLOW_SUMMARIES: Record<string, FlowSummaryBase> = {
+  // Standard Checkout
+  "standard": {
+    flow: "standard-redirect",
+    description: "Full-page redirect to Afterpay where customer completes checkout, then returns to merchant site via redirectConfirmUrl for payment authorization.",
+    steps: ["Create Checkout", "Redirect to Afterpay", "Customer Returns", "Authorize Payment"],
+    docsUrl: "https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart",
+  },
+  "standard-popup": {
+    flow: "standard-popup",
+    description: "Modal popup checkout using Afterpay.js where customer stays on merchant site. Payment is authorized via the onComplete callback.",
+    steps: ["Create Checkout", "Open Afterpay Popup", "Authorize Payment"],
+    docsUrl: "https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart/create-a-checkout#implement-the-popup-method",
+  },
+  // Express Checkout
+  "express-integrated": {
+    flow: "express-integrated",
+    description: "Popup-based checkout where customer selects shipping options directly within the Afterpay popup using the onShippingAddressChange callback.",
+    steps: ["Create Checkout", "Afterpay Popup (with shipping)", "Authorize Payment"],
+    docsUrl: "https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout",
+  },
+  "express-deferred": {
+    flow: "express-deferred",
+    description: "Popup-based checkout where customer completes payment in Afterpay, then returns to merchant site to select shipping before authorization.",
+    steps: ["Create Checkout", "Afterpay Popup", "Select Shipping", "Authorize Payment"],
+    docsUrl: "https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout#deferred-shipping",
+  },
+  // Buy Now (Express variant)
+  "buynow-integrated": {
+    flow: "buynow-integrated",
+    description: "Buy Now popup checkout where customer selects shipping options directly within the Afterpay popup using the onShippingAddressChange callback.",
+    steps: ["Create Checkout", "Afterpay Popup (with shipping)", "Authorize Payment"],
+    docsUrl: "https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout",
+  },
+  "buynow-deferred": {
+    flow: "buynow-deferred",
+    description: "Buy Now popup checkout where customer completes payment in Afterpay, then returns to merchant site to select shipping before authorization.",
+    steps: ["Create Checkout", "Afterpay Popup", "Select Shipping", "Authorize Payment"],
+    docsUrl: "https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout#deferred-shipping",
+  },
+  // Cash App Pay
+  "cashapp": {
+    flow: "cashapp",
+    description: "Cash App Pay checkout where customer scans a QR code or taps the Cash App Pay button to authorize payment via Cash App.",
+    steps: ["Create Checkout", "Initialize Cash App Pay", "Customer Authorizes via Cash App", "Authorize Payment"],
+    docsUrl: "https://developers.cash.app/cash-app-afterpay/guides/api-development/add-cash-app-pay-to-your-site/overview",
+  },
+};
 
 /**
  * Format a flow string into a human-readable description
@@ -228,13 +241,17 @@ export function formatFlowName(flow: string): string {
 
   const parts = flow.toLowerCase().split("-");
 
-  // Determine checkout type
-  const isExpress = parts[0] === "express";
-  const checkoutType = isExpress ? "Express Checkout" : "Standard Checkout";
+  // Determine checkout type ("buynow" is the Buy Now variant of Express Checkout)
+  const isExpress = parts[0] === "express" || parts[0] === "buynow";
+  const isCashApp = parts[0] === "cashapp";
+  const checkoutType = isCashApp ? "Cash App Pay" : isExpress ? "Express Checkout" : "Standard Checkout";
 
   // Determine shipping/method (second part)
   let shippingOrMethod = "";
-  if (isExpress) {
+  if (isCashApp) {
+    // Cash App Pay flows are simply "cashapp-deferred" or "cashapp-immediate"
+    // No sub-method needed
+  } else if (isExpress) {
     if (parts[1] === "integrated") {
       shippingOrMethod = "with Integrated Shipping";
     } else if (parts[1] === "deferred") {

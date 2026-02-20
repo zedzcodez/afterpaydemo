@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { CartItem, Product } from "@/lib/types";
 import {
   getStoredCart,
@@ -41,34 +41,37 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items, mounted]);
 
-  const addToCart = (product: Product) => {
+  const addToCart = useCallback((product: Product) => {
     setItems((prev) => addToCartUtil(prev, product));
     // Trigger cart animation
     setCartAnimationTrigger((prev) => prev + 1);
-  };
+  }, []);
 
-  const removeFromCart = (productId: string) => {
+  const removeFromCart = useCallback((productId: string) => {
     setItems((prev) => removeFromCartUtil(prev, productId));
-  };
+  }, []);
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = useCallback((productId: string, quantity: number) => {
     setItems((prev) => updateQuantityUtil(prev, productId, quantity));
-  };
+  }, []);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setItems([]);
-  };
+  }, []);
 
-  const value: CartContextType = {
+  const total = useMemo(() => calculateTotal(items), [items]);
+  const itemCount = useMemo(() => getItemCount(items), [items]);
+
+  const value: CartContextType = useMemo(() => ({
     items,
-    total: calculateTotal(items),
-    itemCount: getItemCount(items),
+    total,
+    itemCount,
     cartAnimationTrigger,
     addToCart,
     removeFromCart,
     updateQuantity,
     clearCart,
-  };
+  }), [items, total, itemCount, cartAnimationTrigger, addToCart, removeFromCart, updateQuantity, clearCart]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

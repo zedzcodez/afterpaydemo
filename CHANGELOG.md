@@ -2,6 +2,30 @@
 
 All notable changes to this project are documented here.
 
+## [2.7.0] - 2026-02-07
+
+### Added
+- Cash App Pay as third checkout method alongside Express and Standard
+  - QR code payment on desktop, Cash App redirect on mobile
+  - `isCashAppPay: true` flag in checkout API request
+  - SDK-rendered button with full-width dark semiround theme
+  - Mobile/desktop responsive messaging (CSS-based, no hydration mismatches)
+  - Edit, retry, and tab-switch flows with SDK restart lifecycle
+- Cash App Pay developer info section with integration code snippets
+- Cash App Pay mobile redirect return handling on confirmation page
+
+### Fixed
+- Tab switching preserves form state across all checkout methods (always-mounted rendering)
+- Cash App Pay button renders consistently with full-width dark style across all flows
+- Express checkout guards against duplicate `initializeForPopup` calls on tab re-activation
+- Cash App Pay SDK lifecycle managed via `isActive` prop (restart on deactivate, re-init on activate)
+- Shadow DOM style override ensures Cash App button matches configured width and shape
+
+### Changed
+- Checkout page uses CSS `display:none` instead of conditional rendering for all tabs
+- All checkout components accept `isActive` prop for SDK lifecycle management
+- Shipping callback only passed to the active checkout component (prevents hidden component updates)
+
 ## [2.6.0] - 2026-02-05
 
 ### Added

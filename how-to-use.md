@@ -6,15 +6,30 @@ This guide walks you through testing all features of the Afterpay Demo Shop, wit
 
 ## At a Glance
 
-| Feature | What It Does | Demo URL | Afterpay Docs |
-|---------|--------------|----------|---------------|
-| On-Site Messaging | "Pay in 4" or "Pay Monthly" badges | `/products/1` | [OSM Guide](https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging) |
-| Express Checkout | Popup checkout with shipping options | `/checkout` | [Express Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout) |
+### Shopping Experience
+| Feature | What It Does | Where | Afterpay Docs |
+|---------|--------------|-------|---------------|
+| On-Site Messaging | "Pay in 4" or "Pay Monthly" badges | `/products/1`, `/cart` | [On-Site Messaging Guide](https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging) |
+| Buy Now (Express) | Popup checkout from product/cart pages | Product pages, Cart, Mini-cart | [Express Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/additional-features/express-checkout) |
+
+### Checkout
+| Feature | What It Does | Where | Afterpay Docs |
+|---------|--------------|-------|---------------|
 | Standard Checkout | Redirect or popup to Afterpay | `/checkout` | [API Quickstart](https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart) |
+| Cash App Pay | QR code (desktop) or Cash App redirect (mobile) | `/checkout` | [Cash App Pay Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/add-cash-app-pay-to-your-site/overview) |
+
+### Payment Operations
+| Feature | What It Does | Where | Afterpay Docs |
+|---------|--------------|-------|---------------|
 | Deferred Capture | Authorize now, capture later | `/admin` | [Deferred Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart/deferred-capture) |
-| Payment Admin | Capture, refund, void payments | `/admin` | [Payments API](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments) |
-| Webhooks | Dispute notifications (coming soon) | `/admin` | [Webhooks](https://developers.cash.app/cash-app-afterpay/guides/api-development/webhook-signature-generation) |
+| Immediate Capture | Authorize and capture in a single step | `/admin` | [Immediate Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart/immediate-capture) |
+| Refunds & Voids | Full/partial refunds and void authorization | `/admin` | [Payments API](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments) |
 | Order History | Track completed orders | `/orders` | - |
+
+### Admin & Developer
+| Feature | What It Does | Where | Afterpay Docs |
+|---------|--------------|-------|---------------|
+| Admin Configuration | Toggle checkout features and developer mode | `/admin` | - |
 
 > **Common Patterns Across All Flows**
 >
@@ -31,36 +46,32 @@ This guide walks you through testing all features of the Afterpay Demo Shop, wit
 1. [Quick Start](#quick-start)
 
 ### Part 2: Afterpay Payment Features
-2. [On-Site Messaging (OSM)](#on-site-messaging-osm)
+2. [On-Site Messaging](#on-site-messaging)
 3. [Express Checkout](#express-checkout)
 4. [Standard Checkout](#standard-checkout)
-5. [Capture Modes](#capture-modes)
+5. [Cash App Pay](#cash-app-pay)
+6. [Capture Modes](#capture-modes)
 
 ### Part 3: Payment Operations
-6. [Payment Admin Panel](#payment-admin-panel)
-7. [Webhook Handler](#webhook-handler)
+7. [Payment Admin Panel](#payment-admin-panel)
 8. [Order History](#order-history)
 
 ### Part 4: API Reference
 9. [Local to Afterpay API Mapping](#local-to-afterpay-api-mapping)
-10. [API Flow Diagrams](#api-flow-diagrams)
-11. [Test Credentials](#test-credentials)
-12. [Troubleshooting](#troubleshooting)
+10. [Idempotency with requestId](#idempotency-with-requestid)
+11. [API Flow Diagrams](#api-flow-diagrams)
+12. [Test Credentials](#test-credentials)
+13. [FAQ](#faq)
 
 ### Part 5: Developer Tools
-13. [Developer Panel](#developer-panel)
-14. [Integration Flow Summary](#integration-flow-summary)
-15. [Code Viewer](#code-viewer)
+14. [Developer Panel](#developer-panel)
+15. [Integration Flow Summary](#integration-flow-summary)
+16. [Code Viewer](#code-viewer)
 
-### Part 6: App Customization
-16. [Settings & Preferences](#settings--preferences)
-17. [Navigation](#navigation)
-18. [Design System](#design-system)
-19. [UI Components](#ui-components)
-20. [In-App Documentation](#in-app-documentation)
-
-### Part 7: Reference
-21. [Changelog](#changelog)
+### Part 6: Reference
+17. [Dark Mode](#dark-mode)
+18. [Afterpay Resources](#afterpay-resources)
+19. [Changelog](#changelog)
 
 ---
 
@@ -89,7 +100,7 @@ See [Test Customer Accounts](https://developers.cash.app/cash-app-afterpay/guide
 
 # Part 2: Afterpay Payment Features
 
-## On-Site Messaging (OSM)
+## On-Site Messaging
 
 ### What It Does
 Displays "Pay in 4 interest-free payments of $X.XX" badges (or "Pay Monthly" messaging, if the feature is enabled for the merchant account) to inform customers about Afterpay availability.
@@ -109,24 +120,6 @@ Displays "Pay in 4 interest-free payments of $X.XX" badges (or "Pay Monthly" mes
 4. Add items to cart and see the badge update with new totals
 
 ### Technical Details
-
-**Component:** `components/OSMPlacement.tsx`
-
-**Implementation:**
-```tsx
-<square-placement
-  data-mpid={process.env.NEXT_PUBLIC_AFTERPAY_MPID}
-  data-placement-id={placementId}
-  data-page-type={pageType}
-  data-amount={amount}
-  data-currency={currency}
-/>
-```
-
-**Key Configuration:**
-- `data-page-type`: Either `product` (PDP) or `cart` (Cart/Checkout)
-- Different placement IDs for PDP vs Cart
-- Amount updates automatically when cart changes
 
 #### Integration Code
 
@@ -158,26 +151,14 @@ NEXT_PUBLIC_OSM_CART_PLACEMENT_ID=your-cart-placement-id
 
 > **Note:** Use different `placement-id` values for product pages (PDP) vs cart/checkout pages. This enables contextual messaging and conversion tracking.
 
-#### Dark Mode Support
-
-The official OSM widget renders with a light background. In dark mode, the widget container maintains a light background to ensure the widget displays correctly with its info icon and accurate payment calculations.
-
-**Implementation:**
-```tsx
-{/* Light background container ensures widget visibility in dark mode */}
-<div className="p-4 bg-afterpay-gray-50 rounded-lg">
-  <OSMPlacement pageType="product" amount={product.price} />
-</div>
-```
-
 **Afterpay Documentation:** [On-Site Messaging Guide](https://developers.cash.app/cash-app-afterpay/guides/afterpay-messaging)
 
 <details>
 <summary>✓ Verify This Feature</summary>
 
-- [ ] OSM displays on product pages
-- [ ] OSM displays on cart page
-- [ ] OSM displays on checkout page
+- [ ] On-Site Messaging displays on product pages
+- [ ] On-Site Messaging displays on cart page
+- [ ] On-Site Messaging displays on checkout page
 - [ ] Amount updates when cart changes
 - [ ] Info modal opens on click
 
@@ -187,13 +168,24 @@ The official OSM widget renders with a light background. In dark mode, the widge
 
 ## Express Checkout
 
-Express Checkout uses Afterpay.js to provide a streamlined popup-based checkout experience.
+Express Checkout uses Afterpay.js to provide a streamlined popup-based checkout experience. In v3.0, Express Checkout is accessed via inline **Buy Now** buttons located on product pages, the cart, and the mini-cart dropdown -- rather than a tab on the checkout page.
+
+### Where to Find Buy Now Buttons
+
+| Location | What It Buys | URL |
+|----------|-------------|-----|
+| Product detail page | Single item | `/products/{id}` |
+| Product grid cards | Single item (compact button) | `/` |
+| Cart page | Full cart | `/cart` |
+| Mini-cart dropdown | Full cart | Header cart icon |
+
+> **Note:** Buy Now buttons are only visible when Express Checkout is enabled in Admin Configuration (`/admin` > Configuration tab).
 
 ### API Flow Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ EXPRESS CHECKOUT FLOW                                                       │
+│ EXPRESS CHECKOUT FLOW (Buy Now)                                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  1. Initialize Afterpay.js                                                  │
@@ -209,36 +201,48 @@ Express Checkout uses Afterpay.js to provide a streamlined popup-based checkout 
 │  4. Customer Completes in Popup                                             │
 │     → Returns orderToken via onComplete callback                            │
 │                                                                             │
-│  5. Authorize Payment                                                       │
-│     LOCAL:    POST /api/afterpay/auth                                       │
-│     AFTERPAY: POST /v2/payments/auth                                        │
+│  5. Process Payment (depends on capture mode)                               │
 │                                                                             │
-│  6. Capture (if immediate mode)                                             │
+│     IMMEDIATE CAPTURE (single step):                                        │
 │     LOCAL:    POST /api/afterpay/capture-full                               │
 │     AFTERPAY: POST /v2/payments/capture                                     │
+│     → Auth + capture combined, status = CAPTURED                            │
+│                                                                             │
+│     DEFERRED CAPTURE (auth only):                                           │
+│     LOCAL:    POST /api/afterpay/auth                                       │
+│     AFTERPAY: POST /v2/payments/auth                                        │
+│     → Auth only, capture later from Admin Panel                             │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
+### How to Test
+
+1. Enable Express Checkout in Admin Configuration (`/admin` > Configuration tab)
+2. Navigate to any product page, cart, or use the mini-cart dropdown
+3. Click the **"Buy Now"** button (mint-colored, shows Afterpay logo)
+4. Express popup opens
+5. Complete checkout in popup
+6. Redirected to confirmation page
+
 ### Shipping Flow Options
+
+The shipping type (Integrated or Deferred) is configured in Admin Configuration (`/admin` > Configuration tab > Express Checkout section).
 
 #### 1. Integrated Shipping
 
 **What It Does:** Customer selects shipping options directly within the Afterpay popup.
 
 **How to Test:**
-1. Go to `/checkout`
-2. Select **Express Checkout** tab
-3. Select **Integrated** shipping flow
-4. Click "Pay with Afterpay"
-5. In the popup, enter address
-6. Select from shipping options provided
-7. Complete checkout
-8. View confirmation page
+1. In Admin Configuration, set Express Checkout shipping type to **Integrated**
+2. Navigate to any product page, cart, or mini-cart
+3. Click **"Buy Now"**
+4. In the popup, enter address
+5. Select from shipping options provided
+6. Complete checkout
+7. View confirmation page
 
 **Technical Details:**
-
-**File:** `components/CheckoutExpress.tsx`
 
 **Key Callback:**
 ```typescript
@@ -264,7 +268,10 @@ onShippingAddressChange: (addressData, actions) => {
 <details>
 <summary>✓ Verify Integrated Shipping</summary>
 
-- [ ] Popup opens correctly
+- [ ] Buy Now button visible when Express Checkout enabled
+- [ ] Popup opens correctly from product page
+- [ ] Popup opens correctly from cart page
+- [ ] Popup opens correctly from mini-cart
 - [ ] Shipping options display in popup
 - [ ] Shipping selection updates total
 - [ ] Checkout completes successfully
@@ -277,20 +284,15 @@ onShippingAddressChange: (addressData, actions) => {
 **What It Does:** Customer confirms address in Afterpay popup, then returns to merchant site to select shipping. Requires displaying the Payment Schedule Widget.
 
 **How to Test:**
-1. Go to `/checkout`
-2. Select **Express Checkout** tab
-3. Select **Deferred** shipping flow
-4. Click "Pay with Afterpay"
-5. Complete popup (no shipping selection)
-6. Return to shipping page (`/checkout/shipping`)
-7. Select shipping option (widget updates)
-8. Click "Place Order"
+1. In Admin Configuration, set Express Checkout shipping type to **Deferred**
+2. Navigate to any product page, cart, or mini-cart
+3. Click **"Buy Now"**
+4. Complete popup (no shipping selection)
+5. Return to shipping page (`/checkout/shipping`)
+6. Select shipping option (widget updates)
+7. Click "Place Order"
 
 **Technical Details:**
-
-**Files:**
-- `components/CheckoutExpress.tsx` - Initial popup
-- `app/checkout/shipping/page.tsx` - Shipping selection page
 
 **Payment Schedule Widget** (displayed on `/checkout/shipping` page):
 
@@ -355,7 +357,7 @@ widget.update({
 
 ## Standard Checkout
 
-Standard Checkout uses server-side API calls with customer information collected on the merchant site.
+Standard Checkout uses server-side API calls with customer information collected on the merchant site. In v3.0, Standard Checkout is the default (and primary) form on the `/checkout` page. The checkout method (Popup or Redirect) is configured in Admin Configuration, and the submit button is the official branded "Pay with Afterpay" SVG button.
 
 ### API Flow Overview - Redirect
 
@@ -375,15 +377,17 @@ Standard Checkout uses server-side API calls with customer information collected
 │  3. Customer Returns                                                        │
 │     ← orderToken in URL query parameter                                     │
 │                                                                             │
-│  4. Authorize Payment                                                       │
+│  4. Process Payment (depends on capture mode)                               │
+│                                                                             │
+│     IMMEDIATE CAPTURE (single step):                                        │
+│     LOCAL:    POST /api/afterpay/capture-full                               │
+│     AFTERPAY: POST /v2/payments/capture                                     │
+│     → Auth + capture combined, status = CAPTURED                            │
+│                                                                             │
+│     DEFERRED CAPTURE (auth only):                                           │
 │     LOCAL:    POST /api/afterpay/auth                                       │
 │     AFTERPAY: POST /v2/payments/auth                                        │
-│     DOCS:     .../payments/auth                                             │
-│                                                                             │
-│  5. Capture Payment (if immediate mode)                                     │
-│     LOCAL:    POST /api/afterpay/capture                                    │
-│     AFTERPAY: POST /v2/payments/{orderId}/capture                           │
-│     DOCS:     .../payments/capture-payment                                  │
+│     → Auth only, capture later from Admin Panel                             │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -395,15 +399,14 @@ Standard Checkout uses server-side API calls with customer information collected
 **What It Does:** Customer fills form on merchant site, then is redirected to Afterpay's full checkout page. After completion, they return to the review page.
 
 **How to Test:**
-1. Go to `/checkout`
-2. Select **Standard Checkout** tab
-3. Select **Redirect** method
-4. Fill in customer details
-5. Select shipping method
-6. Click "Continue to Afterpay"
-7. Complete checkout on Afterpay site
-8. Return to review page (`/checkout/review`)
-9. Click "Place Order"
+1. In Admin Configuration (`/admin`), set Standard Checkout method to **Redirect**
+2. Go to `/checkout` (Standard Checkout is the default form)
+3. Fill in customer details
+4. Select shipping method
+5. Click the **"Pay with Afterpay"** branded SVG button
+6. Complete checkout on Afterpay site
+7. Return to review page (`/checkout/review`)
+8. Click "Place Order"
 
 **Technical Details:**
 
@@ -415,8 +418,6 @@ Standard Checkout uses server-side API calls with customer information collected
 | 3 | Return | URL params | Customer returns with `orderToken` |
 | 4 | `POST /api/afterpay/auth` | `POST /v2/payments/auth` | Authorize payment |
 | 5 | `POST /api/afterpay/capture` | `POST /v2/payments/{id}/capture` | Capture (if immediate) |
-
-**File:** `app/checkout/review/page.tsx`
 
 <details>
 <summary>✓ Verify Redirect Flow</summary>
@@ -434,20 +435,16 @@ Standard Checkout uses server-side API calls with customer information collected
 **What It Does:** Customer fills form on merchant site, Afterpay opens in a popup. Customer stays on merchant site throughout.
 
 **How to Test:**
-1. Go to `/checkout`
-2. Select **Standard Checkout** tab
-3. Select **Popup** method
-4. Fill in customer details
-5. Click "Continue to Afterpay"
-6. Popup opens with Afterpay checkout
-7. Complete in popup
-8. Automatic redirect to confirmation
+1. In Admin Configuration (`/admin`), set Standard Checkout method to **Popup**
+2. Go to `/checkout` (Standard Checkout is the default form)
+3. Fill in customer details
+4. Click the **"Pay with Afterpay"** branded SVG button
+5. Popup opens with Afterpay checkout
+6. Complete in popup
+7. Automatic redirect to confirmation
 
 **Technical Details:**
 
-**File:** `components/CheckoutStandard.tsx`
-
-**Critical Implementation:**
 ```typescript
 // MUST open popup synchronously in click handler to avoid blockers
 window.Afterpay.initialize({ countryCode: 'US' });
@@ -474,72 +471,251 @@ window.Afterpay.transfer({ token: data.token });
 
 ---
 
+## Cash App Pay
+
+Cash App Pay lets customers pay now using their Cash App account. On desktop, a QR code is displayed for scanning. On mobile, customers are redirected to the Cash App.
+
+> **Note:** The Cash App Pay tab only appears on the checkout page when Cash App Pay is enabled in Admin Configuration (`/admin` > Configuration tab). If disabled, the checkout page shows only the Standard Checkout form with no tabs.
+
+### API Flow Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ CASH APP PAY FLOW                                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1. Collect Customer Details                                                │
+│     Merchant site form (email, name, address, shipping)                     │
+│                                                                             │
+│  2. Create Checkout                                                         │
+│     LOCAL:    POST /api/afterpay/checkout  { isCashAppPay: true }           │
+│     AFTERPAY: POST /v2/checkouts                                            │
+│                                                                             │
+│  3. Initialize Cash App Pay SDK                                             │
+│     renderCashAppPayButton() → initializeForCashAppPay()                    │
+│                                                                             │
+│  4. Customer Pays                                                           │
+│     Desktop: Scan QR code with Cash App                                     │
+│     Mobile:  Redirect to Cash App → return via redirect URL                 │
+│                                                                             │
+│  5. onComplete Callback                                                     │
+│     → Returns orderToken, status, cashtag                                   │
+│                                                                             │
+│  6. Process Payment (depends on capture mode)                               │
+│                                                                             │
+│     IMMEDIATE CAPTURE (single step):                                        │
+│     LOCAL:    POST /api/afterpay/capture-full                               │
+│     AFTERPAY: POST /v2/payments/capture                                     │
+│     → Auth + capture combined, status = CAPTURED                            │
+│                                                                             │
+│     DEFERRED CAPTURE (auth only):                                           │
+│     LOCAL:    POST /api/afterpay/auth                                       │
+│     AFTERPAY: POST /v2/payments/auth                                        │
+│     → Auth only, capture later from Admin Panel                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### How to Test
+
+1. Go to `/checkout`
+2. Select **Cash App Pay** tab
+3. Fill in customer details (email, name, address, phone)
+4. Select shipping method
+5. Click **"Continue to Payment"**
+6. Cash App Pay button appears:
+   - **Desktop**: Tap the button, then scan the QR code with Cash App
+   - **Mobile**: Tap the button to open Cash App
+7. Complete payment in Cash App
+8. View confirmation page
+
+### Key Differences from Express/Standard
+
+| Feature | Express | Standard | Cash App Pay |
+|---------|---------|----------|--------------|
+| Checkout creation | Same API | Same API | Same API + `isCashAppPay: true` |
+| Customer interaction | Afterpay popup | Redirect or popup | QR code or Cash App redirect |
+| SDK method | `initializeForPopup()` | `open()` or redirect | `initializeForCashAppPay()` |
+| Shipping | In popup or deferred | Merchant site form | Merchant site form |
+| Payment type | Pay in 4 (BNPL) | Pay in 4 (BNPL) | Pay now (full amount) |
+
+### Mobile vs Desktop
+
+The component displays different messaging based on viewport:
+
+- **Desktop** (768px+): "Tap the button below, and scan the QR code to pay with Cash App Pay."
+- **Mobile** (< 768px): "Tap the button below to pay with Cash App Pay."
+
+This uses CSS responsive classes (`hidden md:inline` / `md:hidden`) to avoid React hydration mismatches.
+
+### Edit / Retry Flow
+
+After submitting the form, you can:
+
+1. **Edit**: Click "Edit" to return to the form, modify details, and resubmit
+2. **Try Again**: If payment is declined, click "Try Again" to restart
+
+Both flows use the SDK's 3-step restart pattern:
+```
+restartCashAppPay()        → Clears SDK auth state and removes button UI
+renderCashAppPayButton()   → Re-creates the button element
+initializeForCashAppPay()  → Initializes with new checkout token
+```
+
+### Tab Switching
+
+Cash App Pay preserves form state when switching between Standard and Cash App Pay tabs. All components stay mounted in the DOM (hidden via CSS), so form data is never lost. When you switch back to the Cash App Pay tab, the SDK re-initializes automatically with the previously saved token.
+
+### Technical Details
+
+**SDK Initialization:**
+```typescript
+// 1. Render button into #cash-app-pay container
+window.Afterpay.renderCashAppPayButton({
+  countryCode: "US",
+  cashAppPayButtonOptions: {
+    size: "medium",
+    width: "full",
+    theme: "dark",
+    shape: "semiround",
+  },
+});
+
+// 2. Initialize with checkout token
+window.Afterpay.initializeForCashAppPay({
+  countryCode: "US",
+  token: checkoutToken,
+  cashAppPayOptions: {
+    button: { size: "medium", width: "full", theme: "dark", shape: "semiround" },
+    onComplete: (event) => {
+      // event.data: { status, orderToken, cashtag }
+    },
+    eventListeners: {
+      CUSTOMER_REQUEST_DECLINED: () => { /* handle decline */ },
+      CUSTOMER_REQUEST_FAILED: () => { /* handle failure */ },
+    },
+  },
+});
+```
+
+**Afterpay Documentation:** [Cash App Pay Integration Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/add-cash-app-pay-to-your-site/overview)
+
+<details>
+<summary>✓ Verify Cash App Pay</summary>
+
+- [ ] Cash App Pay tab visible on checkout page when enabled in Admin Configuration
+- [ ] Form fields validate correctly
+- [ ] Button renders after "Continue to Payment"
+- [ ] Desktop shows QR code messaging
+- [ ] Mobile shows redirect messaging
+- [ ] Edit → resubmit renders button correctly
+- [ ] Tab switch preserves form state
+- [ ] Tab switch back re-renders button
+- [ ] Try Again works after decline
+- [ ] Confirmation page displays after completion
+
+</details>
+
+---
+
 ## Capture Modes
 
-Toggle between authorization-only and immediate capture strategies.
+Two distinct payment flows determine when money is captured from the customer. Toggle between them in `/admin` > **Configuration** tab > **Capture Mode**.
 
-### How to Toggle
+---
 
-1. Go to `/admin`
-2. Find "Capture Mode" section at top
-3. Click **Deferred** or **Immediate** button
+### Immediate Payment Flow
 
-### Deferred Capture Mode (Default)
+Authorizes and captures in a single API call. The capture is processed the moment checkout completes.
 
-**What It Does:** Only authorizes payment at checkout. Merchant captures later from Admin Panel.
+**Best for:** Digital goods, instant fulfillment, subscriptions — any scenario where you can fulfill immediately.
 
-**Use Cases:**
-- Verify inventory before charging
-- Ship-then-capture workflows
-- Pre-orders
-
-**Flow:**
-1. Checkout completes with authorization only
-2. Confirmation shows "Payment Authorized!" (blue)
-3. Navigate to Admin Panel
-4. Look up order by ID
-5. Click "Capture Payment"
-6. Enter amount and confirm
+**How it works:**
+1. Customer completes checkout (Express, Standard, or Cash App Pay)
+2. Your server calls the Immediate Capture endpoint
+3. Payment is authorized **and** captured in one step
+4. Confirmation shows "Thank you for your order!" (green)
+5. Funds are captured — no further action needed
 
 **API:**
-| Step | Local Endpoint | Afterpay API |
-|------|----------------|--------------|
-| Auth | `POST /api/afterpay/auth` | `POST /v2/payments/auth` |
-| Capture (later) | `POST /api/afterpay/capture` | `POST /v2/payments/{id}/capture` |
+| Step | Endpoint | Afterpay API | Docs |
+|------|----------|--------------|------|
+| Auth + Capture | `POST /api/afterpay/capture-full` | `POST /v2/payments/capture` | [Immediate Capture](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-full-payment) |
 
-### Immediate Capture Mode
+**Request body:**
+```json
+{
+  "token": "ORDER_TOKEN_FROM_CHECKOUT",
+  "merchantReference": "order-123"
+}
+```
 
-**What It Does:** Fully captures payment when checkout completes.
+**Response includes:** `id` (Order ID), `status: "APPROVED"`, `originalAmount`, `events` with capture details.
 
-**Use Cases:**
-- Digital goods
-- Instant fulfillment
+---
 
-**Flow:**
-1. Checkout completes with full capture
-2. Confirmation shows "Thank you for your order!" (green)
-3. Payment already captured
+### Deferred Payment Flow
+
+Separates authorization from capture into two distinct steps. The authorization is completed but not captured until the merchant explicitly captures.
+
+**Best for:** Physical goods, pre-orders, ship-then-capture workflows — any scenario where you need to verify inventory or fulfill before charging.
+
+**How it works:**
+1. Customer completes checkout (Express, Standard, or Cash App Pay)
+2. Your server calls the Auth endpoint — payment is **authorized only**
+3. Confirmation shows "Payment Authorized!" (blue)
+4. Later, navigate to Admin Panel > Payment Operations
+5. Look up order by ID
+6. Click "Capture Payment" and enter the amount
+7. Funds are captured
 
 **API:**
-| Step | Local Endpoint | Afterpay API |
-|------|----------------|--------------|
-| Auth + Capture | `POST /api/afterpay/capture-full` | `POST /v2/payments/capture` |
+| Step | Endpoint | Afterpay API | Docs |
+|------|----------|--------------|------|
+| 1. Authorize | `POST /api/afterpay/auth` | `POST /v2/payments/auth` | [Authorise Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/auth) |
+| 2. Capture (later) | `POST /api/afterpay/capture` | `POST /v2/payments/{id}/capture` | [Deferred Capture](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-payment) |
 
-**Technical Details:**
+**Step 1 — Auth request body:**
+```json
+{
+  "token": "ORDER_TOKEN_FROM_CHECKOUT",
+  "merchantReference": "order-123"
+}
+```
 
-**Storage:** `localStorage.getItem('afterpay_capture_mode')`
+**Step 2 — Capture request body:**
+```json
+{
+  "amount": { "amount": "50.00", "currency": "USD" },
+  "requestId": "unique-uuid"
+}
+```
 
-**Values:** `'deferred'` or `'immediate'`
+> **Note:** Deferred capture supports partial captures. You can capture less than the authorized amount (e.g., capture only the items you're shipping now). The remaining authorized amount can be captured later or voided.
 
 **Afterpay Documentation:** [Deferred Capture Guide](https://developers.cash.app/cash-app-afterpay/guides/api-development/api-quickstart/deferred-capture)
+
+---
+
+### Comparing the Two Flows
+
+| | Immediate | Deferred |
+|---|-----------|----------|
+| **API calls** | 1 (auth + capture) | 2 (auth, then capture) |
+| **When charged** | At checkout | When merchant captures |
+| **Partial capture** | No | Yes |
+| **Confirmation message** | "Thank you for your order!" (green) | "Payment Authorized!" (blue) |
+| **Admin action needed** | None | Capture from Admin Panel |
+| **Best for** | Digital goods, instant fulfillment | Physical goods, pre-orders |
 
 <details>
 <summary>✓ Verify Capture Modes</summary>
 
-- [ ] Toggle persists in localStorage
-- [ ] Deferred: Auth only, status = AUTHORIZED
-- [ ] Immediate: Full capture, status = CAPTURED
-- [ ] Confirmation message matches mode
+- [ ] Toggle persists in config (localStorage)
+- [ ] Immediate: Single API call, status = CAPTURED, green confirmation
+- [ ] Deferred: Auth only, status = AUTHORIZED, blue confirmation
+- [ ] Deferred: Capture from Admin Panel works (full and partial)
+- [ ] Confirmation message matches selected mode
 
 </details>
 
@@ -549,23 +725,42 @@ Toggle between authorization-only and immediate capture strategies.
 
 ## Payment Admin Panel
 
-Full payment management interface for post-checkout operations.
+Full payment management and configuration interface.
 
 ### URL: `/admin`
 
-### Features Overview
+### Admin Tabs
+
+The Admin page has two tabs:
+
+#### Configuration Tab (New in v3.0)
+
+Centralized settings for all checkout features:
+
+| Section | Description |
+|---------|-------------|
+| Express Checkout | ON/OFF toggle + shipping type (Integrated/Deferred) |
+| Standard Checkout | Always ON badge + method (Popup/Redirect) |
+| Cash App Pay | ON/OFF toggle |
+| Capture Mode | Deferred/Immediate radio cards |
+| Developer Mode | ON/OFF toggle — hides/shows code snippets, flow logs, dev panels |
+| Merchant Configuration | Fetch min/max order thresholds and currency from API |
+
+All settings are stored in `ConfigProvider` React Context, persisted to localStorage as `"afterpay-demo-config"`, and accessible via the `useConfig()` hook. Changes take effect instantly with no page refresh needed.
+
+#### Payment Operations Tab
+
+Payment management features (same as previous versions):
 
 | Feature | Description |
 |---------|-------------|
-| Merchant Configuration | View min/max order thresholds and currency |
 | Payment Lookup | Search by Afterpay Order ID |
 | Amount Breakdown | Visual display of captured/refunded/voided amounts |
 | Actions | Capture, Refund, Void with partial amount support |
 | Event History | Timeline of all payment events |
-| Webhook Demo | Test webhook endpoint with simulated events |
 
 ### Merchant Configuration
-- View merchant configuration (min/max order thresholds, currency)
+- View merchant configuration (min/max order thresholds, currency) in the Configuration tab
 
 ### Payment Lookup
 1. Enter Order ID (e.g., `100204123295`)
@@ -598,30 +793,6 @@ Unified timeline showing:
 - `REFUND` - Refund events
 - `VOID` - Void events
 
-### Technical Details
-
-**Files:**
-| File | Purpose |
-|------|---------|
-| `app/admin/page.tsx` | Admin UI |
-| `app/api/afterpay/payment/[orderId]/route.ts` | Get payment details |
-| `app/api/afterpay/capture/route.ts` | Capture payment |
-| `app/api/afterpay/refund/route.ts` | Refund payment |
-| `app/api/afterpay/void/route.ts` | Void payment |
-
-**Payment State Calculation:**
-```typescript
-const getEffectiveStatus = () => {
-  if (refunded >= captured) return 'FULLY REFUNDED';
-  if (refunded > 0) return 'PARTIALLY REFUNDED';
-  if (voided >= original) return 'VOIDED';
-  if (captured > 0 && openToCapture <= 0) return 'CAPTURED';
-  if (captured > 0) return 'PARTIALLY CAPTURED';
-  if (status === 'APPROVED') return 'AUTHORIZED';
-  return status;
-};
-```
-
 <details>
 <summary>✓ Verify Admin Panel</summary>
 
@@ -634,48 +805,6 @@ const getEffectiveStatus = () => {
 - [ ] Optimistic updates work
 
 </details>
-
----
-
-## Webhook Handler
-
-> **Status:** This feature is temporarily unavailable and will be enabled in a future release.
-
-Webhooks are used by Afterpay to notify merchants about **dispute notifications**. When a customer initiates a dispute, Afterpay sends a POST request to your configured webhook endpoint.
-
-### Endpoint Info
-
-**Local Endpoint:** `/api/webhooks/afterpay`
-
-**Purpose:** Receive dispute notifications from Afterpay
-
-### Webhook Payload
-
-Webhooks include:
-- `webhook_event_id` - Unique event identifier
-- `webhook_event_type` - Event type (e.g., "created")
-- `dispute_id` - Associated dispute reference
-- `merchant_reference` - Your internal order reference
-
-### Security
-
-Webhooks use HMAC-SHA256 signature verification:
-1. Extract signature from `X-Afterpay-Request-Signature` header
-2. Construct canonical message (URL + timestamp + payload)
-3. Generate HMAC-SHA256 hash using shared secret
-4. Compare signatures using constant-time comparison
-
-### Production Setup
-
-- Provide your webhook URL to Afterpay support
-- Receive an HMAC shared secret key for verification
-- Configure endpoint to accept `application/json` POST requests
-
-### Technical Details
-
-**File:** `app/api/webhooks/afterpay/route.ts`
-
-**Afterpay Documentation:** [Webhook Signature Generation](https://developers.cash.app/cash-app-afterpay/guides/api-development/webhook-signature-generation)
 
 ---
 
@@ -730,36 +859,6 @@ Track all completed orders with persistent storage and easy management.
 
 This ensures customers don't lose their cart if checkout is interrupted.
 
-### Technical Details
-
-**Files:**
-- `app/orders/page.tsx` - Order history UI
-- `lib/orders.ts` - Order persistence utilities
-
-**Storage:**
-```typescript
-const ORDERS_STORAGE_KEY = 'afterpay-demo-orders';
-const MAX_ORDERS = 20;
-
-interface OrderItem {
-  productId: string;
-  productName: string;
-  quantity: number;
-  price: number;
-}
-
-interface Order {
-  id: string;
-  orderId: string;           // Afterpay order ID
-  status: 'pending' | 'authorized' | 'captured' | 'refunded' | 'voided';
-  total: number;
-  items: OrderItem[];
-  createdAt: string;
-  flow: string;              // e.g., 'express-integrated', 'standard-redirect'
-  captureMode: 'deferred' | 'immediate';
-}
-```
-
 <details>
 <summary>✓ Verify Order History</summary>
 
@@ -783,15 +882,41 @@ interface Order {
 |----------------|--------|--------------|---------|------|
 | `/api/afterpay/checkout` | POST | `POST /v2/checkouts` | Create checkout session | [Create Checkout](https://developers.cash.app/cash-app-afterpay/api-reference/reference/checkouts/create-checkout-1) |
 | `/api/afterpay/auth` | POST | `POST /v2/payments/auth` | Authorize payment | [Authorise Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/auth) |
-| `/api/afterpay/capture` | POST | `POST /v2/payments/{id}/capture` | Deferred capture (full/partial) | [Capture Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-payment) |
-| `/api/afterpay/capture-full` | POST | `POST /v2/payments/capture` | Auth + Capture | [Capture Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-payment) |
+| `/api/afterpay/capture` | POST | `POST /v2/payments/{id}/capture` | Deferred Capture (full/partial) | [Capture Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-payment) |
+| `/api/afterpay/capture-full` | POST | `POST /v2/payments/capture` | Immediate Capture (auth + capture) | [Immediate Capture](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-full-payment) |
 | `/api/afterpay/refund` | POST | `POST /v2/payments/{id}/refund` | Refund (full/partial) | [Create Refund](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/create-refund) |
 | `/api/afterpay/void` | POST | `POST /v2/payments/{id}/void` | Void (full/partial) | [Void Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/void-payment) |
 | `/api/afterpay/payment/[id]` | GET | `GET /v2/payments/{id}` | Get payment details | [Get Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/get-payment-by-order-id) |
 | `/api/afterpay/configuration` | POST | `GET /v2/configuration` | Get merchant config | [Get Configuration](https://developers.cash.app/cash-app-afterpay/api-reference/reference/configuration/get-configuration) |
-| `/api/webhooks/afterpay` | POST | - | Receive webhook events | [Webhooks](https://developers.cash.app/cash-app-afterpay/guides/api-development/webhook-signature-generation) |
 
 **Sandbox Base URL:** `https://global-api-sandbox.afterpay.com`
+
+### Server-Side Retry Logic
+
+All Afterpay API calls include automatic retry logic for transient server errors. The `afterpayFetch` wrapper in `lib/afterpay.ts` handles this transparently:
+
+- **Retried status codes:** 500, 502, 503, 504
+- **Max retries:** 2 (3 total attempts)
+- **Backoff:** Linear (1s, 2s)
+- **Non-retried errors:** 4xx client errors are thrown immediately
+
+This is especially useful with the Afterpay sandbox environment, which occasionally returns transient 502 "Bad Gateway" or 500 "INTERNAL" errors.
+
+### Error Response Format
+
+All API routes return structured error responses:
+
+```json
+{
+  "error": "An error occurred. Please try again.",
+  "errorDetail": "Afterpay API error: Bad Gateway"
+}
+```
+
+- `error` — Sanitized, user-safe error message (from `lib/errors.ts`)
+- `errorDetail` — Raw Afterpay API error message for debugging
+
+The client components use `errorDetail` (when available) to display more specific error information in the UI.
 
 ---
 
@@ -842,7 +967,7 @@ The Request ID is displayed in the Developer Panel when you expand an event, mak
 ### Express Checkout Flow
 
 ```
-Customer clicks "Pay with Afterpay"
+Customer clicks "Buy Now"
          │
          ▼
 ┌─────────────────────────────────────┐
@@ -858,25 +983,26 @@ Customer clicks "Pay with Afterpay"
 │ ← Returns: orderToken via callback  │
 └─────────────────────────────────────┘
          │
-         ▼
-┌─────────────────────────────────────┐
-│ POST /api/afterpay/auth             │
-│ → Afterpay: POST /v2/payments/auth  │
-│ ← Returns: orderId, status          │
-└─────────────────────────────────────┘
-         │
-         ▼ (if immediate capture)
-┌─────────────────────────────────────┐
-│ POST /api/afterpay/capture-full     │
-│ → Afterpay: POST /v2/payments/capture│
-│ ← Returns: captured amount          │
-└─────────────────────────────────────┘
+         ├─── Immediate ──────────────────────┐
+         │                                     │
+         ▼                                     ▼
+┌──────────────────────┐   ┌──────────────────────────────┐
+│ DEFERRED             │   │ IMMEDIATE                    │
+│ POST /api/afterpay/  │   │ POST /api/afterpay/          │
+│   auth               │   │   capture-full               │
+│ → POST /v2/payments/ │   │ → POST /v2/payments/capture  │
+│   auth               │   │ ← orderId, CAPTURED          │
+│ ← orderId, APPROVED  │   └──────────────────────────────┘
+│                      │
+│ (capture later from  │
+│  Admin Panel)        │
+└──────────────────────┘
 ```
 
 ### Standard Checkout - Redirect Flow
 
 ```
-Customer fills form, clicks "Continue to Afterpay"
+Customer fills form, clicks "Pay with Afterpay"
          │
          ▼
 ┌─────────────────────────────────────┐
@@ -892,43 +1018,53 @@ Customer fills form, clicks "Continue to Afterpay"
 │ Redirect back with ?orderToken=xxx  │
 └─────────────────────────────────────┘
          │
-         ▼
-┌─────────────────────────────────────┐
-│ POST /api/afterpay/auth             │
-│ → Afterpay: POST /v2/payments/auth  │
-│ ← Returns: orderId, status          │
-└─────────────────────────────────────┘
-         │
-         ▼ (if immediate capture)
-┌─────────────────────────────────────┐
-│ POST /api/afterpay/capture          │
-│ → Afterpay: POST /v2/payments/{id}/capture │
-│ ← Returns: captured amount          │
-└─────────────────────────────────────┘
+         ├─── Immediate ──────────────────────┐
+         │                                     │
+         ▼                                     ▼
+┌──────────────────────┐   ┌──────────────────────────────┐
+│ DEFERRED             │   │ IMMEDIATE                    │
+│ POST /api/afterpay/  │   │ POST /api/afterpay/          │
+│   auth               │   │   capture-full               │
+│ → POST /v2/payments/ │   │ → POST /v2/payments/capture  │
+│   auth               │   │ ← orderId, CAPTURED          │
+│ ← orderId, APPROVED  │   └──────────────────────────────┘
+│                      │
+│ (capture later from  │
+│  Admin Panel)        │
+└──────────────────────┘
 ```
 
-### Capture / Refund / Void Flow
+### Deferred Capture / Refund / Void (Post-Payment Operations)
 
 ```
+After authorization (Deferred flow), the following operations
+are available from the Admin Panel:
+
 ┌─────────────────────────────────────┐
-│ CAPTURE                             │
+│ DEFERRED CAPTURE                    │
 │ POST /api/afterpay/capture          │
-│ → Afterpay: POST /v2/payments/{id}/capture │
+│ → Afterpay: POST /v2/payments/      │
+│   {id}/capture                      │
 │ Body: { amount, orderId }           │
+│ Supports partial capture            │
 └─────────────────────────────────────┘
 
 ┌─────────────────────────────────────┐
 │ REFUND                              │
 │ POST /api/afterpay/refund           │
-│ → Afterpay: POST /v2/payments/{id}/refund │
+│ → Afterpay: POST /v2/payments/      │
+│   {id}/refund                       │
 │ Body: { amount, orderId }           │
+│ Available after capture (any mode)  │
 └─────────────────────────────────────┘
 
 ┌─────────────────────────────────────┐
 │ VOID                                │
 │ POST /api/afterpay/void             │
-│ → Afterpay: POST /v2/payments/{id}/void │
+│ → Afterpay: POST /v2/payments/      │
+│   {id}/void                         │
 │ Body: { orderId }                   │
+│ Available before capture (deferred) │
 └─────────────────────────────────────┘
 ```
 
@@ -955,32 +1091,70 @@ See [Test Environments](https://developers.cash.app/cash-app-afterpay/guides/api
 
 ---
 
-## Troubleshooting
+## FAQ
 
-### Popup Flow Shows "Cancelled"
-**Cause:** `popupOriginUrl` mismatch
+### General Questions
 
-**Fix:** Ensure `NEXT_PUBLIC_APP_URL` in `.env.local` exactly matches where app is running (e.g., `http://localhost:3000`)
+**What's the difference between Express and Standard Checkout?**
 
-### OSM Not Displaying
-**Cause:** Invalid placement IDs or MPID
+Express Checkout (Buy Now) uses Afterpay.js to open a popup directly from any page — product pages, cart, or mini-cart. Afterpay handles the shipping address collection inside the popup. Standard Checkout redirects or opens a popup from the checkout page after you've filled in your details. Express is faster for customers; Standard gives the merchant more control over the checkout experience.
 
-**Fix:** Verify OSM environment variables are correctly set
+**When should I use deferred vs immediate capture?**
 
-### Widget Not Loading (Deferred Shipping)
-**Cause:** Afterpay.js not loaded
+Deferred capture separates authorization from capture — you authorize at checkout, then capture later when you're ready to fulfill the order. This is ideal for merchants who don't ship immediately (e.g., pre-orders, made-to-order items). Immediate capture authorizes and captures in a single step, which is simpler and works well when you can fulfill orders right away.
 
-**Fix:** Check that Afterpay.js script is included in layout
+**Can I test with real money in the sandbox?**
 
-### Capture Fails with "Already Captured"
-**Cause:** Payment was already captured
+No. The sandbox environment uses test credentials and no real transactions are processed. You can simulate approved and declined payments using the test CVV codes: `000` for approved, `051` for declined.
 
-**Fix:** Refresh payment details in Admin Panel
+**What test cards are available?**
 
-### Refund Exceeds Available Amount
-**Cause:** Refund amount > (Captured - Already Refunded)
+The sandbox accepts any valid-looking card number (e.g., 4111 1111 1111 1111). The CVV controls the outcome: `000` = approved, `051` = declined, `100` = gateway timeout. The email used during checkout must be the sandbox test account email.
 
-**Fix:** Check "Available to Refund" amount in Admin Panel
+**How does the token flow work?**
+
+1. **Create Checkout** → Receives a `checkoutToken`
+2. **Customer completes Afterpay flow** → Returns an `orderToken` (via redirect URL or popup callback)
+3. **Authorize payment** (using `orderToken`) → Receives an `orderId` and payment status
+4. **Subsequent operations** (capture, refund, void) use the `orderId`
+
+**What is On-Site Messaging and where does it appear?**
+
+On-Site Messaging (OSM) shows "Pay in 4" or "Pay Monthly" badges that display the installment breakdown for a given amount. In this demo, On-Site Messaging appears on product detail pages, the cart page, and the checkout page. The messaging updates automatically when the cart amount changes.
+
+**Can I use Cash App Pay with Express Checkout?**
+
+No. Cash App Pay and Express Checkout are separate flows. Cash App Pay is available on the checkout page as a tab alongside Standard Checkout. Express Checkout is available via Buy Now buttons on product and cart pages.
+
+### Common Issues
+
+**Popup flow shows "Cancelled"**
+
+The `popupOriginUrl` in the checkout request doesn't match the actual page URL. Ensure `NEXT_PUBLIC_APP_URL` in your `.env.local` exactly matches where the app is running (e.g., `http://localhost:3000`).
+
+**On-Site Messaging not displaying**
+
+Invalid placement IDs or MPID. Verify that `NEXT_PUBLIC_AFTERPAY_MPID`, `NEXT_PUBLIC_OSM_PDP_PLACEMENT_ID`, and `NEXT_PUBLIC_OSM_CART_PLACEMENT_ID` are correctly set in your environment variables.
+
+**Widget not loading (deferred shipping)**
+
+Afterpay.js script not loaded. Check that the Afterpay.js script tag is included in the page.
+
+**Capture fails with "Already Captured"**
+
+The payment was already captured. Refresh the payment details in the Admin Panel to see the current state.
+
+**Refund exceeds available amount**
+
+The refund amount is greater than the captured amount minus any previous refunds. Check the "Available to Refund" amount shown in the Admin Panel.
+
+**Cash App Pay button not rendering**
+
+The Cash App Pay container element must exist in the DOM before the SDK initializes. If the button doesn't appear, ensure the container div is rendered before calling `initializeForCashAppPay()`.
+
+**Cash App Pay button appears with wrong size or style**
+
+The SDK renders the button inside a shadow DOM with its own styles. External CSS cannot affect the button's appearance. Style overrides must be injected directly into the shadow root.
 
 ---
 
@@ -1123,6 +1297,7 @@ The copy button generates JSON with a disclaimer:
 | Express Deferred | mode, popupOriginUrl, isCheckoutAdjusted, checksum | Checkout Adjustment |
 | Standard Redirect | redirectConfirmUrl, redirectCancelUrl | - |
 | Standard Popup | popupOriginUrl, redirectConfirmUrl | - |
+| Cash App Pay | isCashAppPay, countryCode, redirectConfirmUrl | - |
 
 <details>
 <summary>✓ Verify Integration Flow Summary</summary>
@@ -1146,22 +1321,13 @@ The copy button generates JSON with a disclaimer:
 Shows implementation code for current checkout method.
 
 ### Where to Find
-- Bottom of Express Checkout section
-- Bottom of Standard Checkout section
+- Checkout page (when Developer Mode is ON)
+- Visible for Standard Checkout and Cash App Pay sections
 
 ### Features
 - Syntax-highlighted code
 - Copy to clipboard
 - Updates when switching methods
-
-### Technical Files
-
-| Feature | File |
-|---------|------|
-| Flow Logs | `lib/flowLogs.ts` |
-| Developer Panel | `components/FlowLogsDevPanel.tsx` |
-| Code Viewer | `components/CodeViewer.tsx` |
-| API Routes (with metadata) | `app/api/afterpay/*` |
 
 <details>
 <summary>✓ Verify Code Viewer</summary>
@@ -1174,455 +1340,11 @@ Shows implementation code for current checkout method.
 
 ---
 
-# Part 6: App Customization
-
-## Settings & Preferences
+# Part 6: Reference
 
 ### Dark Mode
 
-The demo includes full dark mode support with system preference detection.
-
-#### How to Toggle
-
-1. Click "Dark Mode" or "Light Mode" in the header navigation
-2. Theme switches immediately
-3. Preference is saved to localStorage
-
-#### Features
-
-| Feature | Description |
-|---------|-------------|
-| System Detection | Automatically matches OS preference on first visit |
-| Manual Toggle | Click "Dark Mode" to switch to dark theme, "Light Mode" to switch to light theme |
-| Persistence | Preference saved to localStorage |
-| Mint Accent | Brand colors preserved in dark theme |
-
-#### Technical Details
-
-**Component:** `components/ThemeProvider.tsx`
-
-**Implementation:**
-```tsx
-// Theme context provides current theme and setter
-const { theme, resolvedTheme, setTheme } = useTheme();
-
-// Toggle between light and dark
-const toggleTheme = () => {
-  setTheme(resolvedTheme === "dark" ? "light" : "dark");
-};
-```
-
-**Tailwind Configuration:**
-```typescript
-// tailwind.config.ts
-{
-  darkMode: "class",  // Uses .dark class on <html>
-}
-```
-
-**CSS Classes:**
-- Light: Default styles
-- Dark: Add `dark:` prefix (e.g., `dark:bg-afterpay-gray-900`)
-
-#### Supported Components
-
-| Component | Dark Mode Support |
-|-----------|-------------------|
-| Header | Glass effect, nav links, toggle button |
-| Product Cards | Background, text, borders |
-| Form Inputs | Background, borders, text |
-| Checkout Pages | Background, cards |
-
-<details>
-<summary>✓ Verify Dark Mode</summary>
-
-- [ ] Toggle visible in header
-- [ ] Click toggles between light/dark
-- [ ] System preference detected on first load
-- [ ] Preference persists after refresh
-- [ ] Product cards display correctly in dark mode
-- [ ] Form inputs readable in dark mode
-- [ ] Header glass effect works in dark mode
-
-</details>
-
----
-
-## Navigation
-
-The demo features a redesigned header with grouped navigation and a mobile-friendly slide-out menu.
-
-### Desktop Navigation
-
-Navigation items are organized into two logical groups:
-
-| Group | Items | Purpose |
-|-------|-------|---------|
-| **Demo** | Shop, Checkout | Core shopping experience |
-| **Tools** | Admin, Orders, Docs | Developer and management tools |
-
-### Mobile Navigation
-
-On mobile devices (< 768px), the navigation collapses into a hamburger menu:
-
-1. Click the hamburger icon in the top-right
-2. Slide-out drawer appears from the right
-3. Navigation items shown in grouped sections
-4. Click outside or the × button to close
-
-### Active State Indicators
-
-- Current page is highlighted with mint accent color
-- Active nav items have a subtle mint background
-- Hover states provide visual feedback
-
-### Technical Details
-
-**Component:** `components/Header.tsx`
-
-**Implementation:**
-```tsx
-const demoNav = [
-  { href: "/", label: "Shop" },
-  { href: "/checkout", label: "Checkout" },
-];
-const toolsNav = [
-  { href: "/admin", label: "Admin" },
-  { href: "/orders", label: "Orders" },
-  { href: "/docs", label: "Docs" },
-];
-
-// Active state detection
-const isActive = (href: string) => {
-  if (href === "/") return pathname === "/";
-  return pathname.startsWith(href);
-};
-```
-
-### Features
-
-| Feature | Description |
-|---------|-------------|
-| Grouped Navigation | Logical separation of demo vs tools |
-| Mobile Menu | Slide-out drawer on small screens |
-| Active Indicators | Mint highlight on current page |
-| Glass Effect | Backdrop blur on scroll (dark mode) |
-| Official Branding | Cash App Afterpay logo from CDN |
-
-<details>
-<summary>✓ Verify Navigation</summary>
-
-- [ ] Desktop shows grouped navigation (Demo | Tools)
-- [ ] Active page highlighted with mint accent
-- [ ] Mobile hamburger menu visible on small screens
-- [ ] Mobile menu slides in from right
-- [ ] Navigation items grouped in mobile menu
-- [ ] Official Afterpay logo displays correctly
-
-</details>
-
----
-
-## Design System
-
-The demo features a polished UI with distinctive styling built on Afterpay's brand identity.
-
-### Typography
-
-| Font | Usage | Source |
-|------|-------|--------|
-| Outfit | Headings, titles, prices | Google Fonts |
-| Plus Jakarta Sans | Body text, descriptions | Google Fonts |
-
-### Color Palette
-
-| Color | Hex | Usage |
-|-------|-----|-------|
-| Afterpay Mint | `#B2FCE4` | Primary CTAs, accents, highlights |
-| Mint Dark | `#8EEBC8` | Hover states |
-| Mint Light | `#D4FEF0` | Subtle backgrounds, gradients |
-
-### Product Images
-
-All product images are sourced from Unsplash and optimized via Next.js Image component:
-- Automatic format selection (WebP where supported)
-- Responsive sizing with `sizes` attribute
-- Lazy loading with blur placeholder support
-
-### Button Styles
-
-Three button variants available via CSS utility classes:
-
-```css
-.btn-primary   /* Mint background, black text, shadow */
-.btn-secondary /* Black background, white text */
-.btn-outline   /* Transparent with black border */
-```
-
-### Form Styles
-
-Styled form elements with mint accents:
-
-```css
-.input-styled   /* Text inputs with gray bg, mint focus ring */
-.checkbox-mint  /* Custom checkbox with mint accent */
-.radio-mint     /* Custom radio with mint accent */
-.select-styled  /* Dropdown with custom arrow */
-```
-
-### Animation Effects
-
-| Effect | Class | Usage |
-|--------|-------|-------|
-| Fade In Up | `animate-fade-in-up` | Hero text, page elements |
-| Card Hover | `hover-lift` | Product cards, info cards |
-| Mint Glow | `shadow-mint-glow` | Logo, featured elements |
-| Bounce Small | `animate-bounce-sm` | Cart icon on add |
-| Slide In Right | `animate-slide-in-right` | Tab indicators |
-
-### Animation Delays
-
-Staggered animation delays for sequenced reveals:
-
-```css
-.animate-delay-100  /* 100ms delay */
-.animate-delay-200  /* 200ms delay */
-.animate-delay-300  /* 300ms delay */
-.animate-delay-400  /* 400ms delay */
-.animate-delay-500  /* 500ms delay */
-```
-
-### Technical Files
-
-| Feature | File |
-|---------|------|
-| Tailwind Config | `tailwind.config.ts` |
-| Global Styles | `app/globals.css` |
-| Font Loading | `app/layout.tsx` |
-| Theme Provider | `components/ThemeProvider.tsx` |
-
----
-
-## UI Components
-
-### Checkout Progress Timeline
-
-Visual stepper showing checkout flow progress.
-
-**Where to Find:** Top of checkout, shipping, review, and confirmation pages
-
-**Steps Shown:**
-- Cart
-- Checkout
-- Shipping (deferred shipping flow only)
-- Review (standard checkout only)
-- Confirm
-
-**Features:**
-- Completed steps show checkmark with mint background
-- Current step has ring highlight
-- Connector lines animate as steps complete
-
-**Technical Details:**
-
-**Component:** `components/CheckoutProgress.tsx`
-
-```tsx
-<CheckoutProgress
-  currentStep="checkout"
-  showShipping={false}  // Show shipping step?
-  showReview={false}    // Show review step?
-/>
-```
-
-### Loading States
-
-#### Product Grid Skeleton
-
-Shows animated placeholder cards while products load.
-
-**Component:** `components/ProductGrid.tsx`
-
-```tsx
-<ProductGrid products={[]} loading={true} />
-```
-
-#### Loading Spinner
-
-Mint-colored spinner for API operations.
-
-**Component:** `components/LoadingSpinner.tsx`
-
-```tsx
-<LoadingSpinner size="sm" />  // 16px
-<LoadingSpinner size="md" />  // 24px (default)
-<LoadingSpinner size="lg" />  // 32px
-```
-
-### Micro-interactions
-
-#### Cart Bounce Animation
-
-Cart icon badge bounces when items are added.
-
-**How It Works:**
-1. `CartProvider` increments `cartAnimationTrigger` on `addToCart`
-2. `Header` listens to trigger and applies `animate-bounce-sm` class
-3. Animation resets after 300ms
-
-**Files:**
-- `components/CartProvider.tsx` - Animation trigger state
-- `components/Header.tsx` - Animation application
-
-#### Tab Slide Indicator
-
-Checkout method tabs have sliding indicator.
-
-**How It Works:**
-- Single indicator element positioned absolutely
-- CSS transform animates position based on selected tab
-- 300ms ease-out transition
-
-**File:** `app/checkout/page.tsx`
-
-### Form Input Styling
-
-All form inputs use consistent mint-accented styling.
-
-**CSS Classes:**
-
-| Class | Usage |
-|-------|-------|
-| `input-styled` | Text inputs, textareas |
-| `checkbox-mint` | Checkboxes |
-| `radio-mint` | Radio buttons |
-| `select-styled` | Select dropdowns |
-
-**Features:**
-- Gray-50 background (dark: gray-800)
-- Mint focus ring
-- Smooth transitions
-- Dark mode support
-
-**File:** `app/globals.css`
-
-### Admin Amount Visualization
-
-Visual progress bar showing payment amount breakdown.
-
-**Location:** Admin Panel → Amount Breakdown section
-
-**Segments:**
-- Green: Captured amount
-- Blue: Open to capture
-- Orange: Refunded amount
-- Red: Voided amount
-
-**Features:**
-- Hover tooltips show exact amounts
-- Legend below bar
-- Animated transitions on state change
-- Gradient header styling
-
-**File:** `app/admin/page.tsx`
-
-<details>
-<summary>✓ Verify UI Components</summary>
-
-- [ ] Checkout progress timeline shows on checkout pages
-- [ ] Completed steps show checkmarks
-- [ ] Current step is highlighted
-- [ ] Cart icon bounces when adding items
-- [ ] Tab indicator slides between Express/Standard
-- [ ] Product skeleton shows when loading
-- [ ] Mint spinners display during API calls
-- [ ] Admin progress bar shows amount breakdown
-- [ ] Form inputs have mint focus rings
-
-</details>
-
----
-
-## In-App Documentation
-
-Access project documentation directly within the app with a premium reading experience.
-
-### URL: `/docs`
-
-### Features
-
-| Feature | Description |
-|---------|-------------|
-| Tabbed Interface | Switch between README and How-to-Use Guide |
-| Table of Contents | Auto-generated sidebar navigation from headings |
-| Section Highlighting | Active section tracked as you scroll |
-| Quick Links | Fast access to Checkout Demo, Admin Panel, API Docs |
-| Premium Typography | Custom markdown rendering with elegant styling |
-| Dark Mode | Full dark mode support throughout |
-| Mobile Responsive | Collapsible TOC sidebar on mobile devices |
-
-### How to Use
-
-#### Navigating Documentation
-1. Go to `/docs` or click "Docs" in the navigation
-2. Select "README" or "How to Use" tab
-3. Use the sidebar to jump to specific sections
-4. Current section highlights as you scroll
-
-#### Using Quick Links
-The header includes quick access links:
-- **Checkout Demo** → `/checkout`
-- **Admin Panel** → `/admin`
-- **API Docs** → External Afterpay API documentation
-
-#### Mobile Navigation
-On mobile devices:
-1. Tap the menu icon to open the TOC sidebar
-2. Tap a section to navigate
-3. Sidebar closes automatically after selection
-
-### Technical Details
-
-**Files:**
-- `app/docs/page.tsx` - Documentation viewer UI
-- `app/api/docs/readme/route.ts` - Serves README.md content
-- `app/api/docs/how-to-use/route.ts` - Serves how-to-use.md content
-
-**Table of Contents Extraction:**
-```typescript
-function extractHeadings(markdown: string): TocItem[] {
-  const headingRegex = /^(#{1,3})\s+(.+)$/gm;
-  // Extracts h1, h2, h3 headings
-  // Generates IDs from heading text
-  // Returns array of { id, text, level }
-}
-```
-
-**Section Highlighting:**
-- Uses scroll event listener
-- Checks heading positions relative to viewport
-- Highlights the heading closest to top of screen
-
-**Custom Markdown Components:**
-- Premium styling for headings, paragraphs, lists
-- Syntax highlighting for code blocks
-- Styled tables with borders and zebra striping
-- Blockquotes with mint accent border
-
-<details>
-<summary>✓ Verify In-App Documentation</summary>
-
-- [ ] Docs page accessible from navigation
-- [ ] README tab loads and displays correctly
-- [ ] How-to-Use tab loads and displays correctly
-- [ ] Table of contents generates from headings
-- [ ] Clicking TOC item scrolls to section
-- [ ] Active section highlights in TOC on scroll
-- [ ] Quick links navigate to correct pages
-- [ ] Dark mode displays correctly
-- [ ] Mobile TOC sidebar works
-
-</details>
+Toggle between light and dark themes using the sun/moon icon in the header. The app detects your system preference on first visit and saves your choice to localStorage.
 
 ---
 
@@ -1644,7 +1366,8 @@ function extractHeadings(markdown: string): TocItem[] {
 |----------|---------------|
 | Create Checkout | https://developers.cash.app/cash-app-afterpay/api-reference/reference/checkouts/create-checkout-1 |
 | Authorise Payment | https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/auth |
-| Capture Payment | https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-payment |
+| Immediate Capture | https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-full-payment |
+| Deferred Capture | https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/capture-payment |
 | Create Refund | https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/create-refund |
 | Void Payment | https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/void-payment |
 | Get Payment | https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/get-payment-by-order-id |
@@ -1656,18 +1379,48 @@ function extractHeadings(markdown: string): TocItem[] {
 
 ### February 2026
 
+#### v3.0.2 - Express Checkout Fixes
+- **Integrated Shipping Amount Fix**: Server-side amount resolution for Express Checkout with Integrated Shipping + Immediate Capture — when the SDK's `onShippingOptionChange` callback doesn't fire reliably, the server now fetches the checkout to get the authoritative amount including shipping
+- **Flow Label Fix**: Buy Now (Express Checkout) flows now correctly display as "Express Checkout" instead of "Standard Checkout" on the confirmation page
+
+#### v3.0.1 - Cash App Pay Capture Fix
+- **Immediate Capture Fix**: Cash App Pay now uses single-step `POST /v2/payments/capture` (was incorrectly using two-step auth + capture)
+- **Deferred Capture Fix**: Cash App Pay deferred flow correctly uses `POST /v2/payments/auth` only
+- **Error Detail Surfacing**: All API routes now return `errorDetail` field with raw Afterpay error messages alongside sanitized `error` field
+- **Server-Side Retry Logic**: `afterpayFetch` automatically retries on transient 500/502/503/504 errors with linear backoff (max 2 retries)
+- **SDK Navigation Fix**: Cash App Pay confirmation redirect uses `window.location.href` instead of `router.push` to fully clear Pay Kit state between orders
+
+#### v3.0.0 - Configurable Demo Platform
+- **Centralized Configuration**: New Admin Configuration tab with toggles for Express Checkout, Cash App Pay, Developer Mode, capture mode, and checkout method
+- **ConfigProvider**: React Context + localStorage persistence replaces scattered localStorage keys
+- **Buy Now Express Checkout**: Inline popup from Product pages, Cart, and Mini-cart via Buy Now buttons (Express removed from checkout page)
+- **Branded Buttons**: BuyNowButton (custom mint) and AfterpayButton (official SVG) components
+- **Developer Mode Toggle**: Hide/show code snippets, flow logs, and dev panels across all pages
+- **Simplified Checkout**: Standard + Cash App Pay only (no Express tab), branded "Pay with Afterpay" button
+- **Bold Brand-Forward Design**: Clash Display + General Sans + JetBrains Mono typography, mint-dominant palette
+- **Header Redesign**: Flat nav, mini-cart dropdown, developer mode indicator bar
+- **Admin Redesign**: Configuration + Payment Operations tabs with pill toggles and radio cards
+
+#### v2.7.0 - Cash App Pay
+- **Cash App Pay**: Added as third checkout method — QR code on desktop, Cash App redirect on mobile
+- **SDK Integration**: `isCashAppPay` flag, `initializeForCashAppPay()`, button rendering with full-width dark theme
+- **Tab State Preservation**: All checkout components always-mounted with CSS `display:none` — form state preserved across tab switches
+- **SDK Lifecycle**: `isActive` prop manages SDK restart/re-init on tab switch, preventing conflicts between Express and Cash App Pay
+- **Button Style Fix**: Shadow DOM style override ensures consistent full-width semiround button
+- **Developer Docs**: Cash App Pay integration code snippets section with copy buttons
+
 #### v2.6.0 - Idempotency & Checkout UX
 - **Idempotency Support**: Added `requestId` to all payment operations (auth, capture, refund, void) for safe retries on timeout/network failures
 - **Dynamic Shipping Updates**: Order Summary sidebar updates shipping and total in real-time with subtle highlight animation
 - **Free Shipping**: Automatically offered for orders over $100 with "FREE" badge
-- **Wider Order Summary**: 60/40 grid split on desktop prevents OSM widget wrapping
+- **Wider Order Summary**: 60/40 grid split on desktop prevents On-Site Messaging widget wrapping
 - **Scroll-to-Top Button**: Accessible, centered button appears on scroll with bouncy Afterpay mint hover effect
 - **Developer Panel**: Redesigned header, improved resize handle, requestId visible in event details
 - **Admin Panel**: Transaction status messages now appear above Actions section
 - **Orders Page**: Demo notice moved to top of list for better visibility
 
-#### v2.5.0 - Dark Mode & OSM Improvements
-- **OSM Dark Mode Support**: Added light background containers for OSM widget in dark mode to ensure proper widget visibility and accurate payment calculations
+#### v2.5.0 - Dark Mode & On-Site Messaging Improvements
+- **On-Site Messaging Dark Mode Support**: Added light background containers for On-Site Messaging widget in dark mode to ensure proper widget visibility and accurate payment calculations
 - **Flow Log Deduplication**: Implemented duplicate detection in `addFlowLog()` to prevent repeated entries within 2-second window
 - **Checkout Review Messaging**: Changed "Payment Confirmed" to "Ready to Complete" with capture-mode-aware messaging
 - **Official Afterpay Logos**: Replaced custom text badges with official Cash App Afterpay color logos throughout
@@ -1687,7 +1440,6 @@ function extractHeadings(markdown: string): TocItem[] {
   - Reverse-chronological display order
 
 #### v2.2.0 - Payment Operations
-- **Webhook Handler Demo**: Interactive webhook testing in Admin Panel
 - **Order History**: Persistent order tracking with individual deletion
 - **Admin Panel**: Full payment management with capture, refund, void operations
 
@@ -1698,6 +1450,6 @@ function extractHeadings(markdown: string): TocItem[] {
 
 #### v2.0.0 - Initial Release
 - Core shopping experience with product catalog and cart
-- On-Site Messaging (OSM) integration
+- On-Site Messaging integration
 - Dark mode with system preference detection
 - Mobile-responsive design

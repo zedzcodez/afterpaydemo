@@ -8,7 +8,7 @@
 }
 
 body {
-  font-family: var(--font-body), "Inter", system-ui, sans-serif;
+  font-family: 'General Sans', var(--font-body), system-ui, sans-serif;
 }
 
 /* Animation utilities */
@@ -59,10 +59,17 @@ body {
   /* Mint gradient backgrounds */
   .bg-mint-gradient {
     @apply bg-gradient-to-br from-white via-afterpay-mint-light to-afterpay-mint/30;
+    @apply dark:from-afterpay-gray-900 dark:via-afterpay-gray-900 dark:to-afterpay-mint/10;
   }
 
   .bg-mint-gradient-strong {
     @apply bg-gradient-to-br from-afterpay-mint-light via-afterpay-mint to-afterpay-mint-dark;
+    @apply dark:from-afterpay-gray-900 dark:via-afterpay-gray-800 dark:to-afterpay-mint/20;
+  }
+
+  /* Interactive card hover with mint glow */
+  .hover-mint-glow {
+    @apply hover:shadow-mint-glow transition-shadow duration-300;
   }
 
   /* Glass effect */
@@ -103,6 +110,21 @@ body {
     @apply focus:ring-2 focus:ring-afterpay-mint focus:ring-offset-2;
     @apply transition-all duration-200 cursor-pointer;
     accent-color: #B2FCE4;
+  }
+
+  /* Developer panel styling */
+  .dev-panel {
+    @apply bg-terminal-bg border border-terminal-border rounded-xl p-4;
+    background-image: radial-gradient(circle, rgba(178, 252, 228, 0.05) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+
+  .dev-label {
+    @apply text-xs font-code font-medium text-terminal-text uppercase tracking-widest;
+  }
+
+  .dev-code {
+    @apply font-code text-sm text-terminal-text;
   }
 
   /* Select dropdown styling */
@@ -223,6 +245,24 @@ body {
 
 .animate-bounce-subtle {
   animation: bounce-subtle 0.6s ease-in-out infinite;
+}
+
+@keyframes dev-slide-down {
+  from { opacity: 0; transform: translateY(-8px); max-height: 0; }
+  to { opacity: 1; transform: translateY(0); max-height: 1000px; }
+}
+
+@keyframes dev-slide-up {
+  from { opacity: 1; transform: translateY(0); max-height: 1000px; }
+  to { opacity: 0; transform: translateY(-8px); max-height: 0; }
+}
+
+.animate-dev-enter {
+  animation: dev-slide-down 0.4s ease-out forwards;
+}
+
+.animate-dev-exit {
+  animation: dev-slide-up 0.3s ease-out forwards;
 }
 
 /* Custom scrollbar */

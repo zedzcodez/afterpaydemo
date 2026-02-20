@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createCheckout, toMoney, cartToCheckoutItems } from "@/lib/afterpay";
+import { createCheckout, toMoney, cartToCheckoutItems, API_URL } from "@/lib/afterpay";
 import { sanitizeError } from "@/lib/errors";
 import { checkoutRequestSchema, validateRequest } from "@/lib/validation";
 
-const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
-
-// Generate a unique merchant reference/order ID
+// Generate a unique merchant reference/order ID using cryptographically secure randomness
 function generateMerchantReference(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const random = crypto.randomUUID().replace(/-/g, "").substring(0, 8).toUpperCase();
   return `ORD-${timestamp}-${random}`;
 }
 
@@ -22,7 +20,7 @@ export async function POST(request: NextRequest) {
     if (!validation.success) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
-    const { items, total, mode, consumer, shipping } = validation.data;
+    const { items, total, mode, consumer, shipping, isCashAppPay } = validation.data;
 
     // CRITICAL: appUrl must exactly match the protocol, host, and port where the app is running.
     // This is used for redirectConfirmUrl, redirectCancelUrl, and popupOriginUrl.
@@ -34,9 +32,11 @@ export async function POST(request: NextRequest) {
     const merchantReference = generateMerchantReference();
 
     // Standard checkout redirects to review page, Express uses popup callbacks
-    const redirectConfirmUrl = mode === "standard"
-      ? `${appUrl}/checkout/review`
-      : `${appUrl}/confirmation`;
+    const redirectConfirmUrl = isCashAppPay
+      ? `${appUrl}/confirmation?cashAppPay=true`
+      : mode === "standard"
+        ? `${appUrl}/checkout/review`
+        : `${appUrl}/confirmation`;
 
     const checkoutRequest = {
       amount: toMoney(total),
@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
         popupOriginUrl: appUrl,
       },
       mode,
+      ...(isCashAppPay && { isCashAppPay: true }),
     };
 
     const response = await createCheckout(checkoutRequest);

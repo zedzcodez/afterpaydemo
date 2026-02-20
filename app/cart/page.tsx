@@ -2,13 +2,19 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartProvider";
 import { formatPrice } from "@/lib/products";
 import { OSMPlacement } from "@/components/OSMPlacement";
 import { getCartSkus, getCartCategories } from "@/lib/cart";
+import { BuyNowButton } from "@/components/BuyNowButton";
+
+import { useBuyNowCheckout } from "@/hooks/useBuyNowCheckout";
 
 export default function CartPage() {
   const { items, total, updateQuantity, removeFromCart } = useCart();
+  const router = useRouter();
+  const { startBuyNow, isLoading } = useBuyNowCheckout("buynow-afterpay-button-cart");
 
   if (items.length === 0) {
     return (
@@ -27,7 +33,7 @@ export default function CartPage() {
             d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
           />
         </svg>
-        <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
+        <h1 className="text-2xl font-display font-bold mb-4">Your cart is empty</h1>
         <p className="text-afterpay-gray-600 mb-6">
           Add some products to get started
         </p>
@@ -43,7 +49,7 @@ export default function CartPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold mb-8">Shopping Cart</h1>
+      <h1 className="text-3xl font-display font-bold mb-8 dark:text-white">Shopping Cart</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Cart Items */}
@@ -52,7 +58,7 @@ export default function CartPage() {
             {items.map((item) => (
               <div
                 key={item.product.id}
-                className="flex items-center gap-4 p-4 bg-white dark:bg-afterpay-gray-800 border border-afterpay-gray-200 dark:border-afterpay-gray-700 rounded-lg"
+                className="flex items-center gap-4 p-4 bg-white dark:bg-afterpay-gray-800 border border-afterpay-gray-200 dark:border-afterpay-gray-700 rounded-xl"
               >
                 {/* Product Image */}
                 <div className="w-24 h-24 bg-afterpay-gray-100 dark:bg-afterpay-gray-700 rounded-lg overflow-hidden flex-shrink-0 relative">
@@ -141,8 +147,8 @@ export default function CartPage() {
 
         {/* Order Summary */}
         <div className="lg:col-span-1">
-          <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-lg p-6 sticky top-24">
-            <h2 className="text-xl font-semibold mb-4 dark:text-white">Order Summary</h2>
+          <div className="bg-afterpay-gray-50 dark:bg-afterpay-gray-800 rounded-xl p-6 sticky top-24">
+            <h2 className="text-xl font-display font-semibold mb-4 dark:text-white">Order Summary</h2>
 
             <div className="space-y-3 mb-6">
               <div className="flex justify-between text-afterpay-gray-600 dark:text-afterpay-gray-300">
@@ -172,19 +178,30 @@ export default function CartPage() {
               />
             </div>
 
-            <Link
-              href="/checkout"
-              className="block w-full py-3 px-6 bg-afterpay-black text-white text-center font-medium rounded-lg hover:bg-afterpay-gray-800 transition-colors"
-            >
-              Proceed to Checkout
-            </Link>
+            <div className="space-y-3">
+              <BuyNowButton
+                onClick={() => startBuyNow({ items, total })}
+                disabled={isLoading}
+              />
 
-            <Link
-              href="/"
-              className="block w-full mt-3 py-3 px-6 text-afterpay-gray-600 dark:text-afterpay-gray-400 text-center hover:text-afterpay-black dark:hover:text-white transition-colors"
-            >
-              Continue Shopping
-            </Link>
+              <button
+                type="button"
+                onClick={() => router.push("/checkout")}
+                className="w-full h-12 bg-afterpay-gray-100 dark:bg-afterpay-gray-700 text-afterpay-black dark:text-white font-medium rounded-xl border border-afterpay-gray-300 dark:border-afterpay-gray-600 hover:bg-afterpay-gray-200 dark:hover:bg-afterpay-gray-600 transition-colors cursor-pointer"
+              >
+                Continue to checkout
+              </button>
+
+              <Link
+                href="/"
+                className="block text-center text-sm text-afterpay-gray-600 hover:text-afterpay-black dark:hover:text-white transition-colors"
+              >
+                Continue Shopping
+              </Link>
+            </div>
+
+            {/* SDK target for Buy Now popup (zero-size, must not be display:none) */}
+            <div id="buynow-afterpay-button-cart" className="absolute w-0 h-0 overflow-hidden" />
           </div>
         </div>
       </div>

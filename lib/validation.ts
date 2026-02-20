@@ -46,6 +46,7 @@ export const checkoutRequestSchema = z.object({
   mode: z.enum(['standard', 'express']).optional().default('standard'),
   consumer: consumerSchema.optional(),
   shipping: shippingSchema.optional(),
+  isCashAppPay: z.boolean().optional().default(false),
 });
 
 // Auth request schema
@@ -58,7 +59,7 @@ export const authRequestSchema = z.object({
 
 // Capture request schema
 export const captureRequestSchema = z.object({
-  orderId: z.string().min(1, 'Order ID is required'),
+  orderId: z.string().min(1, 'Order ID is required').regex(/^[a-zA-Z0-9-]+$/, 'Invalid order ID format'),
   amount: z.number().positive('Amount must be positive'),
   currency: z.string().length(3).optional().default('USD'),
   isCheckoutAdjusted: z.boolean().optional(),
@@ -67,7 +68,7 @@ export const captureRequestSchema = z.object({
 
 // Refund request schema
 export const refundRequestSchema = z.object({
-  orderId: z.string().min(1, 'Order ID is required'),
+  orderId: z.string().min(1, 'Order ID is required').regex(/^[a-zA-Z0-9-]+$/, 'Invalid order ID format'),
   amount: z.number().positive('Refund amount must be positive'),
   currency: z.string().length(3).optional().default('USD'),
   merchantReference: z.string().optional(),
@@ -75,7 +76,7 @@ export const refundRequestSchema = z.object({
 
 // Void request schema
 export const voidRequestSchema = z.object({
-  orderId: z.string().min(1, 'Order ID is required'),
+  orderId: z.string().min(1, 'Order ID is required').regex(/^[a-zA-Z0-9-]+$/, 'Invalid order ID format'),
   amount: z.number().positive('Amount must be positive'),
   currency: z.string().length(3).optional().default('USD'),
 });
@@ -84,6 +85,9 @@ export const voidRequestSchema = z.object({
 export const captureFullRequestSchema = z.object({
   token: z.string().min(1, 'Token is required'),
   merchantReference: z.string().optional(),
+  amount: z.number().positive().optional(),
+  isCheckoutAdjusted: z.boolean().optional(),
+  paymentScheduleChecksum: z.string().optional(),
 });
 
 // Type inference helpers

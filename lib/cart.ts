@@ -1,16 +1,20 @@
 import { CartItem, Product } from "./types";
+import { LOCAL_STORAGE_KEYS } from "./storage-keys";
 
-const CART_STORAGE_KEY = "afterpay-demo-cart";
+/** Round a number to two decimal places to avoid floating-point drift in currency math. */
+export function roundCurrency(amount: number): number {
+  return Math.round(amount * 100) / 100;
+}
 
 export function getStoredCart(): CartItem[] {
   if (typeof window === "undefined") return [];
-  const stored = localStorage.getItem(CART_STORAGE_KEY);
+  const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.CART);
   return stored ? JSON.parse(stored) : [];
 }
 
 export function saveCart(items: CartItem[]): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  localStorage.setItem(LOCAL_STORAGE_KEYS.CART, JSON.stringify(items));
 }
 
 export function addToCart(items: CartItem[], product: Product): CartItem[] {
@@ -46,9 +50,11 @@ export function updateQuantity(
 }
 
 export function calculateTotal(items: CartItem[]): number {
-  return items.reduce(
-    (total, item) => total + item.product.price * item.quantity,
-    0
+  return roundCurrency(
+    items.reduce(
+      (total, item) => total + item.product.price * item.quantity,
+      0
+    )
   );
 }
 

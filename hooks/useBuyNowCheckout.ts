@@ -1,0 +1,370 @@
+"use client";
+
+import { useState, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useConfig } from "@/components/ConfigProvider";
+import { useCart } from "@/components/CartProvider";
+import { Product } from "@/lib/types";
+import { getAfterpayShippingOptions } from "@/lib/shipping";
+import { captureFullPaymentClient, authorizePaymentClient } from "@/lib/payment-client";
+import { createCheckoutTokenClient } from "@/lib/checkout-client";
+import {
+  initFlowLogs,
+  addFlowLog,
+  logCallback,
+  setFlowSummary,
+  updateFlowSummary,
+  FLOW_SUMMARIES,
+} from "@/lib/flowLogs";
+import { STORAGE_KEYS, savePendingOrder } from "@/lib/storage-keys";
+import { DEFAULT_COUNTRY_CODE } from "@/lib/constants";
+
+interface BuyNowItem {
+  product: Product;
+  quantity: number;
+}
+
+interface StartBuyNowParams {
+  items: BuyNowItem[];
+  total: number;
+}
+
+interface UseBuyNowCheckoutReturn {
+  startBuyNow: (params: StartBuyNowParams) => Promise<void>;
+  isLoading: boolean;
+  error: string | null;
+}
+
+function getAfterpaySdk() {
+  if (typeof window === "undefined") return null;
+  // The SDK may be available as either window.AfterPay or window.Afterpay
+  return window.Afterpay ?? null;
+}
+
+export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): UseBuyNowCheckoutReturn {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const { config } = useConfig();
+  const { clearCart } = useCart();
+
+  // Use refs to keep values accessible in popup callbacks
+  const paramsRef = useRef<StartBuyNowParams | null>(null);
+
+  const startBuyNow = useCallback(
+    async (params: StartBuyNowParams) => {
+      const sdk = getAfterpaySdk();
+      if (!sdk || typeof sdk.initializeForPopup !== "function") {
+        setError("Afterpay SDK is not loaded. Please try again.");
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+      paramsRef.current = params;
+
+      const shippingFlow = config.expressCheckout.type; // "integrated" | "deferred"
+      const captureMode = config.captureMode; // "deferred" | "immediate"
+
+      // Initialize flow logs
+      const flowType = shippingFlow === "integrated" ? "buynow-integrated" : "buynow-deferred";
+      initFlowLogs(flowType);
+
+      const baseSummary = FLOW_SUMMARIES[flowType];
+      setFlowSummary({
+        ...baseSummary,
+        requestConfig: {},
+        responseData: {},
+      });
+
+      // Helper: create checkout token via API
+      const createCheckoutToken = async (): Promise<string> => {
+        const currentParams = paramsRef.current;
+        if (!currentParams) {
+          throw new Error("BuyNow parameters not initialized");
+        }
+        const clientRequestBody = {
+          items: currentParams.items.map((item) => ({
+            product: item.product,
+            quantity: item.quantity,
+          })),
+          total: currentParams.total,
+          mode: "express" as const,
+          isCashAppPay: false,
+        };
+
+        const { token, data } = await createCheckoutTokenClient(clientRequestBody);
+
+        // Extract request config from _meta for flow summary
+        const serverRequestBody = data._meta?.requestBody;
+        if (serverRequestBody) {
+          updateFlowSummary({
+            requestConfig: {
+              mode: serverRequestBody.mode,
+              "merchant.popupOriginUrl": serverRequestBody.merchant?.popupOriginUrl,
+              "merchant.redirectConfirmUrl": serverRequestBody.merchant?.redirectConfirmUrl,
+              "merchant.redirectCancelUrl": serverRequestBody.merchant?.redirectCancelUrl,
+            },
+            responseData: {
+              token: data.token,
+              redirectCheckoutUrl: data.redirectCheckoutUrl,
+            },
+          });
+        }
+
+        return token;
+      };
+
+      // Helper: get shipping options based on current total
+      const getShippingOptions = () => {
+        const currentParams = paramsRef.current;
+        if (!currentParams) {
+          throw new Error("BuyNow parameters not initialized");
+        }
+        return getAfterpayShippingOptions(currentParams.total);
+      };
+
+      // Helper: handle payment processing (capture-full for immediate, auth for deferred)
+      const handleAuthorization = async (orderToken: string): Promise<void> => {
+        const isImmediateCapture = captureMode === "immediate";
+        const currentParams = paramsRef.current;
+        if (!currentParams) {
+          throw new Error("BuyNow parameters not initialized");
+        }
+
+        // Don't send amount from the client — the server-side route will fetch the
+        // checkout to get the authoritative final amount (including any shipping
+        // selected in the popup). This avoids reliance on the onShippingOptionChange
+        // SDK callback which is unreliable across environments.
+
+        try {
+          const result = isImmediateCapture
+            ? await captureFullPaymentClient(orderToken)
+            : await authorizePaymentClient(orderToken);
+
+          const orderId = result.orderId;
+
+          updateFlowSummary({
+            responseData: {
+              ...(result.data.token && { token: result.data.token }),
+              "data.orderToken": orderToken,
+              id: result.data.id,
+              status: result.data.status,
+              originalAmount: result.data.originalAmount,
+              openToCaptureAmount: result.data.openToCapture,
+            },
+          });
+
+          // Store order data in sessionStorage for confirmation page
+          savePendingOrder(currentParams.items, currentParams.total);
+
+          // Clear the cart after successful checkout
+          clearCart();
+
+          const flowSuffix = isImmediateCapture ? "immediate" : "deferred";
+          const flowName = `buynow-${shippingFlow}-${flowSuffix}`;
+
+          addFlowLog({
+            type: "redirect",
+            label: "Redirect to Confirmation",
+            endpoint: `/confirmation?orderId=${orderId}&status=success&flow=${flowName}`,
+          });
+
+          router.push(
+            `/confirmation?orderId=${orderId}&status=success&flow=${flowName}&total=${currentParams.total.toFixed(2)}`
+          );
+        } catch (err) {
+          console.error("[BuyNow] handleAuthorization error", err);
+          setError(err instanceof Error ? err.message : "Payment was not approved");
+          setIsLoading(false);
+        }
+      };
+
+      // Build the SDK popup configuration
+      const popupConfig =
+        shippingFlow === "integrated"
+          ? {
+              countryCode: DEFAULT_COUNTRY_CODE,
+              target: `#${targetId}`,
+              addressMode:
+                sdk.ADDRESS_MODES?.ADDRESS_WITH_SHIPPING_OPTIONS ||
+                "ADDRESS_WITH_SHIPPING_OPTIONS",
+              buyNow: true,
+              onCommenceCheckout: async (actions: {
+                resolve: (token: string) => void;
+                reject: (error: { message: string }) => void;
+              }) => {
+                logCallback("onCommenceCheckout", { flow: "buynow-integrated" });
+                try {
+                  const token = await createCheckoutToken();
+                  logCallback("onCommenceCheckout resolved", {
+                    token: token.substring(0, 20) + "...",
+                  });
+                  actions.resolve(token);
+                } catch (err) {
+                  const message = err instanceof Error ? err.message : "Checkout failed";
+                  logCallback("onCommenceCheckout rejected", { error: message });
+                  setError(message);
+                  setIsLoading(false);
+                  actions.reject({ message });
+                }
+              },
+              onShippingAddressChange: (
+                addressData: {
+                  address: {
+                    area1: string;
+                    area2?: string;
+                    countryCode: string;
+                    postcode: string;
+                  };
+                },
+                actions: {
+                  resolve: (
+                    options: Array<{
+                      id: string;
+                      name: string;
+                      description?: string;
+                      shippingAmount: { amount: string; currency: string };
+                      taxAmount?: { amount: string; currency: string };
+                      orderAmount: { amount: string; currency: string };
+                    }>
+                  ) => void;
+                  reject: (error: { message: string }) => void;
+                }
+              ) => {
+                logCallback("onShippingAddressChange", { address: addressData.address });
+                try {
+                  const options = getShippingOptions();
+                  logCallback("onShippingAddressChange resolved", {
+                    optionCount: options.length,
+                    options: options.map((o) => ({
+                      id: o.id,
+                      name: o.name,
+                      amount: o.orderAmount.amount,
+                    })),
+                  });
+                  actions.resolve(options);
+                } catch (err) {
+                  logCallback("onShippingAddressChange rejected", {
+                    error: "Unable to calculate shipping",
+                  });
+                  actions.reject({ message: "Unable to calculate shipping" });
+                }
+              },
+              onShippingOptionChange: (data: { shippingOptionIdentifier: string }) => {
+                logCallback("onShippingOptionChange", { shippingOptionIdentifier: data.shippingOptionIdentifier });
+              },
+              onComplete: async (event: {
+                data: { status: string; orderToken: string; orderInfo?: object };
+              }) => {
+                logCallback("onComplete", {
+                  status: event.data.status,
+                  orderInfo: event.data.orderInfo,
+                });
+
+                if (event.data.status === "SUCCESS") {
+                  await handleAuthorization(event.data.orderToken);
+                } else {
+                  setError("Checkout was cancelled");
+                  setIsLoading(false);
+                }
+              },
+            }
+          : {
+              countryCode: DEFAULT_COUNTRY_CODE,
+              target: `#${targetId}`,
+              shippingOptionRequired: false,
+              buyNow: true,
+              onCommenceCheckout: async (actions: {
+                resolve: (token: string) => void;
+                reject: (error: { message: string }) => void;
+              }) => {
+                logCallback("onCommenceCheckout", { flow: "buynow-deferred" });
+
+                updateFlowSummary({
+                  requestConfig: {
+                    shippingOptionRequired: false,
+                  },
+                });
+
+                try {
+                  const token = await createCheckoutToken();
+                  logCallback("onCommenceCheckout resolved", {
+                    token: token.substring(0, 20) + "...",
+                  });
+                  actions.resolve(token);
+                } catch (err) {
+                  const message = err instanceof Error ? err.message : "Checkout failed";
+                  logCallback("onCommenceCheckout rejected", { error: message });
+                  setError(message);
+                  setIsLoading(false);
+                  actions.reject({ message });
+                }
+              },
+              onComplete: async (event: {
+                data: {
+                  status: string;
+                  orderToken: string;
+                  shippingAddress?: object;
+                  consumer?: object;
+                };
+              }) => {
+                logCallback("onComplete", {
+                  status: event.data.status,
+                  shippingAddress: event.data.shippingAddress,
+                  consumer: event.data.consumer,
+                });
+
+                if (event.data.status === "SUCCESS") {
+                  // For deferred shipping, redirect to shipping selection page
+                  const currentParams = paramsRef.current;
+                  if (!currentParams) {
+                    throw new Error("BuyNow parameters not initialized");
+                  }
+                  savePendingOrder(currentParams.items, currentParams.total, STORAGE_KEYS.CHECKOUT_CART);
+
+                  updateFlowSummary({
+                    responseData: {
+                      "data.orderToken": event.data.orderToken,
+                    },
+                  });
+
+                  clearCart();
+
+                  const searchParams = new URLSearchParams({
+                    token: event.data.orderToken,
+                    flow: "deferred",
+                  });
+
+                  addFlowLog({
+                    type: "redirect",
+                    label: "Redirect to Shipping Selection",
+                    endpoint: `/checkout/shipping?${searchParams.toString()}`,
+                  });
+
+                  router.push(`/checkout/shipping?${searchParams.toString()}`);
+                } else {
+                  setError("Checkout was cancelled");
+                  setIsLoading(false);
+                }
+              },
+            };
+
+      try {
+        sdk.initializeForPopup(popupConfig);
+
+        // initializeForPopup binds a click handler to the target element.
+        // Clicking the target triggers onCommenceCheckout and opens the popup.
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) targetEl.click();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to initialize Afterpay popup";
+        setError(message);
+        setIsLoading(false);
+      }
+    },
+    [targetId, config.expressCheckout.type, config.captureMode, clearCart, router]
+  );
+
+  return { startBuyNow, isLoading, error };
+}
