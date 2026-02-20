@@ -8,7 +8,7 @@ import { CodeViewer } from "./CodeViewer";
 import { getCartSkus, getCartCategories } from "@/lib/cart";
 import { AfterpayShippingOption } from "@/lib/types";
 import { getAfterpayShippingOptions } from "@/lib/shipping";
-import { authorizePaymentClient } from "@/lib/payment-client";
+import { captureFullPaymentClient, authorizePaymentClient } from "@/lib/payment-client";
 import { initFlowLogs, addFlowLog, logCallback, setFlowSummary, updateFlowSummary, FLOW_SUMMARIES } from "@/lib/flowLogs";
 import { toggleDevPanel, useDevPanelState } from "./FlowLogsDevPanel";
 
@@ -205,104 +205,20 @@ export function CheckoutExpress({ isActive, onLog, onLogUpdate, initialShippingF
                 let orderId: string;
 
                 if (isImmediateCapture) {
-                  // Immediate Capture Mode: Auth first (to get correct amount), then capture
-                  // Express Checkout with integrated shipping changes the amount in the popup,
-                  // so we must auth first (which fetches the checkout to get the final amount)
-                  const authClientRequest = { token: event.data.orderToken };
-                  const authLogId = onLogRef.current?.("POST", "/api/afterpay/auth", authClientRequest);
+                  // Immediate Capture: single-step capture-full (auth + capture combined)
+                  const result = await captureFullPaymentClient(event.data.orderToken);
 
-                  const authStartTime = Date.now();
-                  const authResponse = await fetch("/api/afterpay/auth", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(authClientRequest),
-                  });
-
-                  const authData = await authResponse.json();
-                  const authDuration = Date.now() - authStartTime;
-                  onLogUpdateRef.current?.(authLogId!, { response: authData, status: authResponse.status });
-
-                  // Log request with FULL server-side payload from _meta
-                  addFlowLog({
-                    type: "api_request",
-                    label: "Authorize Payment (Immediate Mode - Step 1)",
-                    method: "POST",
-                    endpoint: "/api/afterpay/auth → /v2/payments/auth",
-                    data: authData._meta?.requestBody || authClientRequest,
-                    fullUrl: authData._meta?.fullUrl,
-                    headers: authData._meta?.headers,
-                  });
-
-                  addFlowLog({
-                    type: "api_response",
-                    label: "Authorization Response",
-                    method: "POST",
-                    endpoint: "/v2/payments/auth",
-                    status: authResponse.status,
-                    data: authData,
-                    duration: authDuration,
-                    fullUrl: authData._meta?.fullUrl,
-                  });
-
-                  if (authData.status !== "APPROVED") {
-                    throw new Error("Payment authorization failed");
-                  }
-
-                  // Now capture the authorized amount
-                  const captureAmount = parseFloat(authData.amount?.amount || authData.originalAmount?.amount);
-                  const captureClientRequest = { orderId: authData.id, amount: captureAmount };
-                  const captureLogId = onLogRef.current?.("POST", "/api/afterpay/capture", captureClientRequest);
-
-                  const captureStartTime = Date.now();
-                  const captureResponse = await fetch("/api/afterpay/capture", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(captureClientRequest),
-                  });
-
-                  const captureData = await captureResponse.json();
-                  const captureDuration = Date.now() - captureStartTime;
-                  onLogUpdateRef.current?.(captureLogId!, { response: captureData, status: captureResponse.status });
-
-                  // Log request with FULL server-side payload from _meta
-                  addFlowLog({
-                    type: "api_request",
-                    label: "Capture Payment (Immediate Mode - Step 2)",
-                    method: "POST",
-                    endpoint: `/api/afterpay/capture → /v2/payments/${authData.id}/capture`,
-                    data: captureData._meta?.requestBody || captureClientRequest,
-                    fullUrl: captureData._meta?.fullUrl,
-                    headers: captureData._meta?.headers,
-                  });
-
-                  addFlowLog({
-                    type: "api_response",
-                    label: "Capture Response",
-                    method: "POST",
-                    endpoint: `/v2/payments/${authData.id}/capture`,
-                    status: captureResponse.status,
-                    data: captureData,
-                    duration: captureDuration,
-                    fullUrl: captureData._meta?.fullUrl,
-                  });
-
-                  if (captureData.error) {
-                    throw new Error(captureData.error);
-                  }
-
-                  // Update flow summary with auth and capture response data
                   updateFlowSummary({
                     responseData: {
-                      token: authData.token,
                       'data.orderToken': event.data.orderToken,
-                      id: authData.id,
-                      status: captureData.status || 'CAPTURED',
-                      originalAmount: authData.originalAmount,
-                      openToCaptureAmount: captureData.openToCapture,
+                      id: result.data.id,
+                      status: result.data.status,
+                      originalAmount: result.data.originalAmount,
+                      openToCaptureAmount: result.data.openToCapture,
                     },
                   });
 
-                  orderId = authData.id;
+                  orderId = result.orderId;
                 } else {
                   // Deferred Capture Mode: Only authorize
                   const result = await authorizePaymentClient(event.data.orderToken);
