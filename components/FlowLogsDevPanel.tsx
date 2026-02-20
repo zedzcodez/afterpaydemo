@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { getFlowLogs, FlowLogs, FlowLogEntry } from "@/lib/flowLogs";
 import { useConfig } from "@/components/ConfigProvider";
 import { LOCAL_STORAGE_KEYS } from "@/lib/storage-keys";
+import { COPY_FEEDBACK_MS } from "@/lib/constants";
 
 interface FlowLogsDevPanelProps {
   className?: string;
@@ -363,7 +364,7 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
     try {
       await navigator.clipboard.writeText(text);
       setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
+      setTimeout(() => setCopySuccess(false), COPY_FEEDBACK_MS);
     } catch {
       console.error("Failed to copy to clipboard");
     }

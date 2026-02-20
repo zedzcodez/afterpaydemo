@@ -21,6 +21,7 @@ import { initFlowLogs, addFlowLog, setFlowSummary, updateFlowSummary, FLOW_SUMMA
 import { captureFullPaymentClient, authorizePaymentClient } from "@/lib/payment-client";
 import { CashAppPayCompleteEvent } from "@/lib/types";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { SDK_POLL_INTERVAL_MS } from "@/lib/constants";
 import type { CheckoutFormData, LocalShippingOption } from "@/lib/types";
 
 const CASH_APP_BUTTON_OPTIONS = {
@@ -37,7 +38,7 @@ const CASH_APP_BUTTON_OPTIONS = {
 function applyCashAppButtonStyles(retries = 30) {
   const host = document.querySelector('#cash-app-pay > div');
   if (!host?.shadowRoot) {
-    if (retries > 0) setTimeout(() => applyCashAppButtonStyles(retries - 1), 100);
+    if (retries > 0) setTimeout(() => applyCashAppButtonStyles(retries - 1), SDK_POLL_INTERVAL_MS);
     return;
   }
   const shadow = host.shadowRoot;
@@ -46,7 +47,7 @@ function applyCashAppButtonStyles(retries = 30) {
   if (existing) existing.remove();
   const btn = shadow.querySelector('button[data-testid="cap-btn"]');
   if (!btn) {
-    if (retries > 0) setTimeout(() => applyCashAppButtonStyles(retries - 1), 100);
+    if (retries > 0) setTimeout(() => applyCashAppButtonStyles(retries - 1), SDK_POLL_INTERVAL_MS);
     return;
   }
   const style = document.createElement('style');
@@ -101,7 +102,7 @@ export function CheckoutCashApp({ formData, selectedShipping, total, finalTotal,
       if (typeof window !== "undefined" && window.Afterpay && typeof window.Afterpay.initializeForCashAppPay === 'function') {
         setIsReady(true);
       } else {
-        timeoutId = setTimeout(checkAfterpay, 100);
+        timeoutId = setTimeout(checkAfterpay, SDK_POLL_INTERVAL_MS);
       }
     };
     checkAfterpay();

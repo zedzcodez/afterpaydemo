@@ -14,6 +14,7 @@ import { FlowLogsDevPanel, toggleDevPanel, useDevPanelState } from "@/components
 import { PaymentScheduleCodeSection } from "@/components/OSMInfoSection";
 import { CheckoutProgress } from "@/components/CheckoutProgress";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { SDK_POLL_INTERVAL_MS } from "@/lib/constants";
 
 // Declare Afterpay widget types
 declare global {
@@ -183,7 +184,7 @@ function ShippingContent() {
       if (window.AfterPay) {
         initializeWidget(orderToken, storedCartTotal);
       } else {
-        setTimeout(checkAndInit, 100);
+        setTimeout(checkAndInit, SDK_POLL_INTERVAL_MS);
       }
     };
     checkAndInit();

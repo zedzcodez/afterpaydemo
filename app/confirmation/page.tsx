@@ -10,6 +10,7 @@ import { CheckoutProgress } from "@/components/CheckoutProgress";
 import { saveOrder, Order, OrderItem } from "@/lib/orders";
 import { getStoredCart, calculateTotal } from "@/lib/cart";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { SDK_POLL_INTERVAL_MS, COPY_FEEDBACK_MS } from "@/lib/constants";
 
 function ConfirmationContent() {
   const searchParams = useSearchParams();
@@ -116,7 +117,7 @@ function ConfirmationContent() {
             },
           });
         } else {
-          setTimeout(initListeners, 100);
+          setTimeout(initListeners, SDK_POLL_INTERVAL_MS);
         }
       };
 
@@ -434,7 +435,7 @@ function FlowSummarySection({ summary }: { summary: FlowSummary }) {
     };
     navigator.clipboard.writeText(JSON.stringify(output, null, 2));
     setCopiedSection(section);
-    setTimeout(() => setCopiedSection(null), 2000);
+    setTimeout(() => setCopiedSection(null), COPY_FEEDBACK_MS);
   };
 
   const formatValue = (value: unknown): string => {

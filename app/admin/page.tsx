@@ -8,8 +8,6 @@ import { FlowLogsDevPanel } from "@/components/FlowLogsDevPanel";
 import { initFlowLogs, addFlowLog } from "@/lib/flowLogs";
 import { PaymentDetails } from "@/lib/afterpay";
 import { useConfig } from "@/components/ConfigProvider";
-// Webhook feature temporarily disabled
-// import { StoredWebhookEvent, WebhookEventType, getEventBadgeColor } from "@/lib/webhooks";
 
 type ActionType = "capture" | "refund" | "void";
 

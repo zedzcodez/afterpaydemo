@@ -10,6 +10,7 @@ import { AfterpayShippingOption } from "@/lib/types";
 import { getAfterpayShippingOptions } from "@/lib/shipping";
 import { captureFullPaymentClient, authorizePaymentClient } from "@/lib/payment-client";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { SDK_POLL_INTERVAL_MS } from "@/lib/constants";
 import { initFlowLogs, addFlowLog, logCallback, setFlowSummary, updateFlowSummary, FLOW_SUMMARIES } from "@/lib/flowLogs";
 import { toggleDevPanel, useDevPanelState } from "./FlowLogsDevPanel";
 
@@ -127,7 +128,7 @@ export function CheckoutExpress({ isActive, onLog, onLogUpdate, initialShippingF
       if (typeof window !== "undefined" && window.Afterpay && typeof window.Afterpay.initializeForPopup === 'function') {
         setIsReady(true);
       } else {
-        timeoutId = setTimeout(checkAfterpay, 100);
+        timeoutId = setTimeout(checkAfterpay, SDK_POLL_INTERVAL_MS);
       }
     };
     checkAfterpay();

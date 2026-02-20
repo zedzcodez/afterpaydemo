@@ -14,6 +14,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { SDK_POLL_INTERVAL_MS } from "@/lib/constants";
 import { useCart } from "./CartProvider";
 import { useConfig } from "./ConfigProvider";
 import { AfterpayButton } from "./AfterpayButton";
@@ -55,7 +56,7 @@ export function CheckoutStandard({ formData, selectedShipping, total, finalTotal
       if (typeof window !== "undefined" && window.Afterpay) {
         setIsAfterpayReady(true);
       } else {
-        timeoutId = setTimeout(checkAfterpay, 100);
+        timeoutId = setTimeout(checkAfterpay, SDK_POLL_INTERVAL_MS);
       }
     };
     checkAfterpay();
