@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { captureFullPayment, toMoney, API_URL } from "@/lib/afterpay";
+import { captureFullPayment, getCheckout, toMoney, API_URL } from "@/lib/afterpay";
 import { sanitizeError } from "@/lib/errors";
 import { captureFullRequestSchema, validateRequest } from "@/lib/validation";
 
@@ -20,12 +20,27 @@ export async function POST(request: NextRequest) {
     }
     const { token, merchantReference, amount, isCheckoutAdjusted, paymentScheduleChecksum } = validation.data;
 
+    // For Express Checkout with integrated shipping, the client may not know the
+    // final order amount (the SDK's onShippingOptionChange callback is unreliable).
+    // If no amount is provided, fetch the checkout to get the authoritative amount.
+    let resolvedAmount = amount ? toMoney(amount) : undefined;
+    if (!resolvedAmount) {
+      try {
+        const checkout = await getCheckout(token);
+        if (checkout.amount) {
+          resolvedAmount = checkout.amount;
+        }
+      } catch (err) {
+        console.warn("[capture-full] Could not fetch checkout for amount resolution:", err);
+      }
+    }
+
     const requestBody: Record<string, unknown> = { requestId, token };
     if (merchantReference) {
       requestBody.merchantReference = merchantReference;
     }
-    if (amount) {
-      requestBody.amount = toMoney(amount);
+    if (resolvedAmount) {
+      requestBody.amount = resolvedAmount;
     }
     if (isCheckoutAdjusted) {
       requestBody.isCheckoutAdjusted = isCheckoutAdjusted;
@@ -36,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     const response = await captureFullPayment(token, requestId, {
       merchantReference,
-      amount: amount ? toMoney(amount) : undefined,
+      amount: resolvedAmount,
       isCheckoutAdjusted,
       paymentScheduleChecksum,
     });
@@ -58,7 +73,6 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    const safeMessage = sanitizeError(error, "capture-full");
-    return NextResponse.json({ error: safeMessage }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error, "capture-full") }, { status: 500 });
   }
 }

@@ -280,8 +280,8 @@ export function formatFlowName(flow: string): string {
 
   const parts = flow.toLowerCase().split("-");
 
-  // Determine checkout type
-  const isExpress = parts[0] === "express";
+  // Determine checkout type ("buynow" is the Buy Now variant of Express Checkout)
+  const isExpress = parts[0] === "express" || parts[0] === "buynow";
   const isCashApp = parts[0] === "cashapp";
   const checkoutType = isCashApp ? "Cash App Pay" : isExpress ? "Express Checkout" : "Standard Checkout";
 

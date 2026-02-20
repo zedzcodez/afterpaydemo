@@ -50,8 +50,11 @@ async function afterpayFetch<T>(
     }
 
     const error = await response.json().catch(() => ({}));
+    console.error(`[afterpayFetch] ${endpoint} ${response.status}:`, JSON.stringify(error));
+    // Include full error details for debugging
+    const errorDetail = error.message || error.errorCode || JSON.stringify(error);
     lastError = new Error(
-      error.message || `Afterpay API error: ${response.statusText}`
+      `Afterpay ${response.status}: ${errorDetail}`
     );
 
     // Only retry on transient server errors

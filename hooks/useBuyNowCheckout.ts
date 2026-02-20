@@ -154,6 +154,11 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
         const isImmediateCapture = captureMode === "immediate";
         const currentParams = paramsRef.current!;
 
+        // Don't send amount from the client — the server-side route will fetch the
+        // checkout to get the authoritative final amount (including any shipping
+        // selected in the popup). This avoids reliance on the onShippingOptionChange
+        // SDK callback which is unreliable across environments.
+
         try {
           const result = isImmediateCapture
             ? await captureFullPaymentClient(orderToken)
@@ -202,6 +207,7 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
             `/confirmation?orderId=${orderId}&status=success&flow=${flowName}&total=${currentParams.total.toFixed(2)}`
           );
         } catch (err) {
+          console.error("[BuyNow] handleAuthorization error", err);
           setError(err instanceof Error ? err.message : "Payment was not approved");
           setIsLoading(false);
         }
@@ -277,6 +283,9 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
                   });
                   actions.reject({ message: "Unable to calculate shipping" });
                 }
+              },
+              onShippingOptionChange: (data: { shippingOptionIdentifier: string }) => {
+                logCallback("onShippingOptionChange", { shippingOptionIdentifier: data.shippingOptionIdentifier });
               },
               onComplete: async (event: {
                 data: { status: string; orderToken: string; orderInfo?: object };

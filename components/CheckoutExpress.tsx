@@ -194,6 +194,9 @@ export function CheckoutExpress({ isActive, onLog, onLogUpdate, initialShippingF
               actions.reject({ message: "Unable to calculate shipping" });
             }
           },
+          onShippingOptionChange: (data: { shippingOptionIdentifier: string }) => {
+            logCallback("onShippingOptionChange", { shippingOptionIdentifier: data.shippingOptionIdentifier });
+          },
           onComplete: async (event: { data: { status: string; orderToken: string; orderInfo?: object } }) => {
             logCallback("onComplete", { status: event.data.status, orderInfo: event.data.orderInfo });
 
@@ -204,6 +207,10 @@ export function CheckoutExpress({ isActive, onLog, onLogUpdate, initialShippingF
 
               try {
                 let orderId: string;
+
+                // Don't send amount from the client — the server-side route will
+                // fetch the checkout to get the authoritative final amount (including
+                // any shipping selected in the popup).
 
                 if (isImmediateCapture) {
                   // Immediate Capture: single-step capture-full (auth + capture combined)
