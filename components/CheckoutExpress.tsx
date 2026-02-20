@@ -9,6 +9,7 @@ import { getCartSkus, getCartCategories } from "@/lib/cart";
 import { AfterpayShippingOption } from "@/lib/types";
 import { getAfterpayShippingOptions } from "@/lib/shipping";
 import { captureFullPaymentClient, authorizePaymentClient } from "@/lib/payment-client";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { initFlowLogs, addFlowLog, logCallback, setFlowSummary, updateFlowSummary, FLOW_SUMMARIES } from "@/lib/flowLogs";
 import { toggleDevPanel, useDevPanelState } from "./FlowLogsDevPanel";
 
@@ -188,7 +189,6 @@ export function CheckoutExpress({ isActive, onLog, onLogUpdate, initialShippingF
               });
               actions.resolve(options);
             } catch (err) {
-              console.error("Error getting shipping options:", err);
               logCallback("onShippingAddressChange rejected", { error: "Unable to calculate shipping" });
               actions.reject({ message: "Unable to calculate shipping" });
             }
@@ -240,7 +240,7 @@ export function CheckoutExpress({ isActive, onLog, onLogUpdate, initialShippingF
                 // Store cart data in sessionStorage before redirecting (for confirmation page)
                 const currentItems = itemsRef.current;
                 const currentTotal = totalRef.current;
-                sessionStorage.setItem('afterpay_pending_order', JSON.stringify({
+                sessionStorage.setItem(STORAGE_KEYS.PENDING_ORDER, JSON.stringify({
                   items: currentItems.map(item => ({
                     productId: item.product.id,
                     productName: item.product.name,
@@ -301,7 +301,7 @@ export function CheckoutExpress({ isActive, onLog, onLogUpdate, initialShippingF
               // Store cart data in sessionStorage for shipping page
               const currentItems = itemsRef.current;
               const currentTotal = totalRef.current;
-              sessionStorage.setItem('afterpay_checkout_cart', JSON.stringify({
+              sessionStorage.setItem(STORAGE_KEYS.CHECKOUT_CART, JSON.stringify({
                 items: currentItems.map(item => ({
                   productId: item.product.id,
                   productName: item.product.name,

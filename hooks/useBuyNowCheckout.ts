@@ -15,6 +15,7 @@ import {
   updateFlowSummary,
   FLOW_SUMMARIES,
 } from "@/lib/flowLogs";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
 interface BuyNowItem {
   product: Product;
@@ -173,7 +174,7 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
 
           // Store order data in sessionStorage for confirmation page
           sessionStorage.setItem(
-            "afterpay_pending_order",
+            STORAGE_KEYS.PENDING_ORDER,
             JSON.stringify({
               items: currentParams.items.map((item) => ({
                 productId: item.product.id,
@@ -271,7 +272,6 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
                   });
                   actions.resolve(options);
                 } catch (err) {
-                  console.error("Error getting shipping options:", err);
                   logCallback("onShippingAddressChange rejected", {
                     error: "Unable to calculate shipping",
                   });
@@ -343,7 +343,7 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
                   // For deferred shipping, redirect to shipping selection page
                   const currentParams = paramsRef.current!;
                   sessionStorage.setItem(
-                    "afterpay_checkout_cart",
+                    STORAGE_KEYS.CHECKOUT_CART,
                     JSON.stringify({
                       items: currentParams.items.map((item) => ({
                         productId: item.product.id,

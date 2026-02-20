@@ -9,6 +9,7 @@ import { getFlowLogs, FlowLogs, FlowLogEntry, FlowSummary, formatFlowName } from
 import { CheckoutProgress } from "@/components/CheckoutProgress";
 import { saveOrder, Order, OrderItem } from "@/lib/orders";
 import { getStoredCart, calculateTotal } from "@/lib/cart";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
 function ConfirmationContent() {
   const searchParams = useSearchParams();
@@ -78,7 +79,7 @@ function ConfirmationContent() {
                   const flow = `cashapp-${captureMode}`;
 
                   // Save order
-                  const pendingOrderData = sessionStorage.getItem('afterpay_pending_order');
+                  const pendingOrderData = sessionStorage.getItem(STORAGE_KEYS.PENDING_ORDER);
                   let orderItems: OrderItem[] = [];
                   let orderTotal = 0;
                   if (pendingOrderData) {
@@ -86,7 +87,7 @@ function ConfirmationContent() {
                       const parsed = JSON.parse(pendingOrderData);
                       orderItems = parsed.items || [];
                       orderTotal = parsed.total || 0;
-                      sessionStorage.removeItem('afterpay_pending_order');
+                      sessionStorage.removeItem(STORAGE_KEYS.PENDING_ORDER);
                     } catch { /* fall through */ }
                   }
 
@@ -140,13 +141,13 @@ function ConfirmationContent() {
       let orderItems: OrderItem[] = [];
       let orderTotal = 0;
 
-      const pendingOrderData = sessionStorage.getItem('afterpay_pending_order');
+      const pendingOrderData = sessionStorage.getItem(STORAGE_KEYS.PENDING_ORDER);
       if (pendingOrderData) {
         try {
           const parsed = JSON.parse(pendingOrderData);
           orderItems = parsed.items || [];
           orderTotal = parsed.total || 0;
-          sessionStorage.removeItem('afterpay_pending_order');
+          sessionStorage.removeItem(STORAGE_KEYS.PENDING_ORDER);
         } catch {
           // Fall back to cart
         }

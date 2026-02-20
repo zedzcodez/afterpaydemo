@@ -11,6 +11,7 @@ import { addFlowLog, getFlowLogs } from "@/lib/flowLogs";
 import { captureFullPaymentClient, authorizePaymentClient } from "@/lib/payment-client";
 import { FlowLogsDevPanel } from "@/components/FlowLogsDevPanel";
 import { CheckoutProgress } from "@/components/CheckoutProgress";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
 function ReviewContent() {
   const searchParams = useSearchParams();
@@ -67,7 +68,7 @@ function ReviewContent() {
       const orderId = result.orderId;
 
       // Store cart data in sessionStorage for confirmation page
-      sessionStorage.setItem('afterpay_pending_order', JSON.stringify({
+      sessionStorage.setItem(STORAGE_KEYS.PENDING_ORDER, JSON.stringify({
         items: items.map(item => ({
           productId: item.product.id,
           productName: item.product.name,

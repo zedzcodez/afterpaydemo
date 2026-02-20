@@ -13,6 +13,7 @@ import { captureFullPaymentClient, authorizePaymentClient } from "@/lib/payment-
 import { FlowLogsDevPanel, toggleDevPanel, useDevPanelState } from "@/components/FlowLogsDevPanel";
 import { PaymentScheduleCodeSection } from "@/components/OSMInfoSection";
 import { CheckoutProgress } from "@/components/CheckoutProgress";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
 // Declare Afterpay widget types
 declare global {
@@ -83,7 +84,7 @@ function ShippingContent() {
 
   // Load stored cart data on mount
   useEffect(() => {
-    const storedData = sessionStorage.getItem('afterpay_checkout_cart');
+    const storedData = sessionStorage.getItem(STORAGE_KEYS.CHECKOUT_CART);
     if (storedData) {
       try {
         const parsed = JSON.parse(storedData);
@@ -122,7 +123,6 @@ function ShippingContent() {
         locale: "en-US",
         theme: currentDarkMode ? "dark" : "light",
         onReady: (event) => {
-          console.log("Widget ready:", event);
           setWidgetReady(true);
           addFlowLog({
             type: "callback",
@@ -131,7 +131,6 @@ function ShippingContent() {
           });
         },
         onChange: (event) => {
-          console.log("Widget changed:", event);
           setChecksum(event.data.paymentScheduleChecksum);
           addFlowLog({
             type: "callback",
@@ -143,7 +142,6 @@ function ShippingContent() {
           });
         },
         onError: (event) => {
-          console.error("Widget error:", event);
           addFlowLog({
             type: "callback",
             label: "Widget Error",
@@ -152,7 +150,11 @@ function ShippingContent() {
         },
       });
     } catch (err) {
-      console.error("Failed to initialize widget:", err);
+      addFlowLog({
+        type: "callback",
+        label: "Widget Initialization Error",
+        data: { error: err instanceof Error ? err.message : "Unknown error" },
+      });
     }
   }, []);
 
@@ -257,7 +259,7 @@ function ShippingContent() {
 
       // Store cart data in sessionStorage before clearing (for confirmation page)
       // Use stored cart data if available, otherwise use cart context
-      const storedCartData = sessionStorage.getItem('afterpay_checkout_cart');
+      const storedCartData = sessionStorage.getItem(STORAGE_KEYS.CHECKOUT_CART);
       let orderItems = items.map(item => ({
         productId: item.product.id,
         productName: item.product.name,
@@ -272,12 +274,12 @@ function ShippingContent() {
           // Use empty items
         }
       }
-      sessionStorage.setItem('afterpay_pending_order', JSON.stringify({
+      sessionStorage.setItem(STORAGE_KEYS.PENDING_ORDER, JSON.stringify({
         items: orderItems,
         total: cartTotal + selectedShipping.price,
       }));
       // Clean up the checkout cart data
-      sessionStorage.removeItem('afterpay_checkout_cart');
+      sessionStorage.removeItem(STORAGE_KEYS.CHECKOUT_CART);
 
       // Cart will be cleared on confirmation page after order is saved
       const flowSuffix = isImmediateCapture ? "immediate" : "deferred";

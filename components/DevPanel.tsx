@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { LOCAL_STORAGE_KEYS } from "@/lib/storage-keys";
 
 export interface ApiLog {
   id: string;
@@ -79,7 +80,7 @@ export function DevPanel({ logs, onClear }: DevPanelProps) {
 
   // Load persisted height from localStorage
   useEffect(() => {
-    const savedHeight = localStorage.getItem("devPanelHeight");
+    const savedHeight = localStorage.getItem(LOCAL_STORAGE_KEYS.DEV_PANEL_HEIGHT);
     if (savedHeight) {
       const height = parseInt(savedHeight, 10);
       if (!isNaN(height) && height >= MIN_PANEL_HEIGHT) {
@@ -102,7 +103,7 @@ export function DevPanel({ logs, onClear }: DevPanelProps) {
       if (isResizing) {
         setIsResizing(false);
         // Persist height to localStorage
-        localStorage.setItem("devPanelHeight", panelHeight.toString());
+        localStorage.setItem(LOCAL_STORAGE_KEYS.DEV_PANEL_HEIGHT, panelHeight.toString());
       }
     };
 

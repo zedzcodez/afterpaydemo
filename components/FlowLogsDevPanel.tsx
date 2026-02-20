@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { getFlowLogs, FlowLogs, FlowLogEntry } from "@/lib/flowLogs";
 import { useConfig } from "@/components/ConfigProvider";
+import { LOCAL_STORAGE_KEYS } from "@/lib/storage-keys";
 
 interface FlowLogsDevPanelProps {
   className?: string;
@@ -65,7 +66,7 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
 
   // Load persisted height from localStorage
   useEffect(() => {
-    const savedHeight = localStorage.getItem("devPanelHeight");
+    const savedHeight = localStorage.getItem(LOCAL_STORAGE_KEYS.DEV_PANEL_HEIGHT);
     if (savedHeight) {
       const height = parseInt(savedHeight, 10);
       if (!isNaN(height) && height >= MIN_PANEL_HEIGHT) {
@@ -88,7 +89,7 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
       if (isResizing) {
         setIsResizing(false);
         // Persist height to localStorage
-        localStorage.setItem("devPanelHeight", panelHeight.toString());
+        localStorage.setItem(LOCAL_STORAGE_KEYS.DEV_PANEL_HEIGHT, panelHeight.toString());
       }
     };
 

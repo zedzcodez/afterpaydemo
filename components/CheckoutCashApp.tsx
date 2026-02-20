@@ -20,6 +20,7 @@ import { useConfig } from "@/components/ConfigProvider";
 import { initFlowLogs, addFlowLog, setFlowSummary, updateFlowSummary, FLOW_SUMMARIES } from "@/lib/flowLogs";
 import { captureFullPaymentClient, authorizePaymentClient } from "@/lib/payment-client";
 import { CashAppPayCompleteEvent } from "@/lib/types";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 import type { CheckoutFormData, LocalShippingOption } from "@/lib/types";
 
 const CASH_APP_BUTTON_OPTIONS = {
@@ -174,7 +175,7 @@ export function CheckoutCashApp({ formData, selectedShipping, total, finalTotal,
 
       // Store pending order in sessionStorage
       const currentItems = itemsRef.current;
-      sessionStorage.setItem('afterpay_pending_order', JSON.stringify({
+      sessionStorage.setItem(STORAGE_KEYS.PENDING_ORDER, JSON.stringify({
         items: currentItems.map(item => ({
           productId: item.product.id,
           productName: item.product.name,

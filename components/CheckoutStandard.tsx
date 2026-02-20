@@ -13,6 +13,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 import { useCart } from "./CartProvider";
 import { useConfig } from "./ConfigProvider";
 import { AfterpayButton } from "./AfterpayButton";
@@ -95,7 +96,7 @@ export function CheckoutStandard({ formData, selectedShipping, total, finalTotal
 
           // Store pending order in sessionStorage (confirmation page handles saveOrder)
           const currentItems = itemsRef.current;
-          sessionStorage.setItem('afterpay_pending_order', JSON.stringify({
+          sessionStorage.setItem(STORAGE_KEYS.PENDING_ORDER, JSON.stringify({
             items: currentItems.map(item => ({
               productId: item.product.id,
               productName: item.product.name,
@@ -252,7 +253,7 @@ export function CheckoutStandard({ formData, selectedShipping, total, finalTotal
       // Step 2: Open Afterpay (redirect or popup)
       if (checkoutMode === "redirect") {
         // Store pending order before redirect
-        sessionStorage.setItem('afterpay_pending_order', JSON.stringify({
+        sessionStorage.setItem(STORAGE_KEYS.PENDING_ORDER, JSON.stringify({
           items: items.map(item => ({
             productId: item.product.id,
             productName: item.product.name,

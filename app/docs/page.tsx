@@ -244,8 +244,8 @@ export default function DocsPage() {
           contentCache.current[activeTab] = data.content;
           setContent(data.content);
         }
-      } catch (error) {
-        console.error("Failed to load docs:", error);
+      } catch {
+        // Docs load failure is non-critical; loading state resets in finally
       } finally {
         setLoading(false);
       }
