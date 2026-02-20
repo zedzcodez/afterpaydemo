@@ -1421,6 +1421,10 @@ Toggle between light and dark themes using the sun/moon icon in the header. The 
 
 ### February 2026
 
+#### v3.0.2 - Express Checkout Fixes
+- **Integrated Shipping Amount Fix**: Server-side amount resolution for Express Checkout with Integrated Shipping + Immediate Capture — when the SDK's `onShippingOptionChange` callback doesn't fire reliably, the server now fetches the checkout to get the authoritative amount including shipping
+- **Flow Label Fix**: Buy Now (Express Checkout) flows now correctly display as "Express Checkout" instead of "Standard Checkout" on the confirmation page
+
 #### v3.0.1 - Cash App Pay Capture Fix
 - **Immediate Capture Fix**: Cash App Pay now uses single-step `POST /v2/payments/capture` (was incorrectly using two-step auth + capture)
 - **Deferred Capture Fix**: Cash App Pay deferred flow correctly uses `POST /v2/payments/auth` only

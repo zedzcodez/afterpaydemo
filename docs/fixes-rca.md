@@ -1,6 +1,8 @@
-# Cash App Pay - Fixes & Root Cause Analysis
+# Fixes & Root Cause Analysis
 
-This document tracks all significant bugs found and fixed during Cash App Pay integration, including root cause analysis, symptoms, and the final fix applied.
+This document tracks all significant bugs found and fixed during development, including root cause analysis, symptoms, and the final fix applied.
+
+## Cash App Pay Bugs
 
 ---
 
@@ -85,7 +87,7 @@ useEffect(() => {
 
 ## Bug 3: Cash App Pay button doesn't re-render after Edit -> Resubmit
 
-**Commit:** _(pending)_
+**Commit:** `f45ec5f` (included in Bug 4 tab-switching fix)
 **Severity:** High (Edit flow broken)
 
 ### Symptoms
@@ -241,7 +243,7 @@ Used in both `renderCashAppPayButton()` and `initializeForCashAppPay()` — guar
 
 ---
 
-## Key Takeaways
+## Cash App Pay Key Takeaways
 
 1. **Afterpay SDK config structure matters:** Use nested `cashAppPayOptions`, not flat options/events.
 2. **DOM must exist before SDK init:** Use `useEffect` + `requestAnimationFrame` to ensure React has committed DOM changes.
@@ -252,3 +254,66 @@ Used in both `renderCashAppPayButton()` and `initializeForCashAppPay()` — guar
 7. **Global SDK singletons need lifecycle management via props, not mount/unmount:** Use an `isActive` prop to control SDK state — restart on deactivation, re-init on activation.
 8. **Extract SDK option constants:** Duplicated inline objects drift apart. A single constant ensures consistent button styles across all render/init paths.
 9. **Use refs to read state in effects with minimal dependencies:** When an effect depends on `[isActive]` but needs current values of `formSubmitted`, `showPaymentButton`, etc., use refs to avoid stale closures without adding those values to the dependency array.
+
+---
+
+## Express Checkout Bugs
+
+## Bug 5: Express Checkout Integrated Shipping + Immediate Capture fails with 422
+
+**Commit:** `1825c6b`
+**Severity:** Critical (Payment fails for specific flow combination)
+
+### Symptoms
+- Express Checkout with Integrated Shipping + Immediate Capture mode fails with HTTP 500
+- Server logs show Afterpay returning 422: `amount.amount field value must be between ... and ...`
+- Product costs $35.00 but customer selected $5.99 shipping in the popup (total should be $40.99)
+- The capture request was sending $35.00 (product-only) instead of $40.99 (with shipping)
+- Deferred capture mode worked correctly for the same flow
+
+### Root Cause
+The SDK's `onShippingOptionChange` callback — which should fire when the customer selects a shipping option inside the Afterpay popup — **does not fire reliably across environments**. The client-side code was relying on this callback to track the selected shipping option and compute the final amount (product + shipping), but when the callback didn't fire, the amount fell back to the product-only total.
+
+The `auth` route already had server-side amount resolution via `getCheckout(token)`, but the `capture-full` route (used for Immediate Capture) did not — it relied entirely on the client-provided amount.
+
+### Why Deferred Worked
+The auth route (`/api/afterpay/auth`) already had the `getCheckout(token)` fallback pattern from an earlier implementation. When the client didn't send an amount, the server fetched the checkout to get the authoritative amount including shipping. The capture-full route was missing this pattern.
+
+### Fix
+**Server-side amount resolution in `capture-full/route.ts`:**
+```typescript
+// If no amount provided by client, fetch checkout for authoritative amount
+let resolvedAmount = amount ? toMoney(amount) : undefined;
+if (!resolvedAmount) {
+  try {
+    const checkout = await getCheckout(token);
+    if (checkout.amount) {
+      resolvedAmount = checkout.amount;
+    }
+  } catch (err) {
+    console.warn("[capture-full] Could not fetch checkout for amount resolution:", err);
+  }
+}
+```
+
+**Client-side: Stop sending amount from the client:**
+```typescript
+// Don't send amount from the client — the server-side route will fetch the
+// checkout to get the authoritative final amount (including any shipping
+// selected in the popup). This avoids reliance on the onShippingOptionChange
+// SDK callback which is unreliable across environments.
+const result = await captureFullPaymentClient(orderToken);
+```
+
+The `onShippingOptionChange` callback is kept for flow logging purposes only — it no longer affects the payment amount.
+
+### Additional Fix: Flow Label
+`formatFlowName()` in `lib/flowLogs.ts` didn't recognize "buynow" as an Express Checkout prefix. Flow names like `buynow-integrated-immediate` were displayed as "Standard Checkout (Immediate Capture)" instead of "Express Checkout with Integrated Shipping (Immediate Capture)".
+
+Fixed by adding `parts[0] === "buynow"` to the `isExpress` check.
+
+## Express Checkout Key Takeaways
+
+1. **Don't rely on SDK callbacks for amounts:** The `onShippingOptionChange` callback is unreliable. Use server-side `getCheckout(token)` to get the authoritative checkout amount.
+2. **Keep payment routes consistent:** Both `auth` and `capture-full` should handle missing amounts the same way — fetch the checkout server-side.
+3. **Test all flow × capture mode combinations:** Express Integrated + Immediate, Express Integrated + Deferred, Express Deferred + Immediate, Express Deferred + Deferred — each can have unique failure modes.
