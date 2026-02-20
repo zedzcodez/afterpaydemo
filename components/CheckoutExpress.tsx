@@ -175,14 +175,16 @@ export function CheckoutExpress({ isActive, onLog, onLogUpdate, initialShippingF
 
   useEffect(() => {
     // Check if Afterpay.js is fully loaded with initializeForPopup available
+    let timeoutId: ReturnType<typeof setTimeout>;
     const checkAfterpay = () => {
       if (typeof window !== "undefined" && window.Afterpay && typeof window.Afterpay.initializeForPopup === 'function') {
         setIsReady(true);
       } else {
-        setTimeout(checkAfterpay, 100);
+        timeoutId = setTimeout(checkAfterpay, 100);
       }
     };
     checkAfterpay();
+    return () => clearTimeout(timeoutId);
   }, []);
 
   // Guard refs to prevent duplicate initializeForPopup calls on tab re-activation

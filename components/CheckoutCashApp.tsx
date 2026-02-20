@@ -101,14 +101,16 @@ export function CheckoutCashApp({ formData, selectedShipping, total, finalTotal,
 
   // Poll for SDK readiness (initializeForCashAppPay)
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
     const checkAfterpay = () => {
       if (typeof window !== "undefined" && window.Afterpay && typeof window.Afterpay.initializeForCashAppPay === 'function') {
         setIsReady(true);
       } else {
-        setTimeout(checkAfterpay, 100);
+        timeoutId = setTimeout(checkAfterpay, 100);
       }
     };
     checkAfterpay();
+    return () => clearTimeout(timeoutId);
   }, []);
 
   // Cleanup: restart Cash App Pay when component unmounts
@@ -421,7 +423,10 @@ export function CheckoutCashApp({ formData, selectedShipping, total, finalTotal,
           data: { countryCode: "US", token: data.token.substring(0, 20) + "..." },
         });
 
-        window.Afterpay!.initializeForCashAppPay({
+        if (!window.Afterpay) {
+          throw new Error("Afterpay SDK was unloaded during initialization");
+        }
+        window.Afterpay.initializeForCashAppPay({
           countryCode: "US",
           token: data.token,
           cashAppPayOptions: {

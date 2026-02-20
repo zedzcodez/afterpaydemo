@@ -83,14 +83,16 @@ export function CheckoutStandard({ formData, selectedShipping, total, finalTotal
 
   // Check if Afterpay.js is loaded
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
     const checkAfterpay = () => {
       if (typeof window !== "undefined" && window.Afterpay) {
         setIsAfterpayReady(true);
       } else {
-        setTimeout(checkAfterpay, 100);
+        timeoutId = setTimeout(checkAfterpay, 100);
       }
     };
     checkAfterpay();
+    return () => clearTimeout(timeoutId);
   }, []);
 
   // Create the onComplete handler function for popup mode
