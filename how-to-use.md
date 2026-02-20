@@ -30,7 +30,6 @@ This guide walks you through testing all features of the Afterpay Demo Shop, wit
 | Feature | What It Does | Where | Afterpay Docs |
 |---------|--------------|-------|---------------|
 | Admin Configuration | Toggle checkout features and developer mode | `/admin` | - |
-| Webhooks | Dispute notifications (coming soon) | `/admin` | [Webhooks](https://developers.cash.app/cash-app-afterpay/guides/api-development/webhook-signature-generation) |
 
 > **Common Patterns Across All Flows**
 >
@@ -55,25 +54,24 @@ This guide walks you through testing all features of the Afterpay Demo Shop, wit
 
 ### Part 3: Payment Operations
 7. [Payment Admin Panel](#payment-admin-panel)
-8. [Webhook Handler](#webhook-handler)
-9. [Order History](#order-history)
+8. [Order History](#order-history)
 
 ### Part 4: API Reference
-10. [Local to Afterpay API Mapping](#local-to-afterpay-api-mapping)
-11. [Idempotency with requestId](#idempotency-with-requestid)
-12. [API Flow Diagrams](#api-flow-diagrams)
-13. [Test Credentials](#test-credentials)
-14. [FAQ](#faq)
+9. [Local to Afterpay API Mapping](#local-to-afterpay-api-mapping)
+10. [Idempotency with requestId](#idempotency-with-requestid)
+11. [API Flow Diagrams](#api-flow-diagrams)
+12. [Test Credentials](#test-credentials)
+13. [FAQ](#faq)
 
 ### Part 5: Developer Tools
-15. [Developer Panel](#developer-panel)
-16. [Integration Flow Summary](#integration-flow-summary)
-17. [Code Viewer](#code-viewer)
+14. [Developer Panel](#developer-panel)
+15. [Integration Flow Summary](#integration-flow-summary)
+16. [Code Viewer](#code-viewer)
 
 ### Part 6: Reference
-18. [Dark Mode](#dark-mode)
-19. [Afterpay Resources](#afterpay-resources)
-20. [Changelog](#changelog)
+17. [Dark Mode](#dark-mode)
+18. [Afterpay Resources](#afterpay-resources)
+19. [Changelog](#changelog)
 
 ---
 
@@ -760,7 +758,6 @@ Payment management features (same as previous versions):
 | Amount Breakdown | Visual display of captured/refunded/voided amounts |
 | Actions | Capture, Refund, Void with partial amount support |
 | Event History | Timeline of all payment events |
-| Webhook Demo | Test webhook endpoint with simulated events |
 
 ### Merchant Configuration
 - View merchant configuration (min/max order thresholds, currency) in the Configuration tab
@@ -808,44 +805,6 @@ Unified timeline showing:
 - [ ] Optimistic updates work
 
 </details>
-
----
-
-## Webhook Handler
-
-> **Status:** This feature is temporarily unavailable and will be enabled in a future release.
-
-Webhooks are used by Afterpay to notify merchants about **dispute notifications**. When a customer initiates a dispute, Afterpay sends a POST request to your configured webhook endpoint.
-
-### Endpoint Info
-
-**Local Endpoint:** `/api/webhooks/afterpay`
-
-**Purpose:** Receive dispute notifications from Afterpay
-
-### Webhook Payload
-
-Webhooks include:
-- `webhook_event_id` - Unique event identifier
-- `webhook_event_type` - Event type (e.g., "created")
-- `dispute_id` - Associated dispute reference
-- `merchant_reference` - Your internal order reference
-
-### Security
-
-Webhooks use HMAC-SHA256 signature verification:
-1. Extract signature from `X-Afterpay-Request-Signature` header
-2. Construct canonical message (URL + timestamp + payload)
-3. Generate HMAC-SHA256 hash using shared secret
-4. Compare signatures using constant-time comparison
-
-### Production Setup
-
-- Provide your webhook URL to Afterpay support
-- Receive an HMAC shared secret key for verification
-- Configure endpoint to accept `application/json` POST requests
-
-**Afterpay Documentation:** [Webhook Signature Generation](https://developers.cash.app/cash-app-afterpay/guides/api-development/webhook-signature-generation)
 
 ---
 
@@ -929,7 +888,6 @@ This ensures customers don't lose their cart if checkout is interrupted.
 | `/api/afterpay/void` | POST | `POST /v2/payments/{id}/void` | Void (full/partial) | [Void Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/void-payment) |
 | `/api/afterpay/payment/[id]` | GET | `GET /v2/payments/{id}` | Get payment details | [Get Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/get-payment-by-order-id) |
 | `/api/afterpay/configuration` | POST | `GET /v2/configuration` | Get merchant config | [Get Configuration](https://developers.cash.app/cash-app-afterpay/api-reference/reference/configuration/get-configuration) |
-| `/api/webhooks/afterpay` | POST | - | Receive webhook events | [Webhooks](https://developers.cash.app/cash-app-afterpay/guides/api-development/webhook-signature-generation) |
 
 **Sandbox Base URL:** `https://global-api-sandbox.afterpay.com`
 
@@ -1482,7 +1440,6 @@ Toggle between light and dark themes using the sun/moon icon in the header. The 
   - Reverse-chronological display order
 
 #### v2.2.0 - Payment Operations
-- **Webhook Handler Demo**: Interactive webhook testing in Admin Panel
 - **Order History**: Persistent order tracking with individual deletion
 - **Admin Panel**: Full payment management with capture, refund, void operations
 

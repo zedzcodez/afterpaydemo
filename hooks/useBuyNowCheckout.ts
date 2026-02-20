@@ -7,6 +7,7 @@ import { useCart } from "@/components/CartProvider";
 import { Product } from "@/lib/types";
 import { getAfterpayShippingOptions } from "@/lib/shipping";
 import { captureFullPaymentClient, authorizePaymentClient } from "@/lib/payment-client";
+import { createCheckoutTokenClient } from "@/lib/checkout-client";
 import {
   initFlowLogs,
   addFlowLog,
@@ -15,7 +16,8 @@ import {
   updateFlowSummary,
   FLOW_SUMMARIES,
 } from "@/lib/flowLogs";
-import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { STORAGE_KEYS, savePendingOrder } from "@/lib/storage-keys";
+import { DEFAULT_COUNTRY_CODE } from "@/lib/constants";
 
 interface BuyNowItem {
   product: Product;
@@ -77,7 +79,10 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
 
       // Helper: create checkout token via API
       const createCheckoutToken = async (): Promise<string> => {
-        const currentParams = paramsRef.current!;
+        const currentParams = paramsRef.current;
+        if (!currentParams) {
+          throw new Error("BuyNow parameters not initialized");
+        }
         const clientRequestBody = {
           items: currentParams.items.map((item) => ({
             product: item.product,
@@ -88,41 +93,7 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
           isCashAppPay: false,
         };
 
-        const startTime = Date.now();
-        const response = await fetch("/api/afterpay/checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(clientRequestBody),
-        });
-
-        const data = await response.json();
-        const duration = Date.now() - startTime;
-
-        // Log request with full server-side payload from _meta
-        addFlowLog({
-          type: "api_request",
-          label: "Create Checkout",
-          method: "POST",
-          endpoint: "/api/afterpay/checkout -> /v2/checkouts",
-          data: data._meta?.requestBody || clientRequestBody,
-          fullUrl: data._meta?.fullUrl,
-          headers: data._meta?.headers,
-        });
-
-        addFlowLog({
-          type: "api_response",
-          label: "Checkout Created",
-          method: "POST",
-          endpoint: "/v2/checkouts",
-          status: response.status,
-          data,
-          duration,
-          fullUrl: data._meta?.fullUrl,
-        });
-
-        if (data.error) {
-          throw new Error(data.error);
-        }
+        const { token, data } = await createCheckoutTokenClient(clientRequestBody);
 
         // Extract request config from _meta for flow summary
         const serverRequestBody = data._meta?.requestBody;
@@ -141,18 +112,25 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
           });
         }
 
-        return data.token;
+        return token;
       };
 
       // Helper: get shipping options based on current total
       const getShippingOptions = () => {
-        return getAfterpayShippingOptions(paramsRef.current!.total);
+        const currentParams = paramsRef.current;
+        if (!currentParams) {
+          throw new Error("BuyNow parameters not initialized");
+        }
+        return getAfterpayShippingOptions(currentParams.total);
       };
 
       // Helper: handle payment processing (capture-full for immediate, auth for deferred)
       const handleAuthorization = async (orderToken: string): Promise<void> => {
         const isImmediateCapture = captureMode === "immediate";
-        const currentParams = paramsRef.current!;
+        const currentParams = paramsRef.current;
+        if (!currentParams) {
+          throw new Error("BuyNow parameters not initialized");
+        }
 
         // Don't send amount from the client — the server-side route will fetch the
         // checkout to get the authoritative final amount (including any shipping
@@ -178,18 +156,7 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
           });
 
           // Store order data in sessionStorage for confirmation page
-          sessionStorage.setItem(
-            STORAGE_KEYS.PENDING_ORDER,
-            JSON.stringify({
-              items: currentParams.items.map((item) => ({
-                productId: item.product.id,
-                productName: item.product.name,
-                quantity: item.quantity,
-                price: item.product.price,
-              })),
-              total: currentParams.total,
-            })
-          );
+          savePendingOrder(currentParams.items, currentParams.total);
 
           // Clear the cart after successful checkout
           clearCart();
@@ -217,7 +184,7 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
       const popupConfig =
         shippingFlow === "integrated"
           ? {
-              countryCode: "US",
+              countryCode: DEFAULT_COUNTRY_CODE,
               target: `#${targetId}`,
               addressMode:
                 sdk.ADDRESS_MODES?.ADDRESS_WITH_SHIPPING_OPTIONS ||
@@ -304,7 +271,7 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
               },
             }
           : {
-              countryCode: "US",
+              countryCode: DEFAULT_COUNTRY_CODE,
               target: `#${targetId}`,
               shippingOptionRequired: false,
               buyNow: true,
@@ -350,19 +317,11 @@ export function useBuyNowCheckout(targetId: string = "buynow-afterpay-button"): 
 
                 if (event.data.status === "SUCCESS") {
                   // For deferred shipping, redirect to shipping selection page
-                  const currentParams = paramsRef.current!;
-                  sessionStorage.setItem(
-                    STORAGE_KEYS.CHECKOUT_CART,
-                    JSON.stringify({
-                      items: currentParams.items.map((item) => ({
-                        productId: item.product.id,
-                        productName: item.product.name,
-                        quantity: item.quantity,
-                        price: item.product.price,
-                      })),
-                      total: currentParams.total,
-                    })
-                  );
+                  const currentParams = paramsRef.current;
+                  if (!currentParams) {
+                    throw new Error("BuyNow parameters not initialized");
+                  }
+                  savePendingOrder(currentParams.items, currentParams.total, STORAGE_KEYS.CHECKOUT_CART);
 
                   updateFlowSummary({
                     responseData: {

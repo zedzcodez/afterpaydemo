@@ -8,6 +8,7 @@ import { useCart } from "@/components/CartProvider";
 import { useConfig } from "@/components/ConfigProvider";
 import { formatPrice } from "@/lib/products";
 import { SHIPPING_OPTIONS } from "@/lib/shipping";
+import { roundCurrency } from "@/lib/cart";
 import { addFlowLog, updateFlowSummary } from "@/lib/flowLogs";
 import { captureFullPaymentClient, authorizePaymentClient } from "@/lib/payment-client";
 import { FlowLogsDevPanel, toggleDevPanel, useDevPanelState } from "@/components/FlowLogsDevPanel";
@@ -63,7 +64,7 @@ function ShippingContent() {
 
   // Use stored cart total from sessionStorage, fallback to cart context
   const cartTotal = storedCartTotal ?? total;
-  const finalTotal = cartTotal + selectedShipping.price;
+  const finalTotal = roundCurrency(cartTotal + selectedShipping.price);
 
   // Detect dark mode
   useEffect(() => {
@@ -103,7 +104,7 @@ function ShippingContent() {
     widgetInitialized.current = true;
 
     const initialAmount = {
-      amount: (baseTotal + SHIPPING_OPTIONS[0].price).toFixed(2),
+      amount: roundCurrency(baseTotal + SHIPPING_OPTIONS[0].price).toFixed(2),
       currency: "USD"
     };
 
@@ -277,7 +278,7 @@ function ShippingContent() {
       }
       sessionStorage.setItem(STORAGE_KEYS.PENDING_ORDER, JSON.stringify({
         items: orderItems,
-        total: cartTotal + selectedShipping.price,
+        total: roundCurrency(cartTotal + selectedShipping.price),
       }));
       // Clean up the checkout cart data
       sessionStorage.removeItem(STORAGE_KEYS.CHECKOUT_CART);

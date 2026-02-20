@@ -5,9 +5,7 @@ import {
   clearFlowLogs,
   setFlowSummary,
   updateFlowSummary,
-  logApiCall,
   logCallback,
-  logRedirect,
   formatFlowName,
   FLOW_SUMMARIES,
 } from '@/lib/flowLogs';
@@ -174,23 +172,6 @@ describe('updateFlowSummary', () => {
   });
 });
 
-describe('logApiCall', () => {
-  beforeEach(() => {
-    initFlowLogs('test');
-  });
-
-  it('adds request and response entries', () => {
-    logApiCall('POST', '/v2/checkouts', { items: [] }, { token: 'abc' }, 200, 150);
-    const logs = getFlowLogs()!;
-    expect(logs.entries.length).toBe(2);
-    expect(logs.entries[0].type).toBe('api_request');
-    expect(logs.entries[0].method).toBe('POST');
-    expect(logs.entries[1].type).toBe('api_response');
-    expect(logs.entries[1].status).toBe(200);
-    expect(logs.entries[1].duration).toBe(150);
-  });
-});
-
 describe('logCallback', () => {
   beforeEach(() => {
     initFlowLogs('test');
@@ -208,21 +189,6 @@ describe('logCallback', () => {
     logCallback('onCommenceCheckout');
     const logs = getFlowLogs()!;
     expect(logs.entries[0].data).toBeUndefined();
-  });
-});
-
-describe('logRedirect', () => {
-  beforeEach(() => {
-    initFlowLogs('test');
-  });
-
-  it('adds a redirect entry', () => {
-    logRedirect('/confirmation?orderId=123', 'Redirect to Confirmation');
-    const logs = getFlowLogs()!;
-    expect(logs.entries.length).toBe(1);
-    expect(logs.entries[0].type).toBe('redirect');
-    expect(logs.entries[0].endpoint).toBe('/confirmation?orderId=123');
-    expect(logs.entries[0].label).toBe('Redirect to Confirmation');
   });
 });
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { LOCAL_STORAGE_KEYS } from "@/lib/storage-keys";
 
 type Theme = "light" | "dark" | "system";
 
@@ -19,7 +20,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Load theme from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem("theme") as Theme | null;
+    const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.THEME) as Theme | null;
     if (stored && ["light", "dark", "system"].includes(stored)) {
       setThemeState(stored);
     }
@@ -60,7 +61,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
-    localStorage.setItem("theme", newTheme);
+    localStorage.setItem(LOCAL_STORAGE_KEYS.THEME, newTheme);
   };
 
   // Prevent flash of wrong theme

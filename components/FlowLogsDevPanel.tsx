@@ -13,6 +13,16 @@ interface FlowLogsDevPanelProps {
 
 type FilterType = "all" | "api_request" | "api_response" | "callback" | "redirect";
 
+function extractRequestId(data: object | undefined): string | null {
+  if (!data || typeof data !== "object") return null;
+  const record = data as Record<string, unknown>;
+  const fromRequestBody = (record.requestBody as Record<string, unknown> | undefined)?.requestId;
+  if (typeof fromRequestBody === "string") return fromRequestBody;
+  const fromMeta = (record._meta as Record<string, unknown> | undefined)?.requestId;
+  if (typeof fromMeta === "string") return fromMeta;
+  return null;
+}
+
 const DEFAULT_PANEL_HEIGHT = 320;
 const MIN_PANEL_HEIGHT = 200;
 const MAX_PANEL_HEIGHT_RATIO = 0.8; // 80% of viewport height
@@ -161,12 +171,13 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
 
   useEffect(() => {
     setFlowLogs(getFlowLogs());
+    if (!isOpen) return;
     const interval = setInterval(() => {
       const logs = getFlowLogs();
       setFlowLogs(logs);
     }, 500);
     return () => clearInterval(interval);
-  }, []);
+  }, [isOpen]);
 
   const logs = flowLogs?.entries || [];
 
@@ -646,7 +657,7 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
                   const docUrl = getDocUrl(log.endpoint);
                   const isExpanded = expandedEvents.has(log.id);
                   const typeInfo = getEventTypeLabel(log.type);
-                  const dataSize = log.data ? new Blob([JSON.stringify(log.data)]).size : 0;
+                  const dataSize = log.dataSize ?? (log.data ? new Blob([JSON.stringify(log.data)]).size : 0);
 
                   return (
                     <div
@@ -742,11 +753,11 @@ export function FlowLogsDevPanel({ className = "" }: FlowLogsDevPanelProps) {
                             )}
 
                             {/* Request ID - shown prominently for idempotency debugging */}
-                            {((log.data as Record<string, unknown>)?.requestBody as Record<string, unknown>)?.requestId || ((log.data as Record<string, unknown>)?._meta as Record<string, unknown>)?.requestId ? (
+                            {extractRequestId(log.data) ? (
                               <div className="bg-afterpay-gray-800 rounded p-3">
                                 <span className="text-xs text-afterpay-gray-400">Request ID: </span>
                                 <code className="text-xs text-afterpay-mint font-mono">
-                                  {(((log.data as Record<string, unknown>)?.requestBody as Record<string, unknown>)?.requestId || ((log.data as Record<string, unknown>)?._meta as Record<string, unknown>)?.requestId) as string}
+                                  {extractRequestId(log.data)}
                                 </code>
                               </div>
                             ) : null}

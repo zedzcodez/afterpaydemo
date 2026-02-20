@@ -61,7 +61,6 @@ Full management interface at `/admin` with two tabs:
 - **Configuration Tab**: Express Checkout toggle + type, Standard Checkout method, Cash App Pay toggle, Capture Mode, Developer Mode, Merchant Config
 - **Payment Operations Tab**: Payment lookup by Order ID, capture authorized payments, process refunds (full or partial), void uncaptured authorizations, real-time API request/response logging
 - All configuration settings saved instantly via ConfigProvider (no save button)
-- **Webhook Handler**: Dispute notifications endpoint (coming soon)
 
 ### Order History
 Persistent order tracking at `/orders`:
@@ -127,10 +126,10 @@ Visible only when Developer Mode is enabled:
 ### Security Features
 - **Input Validation**: All API routes validate input with Zod schemas
 - **Error Sanitization**: API errors are sanitized before returning to clients
-- **Security Headers**: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy
+- **Security Headers**: X-Content-Type-Options, X-Frame-Options, Content-Security-Policy, Referrer-Policy
 
 ### Testing
-- **Jest Test Suite**: 57 unit tests with 99.63% coverage on lib utilities
+- **Jest Test Suite**: 139 unit tests across 10 test suites covering lib utilities
 - **Validation Tests**: Comprehensive tests for all Zod schemas
 - **Error Handling Tests**: Tests for error sanitization patterns
 
@@ -223,8 +222,6 @@ If `popupOriginUrl` doesn't match `window.location.origin`, the browser won't di
     /void/route.ts              # Void payment
     /payment/[orderId]/route.ts # Get payment details
     /configuration/route.ts     # Get merchant configuration
-  /api/webhooks/afterpay
-    /route.ts                   # Webhook endpoint for payment notifications
 
 /components
   Header.tsx                    # Flat navigation (Shop, Admin, Orders, User Guide) with mini-cart dropdown and dev mode indicator
@@ -239,7 +236,6 @@ If `popupOriginUrl` doesn't match `window.location.origin`, the browser won't di
   LoadingSpinner.tsx            # Reusable mint-colored loading spinner
   ErrorBoundary.tsx             # Reusable error boundary component
   OSMPlacement.tsx              # Afterpay OSM wrapper
-  CheckoutExpress.tsx           # Express checkout component
   CheckoutStandard.tsx          # Standard checkout component
   CheckoutCashApp.tsx           # Cash App Pay checkout component
   CashAppInfoSection.tsx        # Cash App Pay developer docs/code snippets
@@ -247,8 +243,15 @@ If `popupOriginUrl` doesn't match `window.location.origin`, the browser won't di
   FlowLogsDevPanel.tsx          # Enhanced dev panel with filters, search, cURL export, HAR export (primary)
   DevPanel.tsx                  # Legacy developer panel component
 
+/components/confirmation
+  ConfirmationContent.tsx       # Main confirmation page content
+  FlowLogsSection.tsx           # Flow logs timeline section
+  FlowSummarySection.tsx        # Integration flow summary section
+  index.ts                      # Barrel export
+
 /hooks
   useBuyNowCheckout.ts          # Express checkout hook for Buy Now buttons
+  useAfterpayReady.ts           # SDK readiness polling hook
 
 /lib
   config.ts                     # App config types, defaults, and utilities
@@ -259,7 +262,10 @@ If `popupOriginUrl` doesn't match `window.location.origin`, the browser won't di
   types.ts                      # TypeScript interfaces
   errors.ts                     # Error sanitization utilities
   validation.ts                 # Zod validation schemas
-  webhooks.ts                   # Webhook types and utilities
+  checkout-client.ts            # Checkout token creation helper
+  payment-client.ts             # Payment capture/auth client helpers
+  storage-keys.ts               # Centralized storage key constants
+  constants.ts                  # App constants
   orders.ts                     # Order persistence utilities
 
 /__tests__
@@ -283,8 +289,6 @@ This demo wraps Afterpay's v2 API endpoints. Each local endpoint maps to an Afte
 | `POST /api/afterpay/void` | `POST /v2/payments/{id}/void` | Void authorization | [Void Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/void-payment) |
 | `GET /api/afterpay/payment/[id]` | `GET /v2/payments/{id}` | Get payment details | [Get Payment](https://developers.cash.app/cash-app-afterpay/api-reference/reference/payments/get-payment-by-order-id) |
 | `POST /api/afterpay/configuration` | `GET /v2/configuration` | Get merchant config | [Get Configuration](https://developers.cash.app/cash-app-afterpay/api-reference/reference/configuration/get-configuration) |
-| `POST /api/webhooks/afterpay` | - | Receive dispute notifications (coming soon) | [Webhook Signature](https://developers.cash.app/cash-app-afterpay/guides/api-development/webhook-signature-generation) |
-| `GET /api/webhooks/afterpay` | - | Webhook health check | - |
 
 **API Base URL (Sandbox)**: `https://global-api-sandbox.afterpay.com`
 
@@ -300,7 +304,7 @@ npm run test:watch    # Watch mode
 npm run test:coverage # Coverage report
 ```
 
-Current coverage: **57 tests, 99.63% statement coverage** on lib utilities.
+Current coverage: **139 tests across 10 test suites** covering lib utilities.
 
 ### Sandbox Testing
 
@@ -412,9 +416,8 @@ The demo features a bold, brand-forward UI built on Afterpay's mint-dominant pal
 - [x] Payment Admin Panel with capture/refund/void
 - [x] Developer Panel with cURL/HAR export (collapsed by default)
 - [x] Order History with localStorage persistence and individual deletion
-- [ ] Webhook Handler Demo (dispute notifications - coming soon)
 - [x] Error Boundaries for graceful error handling
-- [x] Jest Test Suite (57 tests, 99.63% coverage)
+- [x] Jest Test Suite (139 tests across 10 test suites)
 - [x] Security: Input validation with Zod
 - [x] Security: Error message sanitization
 - [x] Security: HTTP security headers

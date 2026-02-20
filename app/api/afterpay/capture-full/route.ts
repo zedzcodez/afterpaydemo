@@ -35,6 +35,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (!resolvedAmount) {
+      return NextResponse.json(
+        { error: "Could not resolve capture amount. Please provide an amount or ensure the checkout token is valid." },
+        { status: 400 }
+      );
+    }
+
     const requestBody: Record<string, unknown> = { requestId, token };
     if (merchantReference) {
       requestBody.merchantReference = merchantReference;

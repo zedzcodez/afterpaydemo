@@ -63,8 +63,11 @@ function highlightCode(code: string, language: string): string {
 }
 
 // CodeBlock renders syntax-highlighted code with a hover-to-copy button.
-// All content passed to dangerouslySetInnerHTML comes from highlightCode() above,
-// which only processes developer-controlled static template literals — never user input.
+// SECURITY NOTE: dangerouslySetInnerHTML is used here intentionally and is safe.
+// All content comes from highlightCode() which wraps keywords in <span> tags.
+// The input `code` prop is always a developer-controlled static template literal
+// (verified: only called from CashAppInfoSection and OSMInfoSection with hardcoded strings).
+// No user-generated input ever flows into this component, so XSS risk is not applicable.
 export function CodeBlock({ code, language = "html" }: { code: string; language?: string }) {
   return (
     <div className="relative group">

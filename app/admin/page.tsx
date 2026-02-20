@@ -206,11 +206,6 @@ function AdminContent() {
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
   const [configError, setConfigError] = useState<string | null>(null);
 
-  // Webhook demo state - temporarily disabled
-  // const [webhookEvents, setWebhookEvents] = useState<StoredWebhookEvent[]>([]);
-  // const [testingWebhook, setTestingWebhook] = useState(false);
-  // const [webhookExpanded, setWebhookExpanded] = useState(false);
-
   // Initialize flow logs on mount + load merchant config
   useEffect(() => {
     initFlowLogs("admin");
@@ -633,12 +628,6 @@ function AdminContent() {
     };
   };
 
-  // Webhook handler functions - temporarily disabled
-  /*
-  const handleTestWebhook = async (eventType: WebhookEventType = 'PAYMENT_CAPTURED') => { ... };
-  const handleClearWebhooks = () => { setWebhookEvents([]); };
-  */
-
   /* ---------------------------------------------------------------- */
   /*  Configuration Tab                                                */
   /* ---------------------------------------------------------------- */
@@ -819,28 +808,6 @@ function AdminContent() {
 
   const renderOperationsTab = () => (
     <div>
-      {/* Webhook Demo Section - Temporarily Unavailable */}
-      <div className="bg-white dark:bg-afterpay-gray-800 rounded-xl shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 mb-6 overflow-hidden opacity-60">
-        <div className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-afterpay-gray-50 to-purple-50 dark:from-afterpay-gray-700 dark:to-purple-900/30">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-            </div>
-            <div className="text-left">
-              <h2 className="text-lg font-semibold dark:text-white">Webhook Handler Demo</h2>
-              <p className="text-sm text-afterpay-gray-600 dark:text-afterpay-gray-400">
-                Simulate async payment notifications from Afterpay
-              </p>
-            </div>
-          </div>
-          <span className="px-3 py-1 bg-afterpay-gray-200 dark:bg-afterpay-gray-600 text-afterpay-gray-600 dark:text-afterpay-gray-300 text-xs font-medium rounded-full">
-            Coming Soon
-          </span>
-        </div>
-      </div>
-
       {/* Lookup Section */}
       <div className="bg-white dark:bg-afterpay-gray-800 rounded-xl shadow-sm border border-afterpay-gray-200 dark:border-afterpay-gray-700 p-6 mb-6">
         <h2 className="text-lg font-display font-semibold mb-4 dark:text-white">Lookup Payment</h2>

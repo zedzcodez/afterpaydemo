@@ -1,4 +1,5 @@
 import { LocalShippingOption } from "./types";
+import { roundCurrency } from "./cart";
 
 export const FREE_SHIPPING_THRESHOLD = 100;
 
@@ -44,7 +45,7 @@ export function getAfterpayShippingOptions(cartTotal: number) {
         : { amount: opt.price.toFixed(2), currency: "USD" },
       taxAmount: { amount: "0.00", currency: "USD" },
       orderAmount: {
-        amount: (cartTotal + (isFreeShipping ? 0 : opt.price)).toFixed(2),
+        amount: roundCurrency(cartTotal + (isFreeShipping ? 0 : opt.price)).toFixed(2),
         currency: "USD",
       },
     };

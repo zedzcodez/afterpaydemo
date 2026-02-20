@@ -39,15 +39,6 @@ export interface Cart {
   total: number;
 }
 
-export interface ShippingOption {
-  id: string;
-  name: string;
-  description?: string;
-  shippingAmount: Money;
-  taxAmount?: Money;
-  orderAmount: Money;
-}
-
 export interface Money {
   amount: string;
   currency: string;

@@ -13,13 +13,15 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { STORAGE_KEYS } from "@/lib/storage-keys";
-import { SDK_POLL_INTERVAL_MS } from "@/lib/constants";
+import { savePendingOrder } from "@/lib/storage-keys";
 import { useCart } from "./CartProvider";
 import { useConfig } from "./ConfigProvider";
 import { AfterpayButton } from "./AfterpayButton";
 import { initFlowLogs, addFlowLog, logCallback, setFlowSummary, updateFlowSummary, FLOW_SUMMARIES } from "@/lib/flowLogs";
 import { captureFullPaymentClient, authorizePaymentClient } from "@/lib/payment-client";
+import { createCheckoutTokenClient } from "@/lib/checkout-client";
+import { useAfterpayReady } from "@/hooks/useAfterpayReady";
+import { DEFAULT_COUNTRY_CODE } from "@/lib/constants";
 import type { CheckoutFormData, LocalShippingOption } from "@/lib/types";
 
 type CheckoutMode = "redirect" | "popup";
@@ -39,7 +41,7 @@ export function CheckoutStandard({ formData, selectedShipping, total, finalTotal
   const { config } = useConfig();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isAfterpayReady, setIsAfterpayReady] = useState(false);
+  const isAfterpayReady = useAfterpayReady();
 
   const checkoutMode: CheckoutMode = config.standardCheckout.method === "popup" ? "popup" : "redirect";
 
@@ -48,20 +50,6 @@ export function CheckoutStandard({ formData, selectedShipping, total, finalTotal
   const finalTotalRef = useRef(finalTotal);
   useEffect(() => { itemsRef.current = items; }, [items]);
   useEffect(() => { finalTotalRef.current = finalTotal; }, [finalTotal]);
-
-  // Check if Afterpay.js is loaded
-  useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout>;
-    const checkAfterpay = () => {
-      if (typeof window !== "undefined" && window.Afterpay) {
-        setIsAfterpayReady(true);
-      } else {
-        timeoutId = setTimeout(checkAfterpay, SDK_POLL_INTERVAL_MS);
-      }
-    };
-    checkAfterpay();
-    return () => clearTimeout(timeoutId);
-  }, []);
 
   // Create the onComplete handler function for popup mode
   const createOnCompleteHandler = useCallback(() => {
@@ -96,16 +84,7 @@ export function CheckoutStandard({ formData, selectedShipping, total, finalTotal
           });
 
           // Store pending order in sessionStorage (confirmation page handles saveOrder)
-          const currentItems = itemsRef.current;
-          sessionStorage.setItem(STORAGE_KEYS.PENDING_ORDER, JSON.stringify({
-            items: currentItems.map(item => ({
-              productId: item.product.id,
-              productName: item.product.name,
-              quantity: item.quantity,
-              price: item.product.price,
-            })),
-            total: finalTotalRef.current,
-          }));
+          savePendingOrder(itemsRef.current, finalTotalRef.current);
 
           const flowSuffix = isImmediateCapture ? "immediate" : "deferred";
           addFlowLog({
@@ -154,10 +133,10 @@ export function CheckoutStandard({ formData, selectedShipping, total, finalTotal
       addFlowLog({
         type: "callback",
         label: "Initialize Afterpay (popup mode)",
-        data: { countryCode: "US" },
+        data: { countryCode: DEFAULT_COUNTRY_CODE },
       });
 
-      window.Afterpay.initialize({ countryCode: "US" });
+      window.Afterpay.initialize({ countryCode: DEFAULT_COUNTRY_CODE });
 
       addFlowLog({
         type: "callback",
@@ -200,40 +179,7 @@ export function CheckoutStandard({ formData, selectedShipping, total, finalTotal
         },
       };
 
-      const startTime = Date.now();
-      const response = await fetch("/api/afterpay/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(checkoutClientRequest),
-      });
-
-      const data = await response.json();
-      const duration = Date.now() - startTime;
-
-      addFlowLog({
-        type: "api_request",
-        label: "Create Checkout",
-        method: "POST",
-        endpoint: "/api/afterpay/checkout → /v2/checkouts",
-        data: data._meta?.requestBody || checkoutClientRequest,
-        fullUrl: data._meta?.fullUrl,
-        headers: data._meta?.headers,
-      });
-
-      addFlowLog({
-        type: "api_response",
-        label: "Checkout Created",
-        method: "POST",
-        endpoint: "/v2/checkouts",
-        status: response.status,
-        data: data,
-        duration,
-        fullUrl: data._meta?.fullUrl,
-      });
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
+      const { data } = await createCheckoutTokenClient(checkoutClientRequest);
 
       // Extract request config from _meta for flow summary
       const serverRequestBody = data._meta?.requestBody;
@@ -254,15 +200,7 @@ export function CheckoutStandard({ formData, selectedShipping, total, finalTotal
       // Step 2: Open Afterpay (redirect or popup)
       if (checkoutMode === "redirect") {
         // Store pending order before redirect
-        sessionStorage.setItem(STORAGE_KEYS.PENDING_ORDER, JSON.stringify({
-          items: items.map(item => ({
-            productId: item.product.id,
-            productName: item.product.name,
-            quantity: item.quantity,
-            price: item.product.price,
-          })),
-          total: finalTotal,
-        }));
+        savePendingOrder(items, finalTotal);
 
         addFlowLog({
           type: "redirect",

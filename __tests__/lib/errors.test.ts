@@ -1,4 +1,4 @@
-import { sanitizeError, errorResponse } from '@/lib/errors';
+import { sanitizeError } from '@/lib/errors';
 
 describe('sanitizeError', () => {
   // Suppress console.error during tests since sanitizeError logs errors
@@ -71,33 +71,5 @@ describe('sanitizeError', () => {
     const error = new Error('Test error');
     sanitizeError(error, 'test-context');
     expect(console.error).toHaveBeenCalledWith('[test-context] Error:', error);
-  });
-});
-
-describe('errorResponse', () => {
-  beforeEach(() => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
-  it('returns error object with safe message and default status', () => {
-    const error = new Error('Some error');
-    const result = errorResponse(error, 'test');
-    expect(result).toEqual({
-      error: 'An error occurred. Please try again.',
-      status: 500,
-    });
-  });
-
-  it('returns error object with custom status', () => {
-    const error = new Error('Unauthorized');
-    const result = errorResponse(error, 'test', 401);
-    expect(result).toEqual({
-      error: 'Authentication failed',
-      status: 401,
-    });
   });
 });

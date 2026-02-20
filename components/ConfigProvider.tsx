@@ -46,23 +46,13 @@ function deepMergeUpdate(
   };
 }
 
-const LEGACY_CAPTURE_MODE_KEY = "afterpay_capture_mode";
-
 export function ConfigProvider({ children }: { children: React.ReactNode }) {
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG);
   const [mounted, setMounted] = useState(false);
 
-  // Load config from localStorage on mount and migrate legacy key
+  // Load config from localStorage on mount
   useEffect(() => {
     const stored = getStoredConfig();
-
-    // Migrate legacy afterpay_capture_mode key
-    const legacyMode = localStorage.getItem(LEGACY_CAPTURE_MODE_KEY);
-    if (legacyMode === "deferred" || legacyMode === "immediate") {
-      stored.captureMode = legacyMode;
-      localStorage.removeItem(LEGACY_CAPTURE_MODE_KEY);
-    }
-
     setConfig(stored);
     setMounted(true);
   }, []);

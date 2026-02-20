@@ -13,7 +13,7 @@ export interface AppConfig {
   developerMode: boolean;
 }
 
-const CONFIG_STORAGE_KEY = "afterpay-demo-config";
+import { LOCAL_STORAGE_KEYS } from "./storage-keys";
 
 export const DEFAULT_CONFIG: AppConfig = {
   expressCheckout: {
@@ -56,7 +56,7 @@ function mergeWithDefaults(stored: Partial<AppConfig>): AppConfig {
 export function getStoredConfig(): AppConfig {
   if (typeof window === "undefined") return DEFAULT_CONFIG;
   try {
-    const stored = localStorage.getItem(CONFIG_STORAGE_KEY);
+    const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.CONFIG);
     if (!stored) return DEFAULT_CONFIG;
     const parsed = JSON.parse(stored);
     return mergeWithDefaults(parsed);
@@ -67,5 +67,5 @@ export function getStoredConfig(): AppConfig {
 
 export function saveConfig(config: AppConfig): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config));
+  localStorage.setItem(LOCAL_STORAGE_KEYS.CONFIG, JSON.stringify(config));
 }

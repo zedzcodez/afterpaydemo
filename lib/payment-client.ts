@@ -6,8 +6,15 @@
 
 import { addFlowLog } from "./flowLogs";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface PaymentResult<T = any> {
+export interface PaymentResponseData {
+  id: string;
+  status: string;
+  token?: string;
+  originalAmount?: { amount: string; currency: string };
+  openToCapture?: { amount: string; currency: string };
+}
+
+export interface PaymentResult<T = PaymentResponseData> {
   orderId: string;
   data: T;
 }

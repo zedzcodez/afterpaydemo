@@ -29,20 +29,27 @@ export default function RootLayout({
       <head>
         {/* Preconnect to Fontshare CDN for faster font loading */}
         <link rel="preconnect" href="https://api.fontshare.com" crossOrigin="anonymous" />
-        {/* Fontshare CDN — Clash Display + General Sans */}
+        {/* Fontshare CDN — Clash Display + General Sans
+             Loaded via preload + swap to avoid render-blocking.
+             The font URL includes display=swap for font-display: swap. */}
+        <link
+          rel="preload"
+          as="style"
+          href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=general-sans@400,500,600,700&display=swap"
+        />
         <link
           href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=general-sans@400,500,600,700&display=swap"
           rel="stylesheet"
         />
-        {/* Afterpay On-Site Messaging SDK */}
+        {/* Afterpay On-Site Messaging SDK — lazyOnload so it doesn't block initial render */}
         <Script
           src="https://js-sandbox.squarecdn.com/square-marketplace.js"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
-        {/* Afterpay.js for Express Checkout */}
+        {/* Afterpay.js for Express Checkout — lazyOnload so it doesn't block initial render */}
         <Script
           src="https://portal.sandbox.afterpay.com/afterpay.js"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
       </head>
       <body className="bg-white dark:bg-afterpay-gray-900 text-afterpay-black dark:text-white min-h-screen font-body transition-colors duration-200">

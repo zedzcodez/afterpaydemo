@@ -3,10 +3,10 @@ import { createCheckout, toMoney, cartToCheckoutItems, API_URL } from "@/lib/aft
 import { sanitizeError } from "@/lib/errors";
 import { checkoutRequestSchema, validateRequest } from "@/lib/validation";
 
-// Generate a unique merchant reference/order ID
+// Generate a unique merchant reference/order ID using cryptographically secure randomness
 function generateMerchantReference(): string {
   const timestamp = Date.now().toString(36).toUpperCase();
-  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const random = crypto.randomUUID().replace(/-/g, "").substring(0, 8).toUpperCase();
   return `ORD-${timestamp}-${random}`;
 }
 

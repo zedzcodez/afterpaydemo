@@ -131,11 +131,11 @@ Wraps all Afterpay v2 endpoints:
 
 - **Input Validation** - All API routes validate input with Zod schemas
 - **Error Sanitization** - API errors are sanitized before returning to clients
-- **Security Headers** - X-Content-Type-Options, X-Frame-Options, X-XSS-Protection
+- **Security Headers** - X-Content-Type-Options, X-Frame-Options, Content-Security-Policy, Referrer-Policy
 
 ### Quality
 
-- **Test Coverage** - 57 unit tests with 99.63% coverage on lib utilities
+- **Test Coverage** - 139 unit tests across 10 test suites covering lib utilities
 - **TypeScript** - Full type safety throughout the codebase
 - **Error Boundaries** - Graceful error handling with user-friendly fallback UI
 

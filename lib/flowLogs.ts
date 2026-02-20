@@ -6,11 +6,6 @@ export interface RequestHeaders {
   userAgent?: string;
 }
 
-export interface ResponseHeaders {
-  contentType?: string;
-  requestId?: string;  // Afterpay request tracking ID
-}
-
 export interface FlowLogEntry {
   id: string;
   timestamp: string;
@@ -25,9 +20,7 @@ export interface FlowLogEntry {
   fullUrl?: string;  // Complete URL (e.g., https://global-api-sandbox.afterpay.com/v2/checkouts)
   pathParams?: Record<string, string>;  // Path parameters (e.g., { orderId: "123" })
   headers?: RequestHeaders;
-  responseHeaders?: ResponseHeaders;
-  requestSize?: number;  // Request body size in bytes
-  responseSize?: number;  // Response body size in bytes
+  dataSize?: number;  // Pre-computed size of JSON.stringify(data) in bytes
 }
 
 export interface FlowSummary {
@@ -53,7 +46,9 @@ export interface FlowLogs {
   summary?: FlowSummary;
 }
 
-const STORAGE_KEY = "afterpay-flow-logs";
+import { STORAGE_KEYS as CENTRALIZED_KEYS } from "./storage-keys";
+
+const STORAGE_KEY = CENTRALIZED_KEYS.FLOW_LOGS;
 
 // Counter to ensure unique IDs even when entries are added in the same millisecond
 let idCounter = 0;
@@ -124,10 +119,12 @@ export function addFlowLog(entry: Omit<FlowLogEntry, "id" | "timestamp">): void 
     return;
   }
 
+  const dataSize = entry.data ? new Blob([JSON.stringify(entry.data)]).size : 0;
   logs.entries.push({
     ...entry,
     id: generateUniqueId(),
     timestamp: new Date().toISOString(),
+    dataSize,
   });
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
 }
@@ -165,39 +162,12 @@ export function updateFlowSummary(updates: Partial<FlowSummary>): void {
   if (!stored) return;
 
   const logs: FlowLogs = JSON.parse(stored);
-  if (logs.summary) {
-    logs.summary = { ...logs.summary, ...updates };
-  } else {
-    logs.summary = updates as FlowSummary;
+  if (!logs.summary) {
+    console.warn("[flowLogs] updateFlowSummary called before setFlowSummary");
+    return;
   }
+  logs.summary = { ...logs.summary, ...updates };
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
-}
-
-// Helper to log an API call (request + response)
-export function logApiCall(
-  method: string,
-  endpoint: string,
-  request: object,
-  response: object,
-  status: number,
-  duration: number
-): void {
-  addFlowLog({
-    type: "api_request",
-    label: `${method} ${endpoint}`,
-    method,
-    endpoint,
-    data: request,
-  });
-  addFlowLog({
-    type: "api_response",
-    label: `Response ${status}`,
-    method,
-    endpoint,
-    status,
-    data: response,
-    duration,
-  });
 }
 
 // Helper to log Afterpay.js callbacks
@@ -206,15 +176,6 @@ export function logCallback(name: string, data?: object): void {
     type: "callback",
     label: `Afterpay.js: ${name}`,
     data,
-  });
-}
-
-// Helper to log redirects
-export function logRedirect(destination: string, reason: string): void {
-  addFlowLog({
-    type: "redirect",
-    label: reason,
-    endpoint: destination,
   });
 }
 

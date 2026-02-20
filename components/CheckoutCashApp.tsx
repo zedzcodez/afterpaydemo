@@ -19,9 +19,11 @@ import { useCart } from "./CartProvider";
 import { useConfig } from "@/components/ConfigProvider";
 import { initFlowLogs, addFlowLog, setFlowSummary, updateFlowSummary, FLOW_SUMMARIES } from "@/lib/flowLogs";
 import { captureFullPaymentClient, authorizePaymentClient } from "@/lib/payment-client";
+import { createCheckoutTokenClient } from "@/lib/checkout-client";
 import { CashAppPayCompleteEvent } from "@/lib/types";
-import { STORAGE_KEYS } from "@/lib/storage-keys";
-import { SDK_POLL_INTERVAL_MS } from "@/lib/constants";
+import { savePendingOrder } from "@/lib/storage-keys";
+import { SDK_POLL_INTERVAL_MS, DEFAULT_COUNTRY_CODE } from "@/lib/constants";
+import { useAfterpayReady } from "@/hooks/useAfterpayReady";
 import type { CheckoutFormData, LocalShippingOption } from "@/lib/types";
 
 const CASH_APP_BUTTON_OPTIONS = {
@@ -62,6 +64,9 @@ function applyCashAppButtonStyles(retries = 30) {
   shadow.appendChild(style);
 }
 
+const cashAppReadyCheck = (sdk: NonNullable<typeof window.Afterpay>) =>
+  typeof sdk.initializeForCashAppPay === 'function';
+
 interface CheckoutCashAppProps {
   formData: CheckoutFormData;
   selectedShipping: LocalShippingOption;
@@ -79,7 +84,7 @@ export function CheckoutCashApp({ formData, selectedShipping, total, finalTotal,
   const { config } = useConfig();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  const isReady = useAfterpayReady(cashAppReadyCheck);
   const [isInitialized, setIsInitialized] = useState(false);
   const [buttonRendered, setButtonRendered] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -94,20 +99,6 @@ export function CheckoutCashApp({ formData, selectedShipping, total, finalTotal,
   useEffect(() => { itemsRef.current = items; }, [items]);
   useEffect(() => { totalRef.current = finalTotal; }, [finalTotal]);
   useEffect(() => { captureModeRef.current = config.captureMode; }, [config.captureMode]);
-
-  // Poll for SDK readiness (initializeForCashAppPay)
-  useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout>;
-    const checkAfterpay = () => {
-      if (typeof window !== "undefined" && window.Afterpay && typeof window.Afterpay.initializeForCashAppPay === 'function') {
-        setIsReady(true);
-      } else {
-        timeoutId = setTimeout(checkAfterpay, SDK_POLL_INTERVAL_MS);
-      }
-    };
-    checkAfterpay();
-    return () => clearTimeout(timeoutId);
-  }, []);
 
   // Cleanup: restart Cash App Pay when component unmounts
   useEffect(() => {
@@ -175,16 +166,7 @@ export function CheckoutCashApp({ formData, selectedShipping, total, finalTotal,
       });
 
       // Store pending order in sessionStorage
-      const currentItems = itemsRef.current;
-      sessionStorage.setItem(STORAGE_KEYS.PENDING_ORDER, JSON.stringify({
-        items: currentItems.map(item => ({
-          productId: item.product.id,
-          productName: item.product.name,
-          quantity: item.quantity,
-          price: item.product.price,
-        })),
-        total: totalRef.current,
-      }));
+      savePendingOrder(itemsRef.current, totalRef.current);
 
       setProcessingStep("Redirecting...");
       const flowSuffix = isImmediateCapture ? "immediate" : "deferred";
@@ -262,40 +244,7 @@ export function CheckoutCashApp({ formData, selectedShipping, total, finalTotal,
           isCashAppPay: true,
         };
 
-        const startTime = Date.now();
-        const response = await fetch("/api/afterpay/checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(checkoutClientRequest),
-        });
-
-        const data = await response.json();
-        const duration = Date.now() - startTime;
-
-        addFlowLog({
-          type: "api_request",
-          label: "Create Checkout",
-          method: "POST",
-          endpoint: "/api/afterpay/checkout → /v2/checkouts",
-          data: data._meta?.requestBody || checkoutClientRequest,
-          fullUrl: data._meta?.fullUrl,
-          headers: data._meta?.headers,
-        });
-
-        addFlowLog({
-          type: "api_response",
-          label: "Checkout Created",
-          method: "POST",
-          endpoint: "/v2/checkouts",
-          status: response.status,
-          data: data,
-          duration,
-          fullUrl: data._meta?.fullUrl,
-        });
-
-        if (data.error) {
-          throw new Error(data.error);
-        }
+        const { data } = await createCheckoutTokenClient(checkoutClientRequest);
 
         // Extract request config for flow summary
         const serverRequestBody = data._meta?.requestBody;
@@ -316,7 +265,7 @@ export function CheckoutCashApp({ formData, selectedShipping, total, finalTotal,
         // Per docs: restartCashAppPay() clears all UI, so always re-render
         if (window.Afterpay?.renderCashAppPayButton) {
           window.Afterpay.renderCashAppPayButton({
-            countryCode: "US",
+            countryCode: DEFAULT_COUNTRY_CODE,
             cashAppPayButtonOptions: CASH_APP_BUTTON_OPTIONS,
           });
           setButtonRendered(true);
@@ -326,14 +275,14 @@ export function CheckoutCashApp({ formData, selectedShipping, total, finalTotal,
         addFlowLog({
           type: "callback",
           label: "Initialize Cash App Pay",
-          data: { countryCode: "US", token: data.token.substring(0, 20) + "..." },
+          data: { countryCode: DEFAULT_COUNTRY_CODE, token: data.token.substring(0, 20) + "..." },
         });
 
         if (!window.Afterpay) {
           throw new Error("Afterpay SDK was unloaded during initialization");
         }
         window.Afterpay.initializeForCashAppPay({
-          countryCode: "US",
+          countryCode: DEFAULT_COUNTRY_CODE,
           token: data.token,
           cashAppPayOptions: {
             button: CASH_APP_BUTTON_OPTIONS,

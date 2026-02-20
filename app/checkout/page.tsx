@@ -13,7 +13,7 @@ import { OSMInfoSection } from "@/components/OSMInfoSection";
 import { CodeViewer } from "@/components/CodeViewer";
 import { CashAppInfoSection } from "@/components/CashAppInfoSection";
 import { toggleDevPanel, useDevPanelState } from "@/components/FlowLogsDevPanel";
-import { getCartSkus, getCartCategories } from "@/lib/cart";
+import { getCartSkus, getCartCategories, roundCurrency } from "@/lib/cart";
 import { SHIPPING_OPTIONS, FREE_SHIPPING_THRESHOLD } from "@/lib/shipping";
 import type { CheckoutFormData, LocalShippingOption } from "@/lib/types";
 
@@ -65,7 +65,7 @@ export default function CheckoutPage() {
   // Track form validity for enabling/disabling payment buttons
   const [isFormValid, setIsFormValid] = useState(false);
 
-  const finalTotal = total + selectedShipping.price;
+  const finalTotal = roundCurrency(total + selectedShipping.price);
 
   const checkoutMode = config.standardCheckout.method === "popup" ? "popup" : "redirect";
 
