@@ -9,7 +9,7 @@ import {
   PaymentEvent,
 } from "./types";
 
-const API_URL = process.env.AFTERPAY_API_URL!;
+export const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
 const MERCHANT_ID = process.env.AFTERPAY_MERCHANT_ID!;
 const SECRET_KEY = process.env.AFTERPAY_SECRET_KEY!;
 

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createCheckout, toMoney, cartToCheckoutItems } from "@/lib/afterpay";
+import { createCheckout, toMoney, cartToCheckoutItems, API_URL } from "@/lib/afterpay";
 import { sanitizeError } from "@/lib/errors";
 import { checkoutRequestSchema, validateRequest } from "@/lib/validation";
-
-const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
 
 // Generate a unique merchant reference/order ID
 function generateMerchantReference(): string {

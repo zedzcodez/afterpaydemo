@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { captureFullPayment, toMoney } from "@/lib/afterpay";
+import { captureFullPayment, toMoney, API_URL } from "@/lib/afterpay";
 import { sanitizeError } from "@/lib/errors";
 import { captureFullRequestSchema, validateRequest } from "@/lib/validation";
-
-const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
 
 // Capture Full Payment - combines auth and capture in one call
 // Used for Immediate Capture mode across all flows (Standard, Express, Cash App Pay)

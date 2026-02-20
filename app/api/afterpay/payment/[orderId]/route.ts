@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPayment } from "@/lib/afterpay";
+import { getPayment, API_URL } from "@/lib/afterpay";
 import { sanitizeError } from "@/lib/errors";
-
-const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
 
 export async function GET(
   request: NextRequest,

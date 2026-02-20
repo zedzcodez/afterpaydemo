@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { refundPayment, toMoney } from "@/lib/afterpay";
+import { refundPayment, toMoney, API_URL } from "@/lib/afterpay";
 import { sanitizeError } from "@/lib/errors";
 import { refundRequestSchema, validateRequest } from "@/lib/validation";
-
-const API_URL = process.env.AFTERPAY_API_URL || "https://global-api-sandbox.afterpay.com";
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
